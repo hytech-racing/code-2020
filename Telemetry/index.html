@@ -2,9 +2,11 @@
 
 <body>
     <table>
-        <tr><td>MODULE A TEMP</td><td id="module-a-temp"></td></tr>
-        <tr><td>MODULE A TEMP</td><td id="module-b-temp"></td></tr>
-        <tr><td>MODULE C TEMP</td><td id="module-C-temp"></td></tr>
+        {% for item in data %}
+        <tr><td>{% item["displayName"] %}</td><td id="{% item['id'] %}"></td></tr>
+        {% endfor %}
+        <tr><td>MODULE B TEMP</td><td id="module-b-temp"></td></tr>
+        <tr><td>MODULE C TEMP</td><td id="module-c-temp"></td></tr>
         <tr><td>GATE DRIVER BOARD TEMP</td><td id="gate-driver-board-temp"></td></tr>
         <tr><td>RTD 4 TEMP</td><td id="rtd-4-temp"></td></tr>
         <tr><td>RTD 5 TEMP</td><td id="rtd-5-temp"></td></tr>

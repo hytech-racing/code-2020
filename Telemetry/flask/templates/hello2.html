@@ -1,0 +1,11 @@
+<html>
+
+<body>
+    <table>
+        {% for item in data %}
+        <tr><td>{{ item["displayName"] }}</td><td id="{{ item['id'] }}">{{ item['value'] }}</td></tr>
+        {% endfor %}
+    </table>
+</body>
+
+</html>

@@ -1,0 +1,5 @@
+<!doctype html>
+<title>Hello from Flask</title>
+{% for item in data %}
+<tr><td>{{ item["displayName"] }}</td><td id="{{} item['id'] }}"></td></tr>
+{% endfor %}
