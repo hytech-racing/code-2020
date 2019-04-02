@@ -4,47 +4,16 @@
 #include "../Libraries/XBTools/XBTools.h"
 #include <MQTTClient.h>
 
-struct {
-    uint64_t                                timestamp;
-    CAN_msg_rcu_status                      rcu_status;
-    CAN_msg_fcu_status                      fcu_status;
-    CAN_msg_fcu_readings                    fcu_readings;
-    CAN_message_bms_voltages_t              bms_voltages;
-    CAN_message_bms_detailed_voltages_t     bms_detailed_voltages;
-    CAN_message_bms_temperatures_t          bms_temperatures;
-    CAN_message_bms_detailed_temperatures_t bms_detailed_temperatures;
-    CAN_message_bms_onboard_temperatures_t  bms_onboard_temperatures;
-    CAN_message_bms_onboard_detailed_temperatures_t bms_onboard_detailed_temperatures;
-    CAN_message_bms_status_t                bms_status;
-    CAN_message_bms_balancing_status_t      bms_balancing_status;
-    CAN_message_ccu_status_t                ccu_status;
-    CAN_message_mc_temperatures_1_t         mc_temperatures_1;
-    CAN_message_mc_temperatures_2_t         mc_temperatures_2;
-    CAN_message_mc_temperatures_3_t         mc_temperatures_3;
-    CAN_message_mc_analog_input_voltages_t  mc_analog_input_voltages;
-    CAN_message_mc_digital_input_status_t   mc_digital_input_status;
-    CAN_message_mc_motor_position_information_t mc_motor_position_information;
-    CAN_message_mc_current_information_t    mc_current_information;
-    CAN_message_mc_voltage_information_t    mc_voltage_information;
-    CAN_message_mc_internal_states_t        mc_internal_states;
-    CAN_message_mc_fault_codes_t            mc_fault_codes;
-    CAN_message_mc_torque_timer_information_t mc_torque_timer_information;
-    CAN_message_mc_modulation_index_flux_weakening_output_information_t
-        mc_modulation_index_flux_weakening_output_information;
-    CAN_message_mc_firmware_information_t   mc_firmware_information;
-    CAN_message_mc_command_message_t        mc_command_message;
-    CAN_message_mc_read_write_parameter_command_t
-        mc_read_write_parameter_command;
-    CAN_message_mc_read_write_parameter_response_t
-        mc_read_write_parameter_response;
-    CAN_message_fcu_accelerometer_values_t  fcu_accelerometer_values;
-} current_status;
+struct context {
+    FILE *logfile;
+};
 
-static void process_message(uint64_t timestamp, Telem_message_t *msg)
+static void process_message(uint64_t timestamp, Telem_message_t *msg,
+        struct context *ctx)
 {
-    // Do logging stuff.
+    fwrite(&timestamp, sizeof(timestamp), 1, ctx->logfile);
+    fwrite(msg, sizeof(*msg), 1, ctx->logfile);
     printf("\nTimestamp: %llu\n", timestamp);
-    current_status.timestamp = timestamp;
 
     switch (msg->msg_id) {
         case ID_RCU_STATUS:
@@ -60,7 +29,6 @@ static void process_message(uint64_t timestamp, Telem_message_t *msg)
                    data->glv_battery_voltage / 100.0,
                    (char)(!(data->flags & 1)),
                    (char)(!(data->flags & 2)));
-            current_status.rcu_status = *data;
             break;
         }
         case ID_FCU_STATUS:
@@ -78,7 +46,6 @@ static void process_message(uint64_t timestamp, Telem_message_t *msg)
                    (char)((data->flags & 8) >> 3),
                    (char)(data->flags & 1),
                    (char)((data->flags & 4) >> 2));
-            current_status.fcu_status = *data;
             break;
         }
         case ID_FCU_READINGS:
@@ -90,7 +57,6 @@ static void process_message(uint64_t timestamp, Telem_message_t *msg)
                    data->accelerator_pedal_raw_1,
                    data->accelerator_pedal_raw_2,
                    data->brake_pedal_raw);
-            current_status.fcu_readings = *data;
             break;
         }
         case ID_FCU_ACCELEROMETER:
@@ -114,7 +80,6 @@ static void process_message(uint64_t timestamp, Telem_message_t *msg)
                    data->low_voltage / 1000.0,
                    data->high_voltage / 1000.0,
                    data->total_voltage / 100.0);
-            current_status.bms_voltages = *data;
             break;
         }
         case ID_BMS_DETAILED_VOLTAGES:
@@ -130,7 +95,6 @@ static void process_message(uint64_t timestamp, Telem_message_t *msg)
                    data->average_temperature / 100.0,
                    data->low_temperature / 100.0,
                    data->high_temperature / 100.0);
-            current_status.bms_temperatures = *data;
             break;
         }
         case ID_BMS_DETAILED_TEMPERATURES:
@@ -146,7 +110,6 @@ static void process_message(uint64_t timestamp, Telem_message_t *msg)
                    data->state,
                    data->error_flags,
                    data->current / 100.0);
-            current_status.bms_status = *data;
             break;
         }
         case ID_BMS_BALANCING_STATUS:
@@ -165,7 +128,6 @@ static void process_message(uint64_t timestamp, Telem_message_t *msg)
                     data->module_b_temperature / 10.,
                     data->module_c_temperature / 10.,
                     data->gate_driver_board_temperature / 10.);
-            current_status.mc_temperatures_1 = *data;
             break;
         }
         case ID_MC_TEMPERATURES_2: {
@@ -178,7 +140,6 @@ static void process_message(uint64_t timestamp, Telem_message_t *msg)
                     data->rtd_1_temperature / 10.,
                     data->rtd_2_temperature / 10.,
                     data->rtd_3_temperature / 10.);
-            current_status.mc_temperatures_2 = *data;
             break;
         }
         case ID_MC_TEMPERATURES_3: {
@@ -191,7 +152,6 @@ static void process_message(uint64_t timestamp, Telem_message_t *msg)
                     data->rtd_5_temperature / 10.,
                     data->motor_temperature / 10.,
                     data->torque_shudder / 10.);
-            current_status.mc_temperatures_3 = *data;
             break;
         }
         case ID_MC_ANALOG_INPUTS_VOLTAGES:
@@ -212,7 +172,6 @@ static void process_message(uint64_t timestamp, Telem_message_t *msg)
                    data->motor_speed,
                    data->electrical_output_frequency / 10.,
                    data->delta_resolver_filtered);
-            current_status.mc_motor_position_information = *data;
             break;
         }
         case ID_MC_CURRENT_INFORMATION:
@@ -226,7 +185,6 @@ static void process_message(uint64_t timestamp, Telem_message_t *msg)
                    data->phase_b_current / 10.,
                    data->phase_c_current / 10.,
                    data->dc_bus_current / 10.);
-            current_status.mc_current_information = *data;
             break;
         }
         case ID_MC_VOLTAGE_INFORMATION:
@@ -240,7 +198,6 @@ static void process_message(uint64_t timestamp, Telem_message_t *msg)
                    data->output_voltage / 10.,
                    data->phase_ab_voltage / 10.,
                    data->phase_bc_voltage / 10.);
-            current_status.mc_voltage_information = *data;
             break;
         }
         case ID_MC_FLUX_INFORMATION:
@@ -266,7 +223,6 @@ static void process_message(uint64_t timestamp, Telem_message_t *msg)
                    (char)(data->inverter_enable & 1),
                    (char)((data->inverter_enable & 0x80) >> 7),
                    data->direction_command);
-            current_status.mc_internal_states = *data;
         }
         case ID_MC_FAULT_CODES:
         {
@@ -279,7 +235,6 @@ static void process_message(uint64_t timestamp, Telem_message_t *msg)
                    data->post_fault_hi,
                    data->run_fault_lo,
                    data->run_fault_hi);
-            current_status.mc_fault_codes = *data;
             break;
         }
         case ID_MC_TORQUE_TIMER_INFORMATION:
@@ -292,7 +247,6 @@ static void process_message(uint64_t timestamp, Telem_message_t *msg)
                    data->commanded_torque / 10.,
                    data->torque_feedback / 10.,
                    data->power_on_timer * 0.003);
-            current_status.mc_torque_timer_information = *data;
             break;
         }
         case ID_MC_MODULATION_INDEX_FLUX_WEAKENING_OUTPUT_INFORMATION:
@@ -306,7 +260,6 @@ static void process_message(uint64_t timestamp, Telem_message_t *msg)
             // TODO add the other members of this struct??
             printf("FCU REQUESTED TORQUE: %f\n",
                    data->torque_command / 10.);
-            current_status.mc_command_message = *data;
         }
         case ID_MC_READ_WRITE_PARAMETER_COMMAND:
             break;
@@ -326,6 +279,7 @@ static void process_message(uint64_t timestamp, Telem_message_t *msg)
 #define TOPIC       "hytech_car/telemetry"
 #define QOS         1
 #define TIMEOUT     10000L
+#define DB_FILENAME "can_messages.db"
 
 static void connection_lost(void *context, char *cause)
 {
@@ -355,7 +309,7 @@ static int msg_arrived(void *context, char *topic_name, int topic_len,
                         checksum_calc, payload.checksum);
                 goto cleanup;
             }
-            process_message(timestamp, &payload);
+            process_message(timestamp, &payload, context);
             goto cleanup;
         }
     }
@@ -373,11 +327,17 @@ int main(int argc, char* argv[])
     MQTTClient_connectOptions conn_opts = MQTTClient_connectOptions_initializer;
     int rc;
     int ch;
+    struct context ctx;
+    ctx.logfile = fopen(DB_FILENAME, "a+b");
+    if (!ctx.logfile) {
+        printf("Could not open database file %s\n", DB_FILENAME);
+        exit(EXIT_FAILURE);
+    }
     MQTTClient_create(&client, ADDRESS, CLIENTID,
         MQTTCLIENT_PERSISTENCE_NONE, NULL);
     conn_opts.keepAliveInterval = 20;
     conn_opts.cleansession = 1;
-    MQTTClient_setCallbacks(client, NULL, connection_lost,
+    MQTTClient_setCallbacks(client, &ctx, connection_lost,
                             msg_arrived, msg_delivered);
     if ((rc = MQTTClient_connect(client, &conn_opts)) != MQTTCLIENT_SUCCESS)
     {
