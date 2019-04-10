@@ -43,13 +43,56 @@ static PyObject *can_decode(PyObject *self, PyObject *args)
         return NULL;
 
     switch (msg.msg_id) {
+    case ID_MCU_STATUS:
+    case ID_MCU_PEDAL_READINGS:
+    case ID_RCU_STATUS:
+    case ID_FCU_STATUS:
+    case ID_FCU_READINGS:
+    case ID_FCU_ACCELEROMETER:
+    case ID_RCU_RESTART_MC:
+    case ID_BMS_ONBOARD_TEMPERATURES:
+    case ID_BMS_ONBOARD_DETAILED_TEMPERATURES:
+    case ID_BMS_VOLTAGES:
+    case ID_BMS_DETAILED_VOLTAGES:
+    case ID_BMS_TEMPERATURES:
+    case ID_BMS_DETAILED_TEMPERATURES:
+    case ID_BMS_STATUS:
+    case ID_BMS_BALANCING_STATUS:
+    case ID_BMS_READ_WRITE_PARAMETER_COMMAND:
+    case ID_BMS_PARAMETER_RESPONSE:
+    case ID_BMS_COULOMB_COUNTS:
+    case ID_FH_WATCHDOG_TEST:
+    case ID_CCU_STATUS:
+    case ID_MC_TEMPERATURES_1:
+    case ID_MC_TEMPERATURES_2:
+    case ID_MC_TEMPERATURES_3:
+    case ID_MC_ANALOG_INPUTS_VOLTAGES:
+    case ID_MC_DIGITAL_INPUT_STATUS:
+    case ID_MC_MOTOR_POSITION_INFORMATION:
+    case ID_MC_CURRENT_INFORMATION:
+    case ID_MC_VOLTAGE_INFORMATION:
+    case ID_MC_FLUX_INFORMATION:
+    case ID_MC_INTERNAL_VOLTAGES:
+    case ID_MC_INTERNAL_STATES:
+    case ID_MC_FAULT_CODES:
+    case ID_MC_TORQUE_TIMER_INFORMATION:
+    case ID_MC_MODULATION_INDEX_FLUX_WEAKENING_OUTPUT_INFORMATION:
+    case ID_MC_FIRMWARE_INFORMATION:
+    case ID_MC_DIAGNOSTIC_DATA:
+    case ID_MC_COMMAND_MESSAGE:
+    case ID_MC_READ_WRITE_PARAMETER_COMMAND:
+    case ID_MC_READ_WRITE_PARAMETER_RESPONSE:
+    case ID_GLV_CURRENT_READINGS:
+    case ID_ECU_GPS_READINGS_ALPHA:
+    case ID_ECU_GPS_READINGS_BETA:
     default:
         return NULL;
     }
 }
 
 static PyMethodDef can_methods[] = {
-    { "unpack", can_unpack, METH_VARARGS, "Unpack a CAN message." }
+    { "unpack", can_unpack, METH_VARARGS, "Unpack a CAN message." },
+    { "decode", can_decode, METH_VARARGS, "Decode a CAN message." }
 };
 
 static struct PyModuleDef can_module = {
