@@ -44,15 +44,44 @@ static PyObject *can_decode(PyObject *self, PyObject *args)
 
     switch (msg.msg_id) {
     case ID_MCU_STATUS:
+        return Py_BuildValue("{s: B, s: B, s: h, s: H}",
+            "state",                msg.mcu_status.state,
+            "flags",                msg.mcu_status.flags,
+            "temperature",          msg.mcu_status.temperature,
+            "glv_battery_voltage",  msg.mcu_status.glv_battery_voltage);
     case ID_MCU_PEDAL_READINGS:
+        return Py_BuildValue("{s: H, s: H, s: H, s: B, s: B}",
+            "accelerator_pedal_raw_1",  msg.mcu_petal_readings.accelerator_pedal_raw_1,
+            "accelerator_pedal_raw_2",  msg.mcu_petal_readings.accelerator_pedal_raw_2,
+            "brake_pedal_raw",          msg.mcu_petal_readings.brake_pedal_raw,
+            "pedal_flags",              msg.mcu_petal_readings.pedal_flags,
+            "torque_map_mode",          msg.mcu_petal_readings.torque_map_mode);
     case ID_RCU_STATUS:
+        break;
     case ID_FCU_STATUS:
+        break;
     case ID_FCU_READINGS:
+        break;
     case ID_FCU_ACCELEROMETER:
+        break;
     case ID_RCU_RESTART_MC:
+        break;
     case ID_BMS_ONBOARD_TEMPERATURES:
+        return Py_BuildValue("{s: h, s: h, s: h}",
+            "average_temperature",  msg.bms_onboard_temperatures.average_temperature,
+            "low_temperature",      msg.bms_onboard_temperatures.low_temperature,
+            "high_temperature",     msg.bms_onboard_temperatures.high_temperature);
     case ID_BMS_ONBOARD_DETAILED_TEMPERATURES:
+        return Py_BuildValue("{s: B, s: h, s: h}",
+            "ic_id",            msg.bms_onboard_detailed_temperatures.ic_id,
+            "temperature_0",    msg.bms_onboard_detailed_temperatures.temperature_0,
+            "temperature_1",    msg.bms_onboard_detailed_temperatures.temperature_1);
     case ID_BMS_VOLTAGES:
+        return Py_BuildValue("{s: H, s: H, s: H, s: H}",
+            "average_voltage",  msg.bms_voltages.average_voltage,
+            "low_voltage",      msg.bms_voltages.low_voltage,
+            "high_voltage",     msg.bms_voltages.high_voltage,
+            "total_voltage",    msg.bms_voltages.total_voltage);
     case ID_BMS_DETAILED_VOLTAGES:
     case ID_BMS_TEMPERATURES:
     case ID_BMS_DETAILED_TEMPERATURES:
@@ -86,8 +115,8 @@ static PyObject *can_decode(PyObject *self, PyObject *args)
     case ID_ECU_GPS_READINGS_ALPHA:
     case ID_ECU_GPS_READINGS_BETA:
     default:
-        return NULL;
     }
+    return NULL;
 }
 
 static PyMethodDef can_methods[] = {
