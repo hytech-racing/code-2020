@@ -1,81 +1,90 @@
 dbfile = open('can_messages.db')
 data = f.read(31)
-(timestamp, msg_id) = struct.unpack('=QI', data)
 
-if msg_id == 0xD5:
-    (avg_temp, lo_temp, hi_temp) = struct.unpack_from('=hhh', data, 13)
+def unpack(data):
+    (timestamp, msg_id) = struct.unpack('=QI', data)
 
-if msg_id == 0xD6:
-    (id_ic, temp0, temp1) = struct.unpack_from('=hhh', data, 13)
+    if msg_id == 0xD5:
+        (avg_temp, lo_temp, hi_temp) = struct.unpack_from('=hhh', data, 13)
+        return {
+            'timestamp': timestamp,
+            'msgID': msg_id,
+            'avgTemp': avg_temp,
+            'loTemp': lo_temp,
+            'hiTemp': hi_temp
+        }
 
-if msg_id == 0xD7:
-    (avg_volt, lo_volt, hi_volt, tot_volt) = struct.unpack_from('=hhhh', data, 13)
+    if msg_id == 0xD6:
+        (id_ic, temp0, temp1) = struct.unpack_from('=hhh', data, 13)
 
-if msg_id == 0xD8:
-    (ic_id, volt_0, volt_1, volt_2) = struct.unpack_from('=bhhh', data, 13)
+    if msg_id == 0xD7:
+        (avg_volt, lo_volt, hi_volt, tot_volt) = struct.unpack_from('=hhhh', data, 13)
 
-if msg_id == 0xD9:
-    (avg_temp, lo_temp, hi_temp) = struct.unpack_from('=hhh', data, 13)
+    if msg_id == 0xD8:
+        (ic_id, volt_0, volt_1, volt_2) = struct.unpack_from('=bhhh', data, 13)
 
-if msg_id == 0xDA:
-    (id_ic, temp0, temp1) = struct.unpack_from('=bhh', data, 13)
+    if msg_id == 0xD9:
+        (avg_temp, lo_temp, hi_temp) = struct.unpack_from('=hhh', data, 13)
 
-if msg_id == 0xDB:
-    (state, error_flags, cur) = struct.unpack_from('=bhh', data, 13)
+    if msg_id == 0xDA:
+        (id_ic, temp0, temp1) = struct.unpack_from('=bhh', data, 13)
 
-if msg_id == 0xDD:
-    (charge_enabled) = struct.unpack_from('=?', data, 13)
+    if msg_id == 0xDB:
+        (state, error_flags, cur) = struct.unpack_from('=bhh', data, 13)
 
-if msg_id == 0xA0:
-    (mod_a, mod_b, mod_c,gate_driver) = struct.unpack_from('=hhhh', data, 13)
+    if msg_id == 0xDD:
+        (charge_enabled) = struct.unpack_from('=?', data, 13)
 
-if msg_id == 0xA1:
-    (control_board, rtd_1, rtd2, rtd3) = struct.unpack_from('=hhhh', data, 13)
+    if msg_id == 0xA0:
+        (mod_a, mod_b, mod_c,gate_driver) = struct.unpack_from('=hhhh', data, 13)
 
-if msg_id == 0xA2:
-    (rtd_5, rtd_6, motor_temp, torque_shudder) = struct.unpack_from('=hhhh', data, 13)
+    if msg_id == 0xA1:
+        (control_board, rtd_1, rtd2, rtd3) = struct.unpack_from('=hhhh', data, 13)
 
-if msg_id == 0xA3:
-    (analog_1, analog_2, analog_3, analog_4) = struct.unpack_from('=hhhh', data, 13)
+    if msg_id == 0xA2:
+        (rtd_5, rtd_6, motor_temp, torque_shudder) = struct.unpack_from('=hhhh', data, 13)
 
-if msg_id == 0xA4:
-    (dig_1, dig_2, dig_3, dig_4, dig_5, dig_6, dig_7, dig_8) = struct.unpack_from('=????????', data, 13)
+    if msg_id == 0xA3:
+        (analog_1, analog_2, analog_3, analog_4) = struct.unpack_from('=hhhh', data, 13)
 
-if msg_id == 0xA5:
-    (motor_angle, motor_speed, elec_freq, delta_filtered) = struct.unpack_from('=hhhh', data, 13)
+    if msg_id == 0xA4:
+        (dig_1, dig_2, dig_3, dig_4, dig_5, dig_6, dig_7, dig_8) = struct.unpack_from('=????????', data, 13)
 
-if msg_id == 0xA6:
-    (phase_a, phase_b, phase_c, dc_cur) = struct.unpack_from('=hhhh', data, 13)
+    if msg_id == 0xA5:
+        (motor_angle, motor_speed, elec_freq, delta_filtered) = struct.unpack_from('=hhhh', data, 13)
 
-if msg_id == 0xA7:
-    (dc_volt, out_volt, phase_ab, phase_bc) = struct.unpack_from('=hhhh', data, 13)
+    if msg_id == 0xA6:
+        (phase_a, phase_b, phase_c, dc_cur) = struct.unpack_from('=hhhh', data, 13)
 
-if msg_id == 0xAA:
-    (vsm, inverter, relay, inverter_run, inverter_command, inverter_enable, direct_command) = struct.unpack_from('=hbbbbbb', data, 13)
+    if msg_id == 0xA7:
+        (dc_volt, out_volt, phase_ab, phase_bc) = struct.unpack_from('=hhhh', data, 13)
 
-if msg_id == 0xAB:
-    (post_lo, post_hi, run_lo, run_hi) = struct.unpack_from('=hhhh', data, 13)
+    if msg_id == 0xAA:
+        (vsm, inverter, relay, inverter_run, inverter_command, inverter_enable, direct_command) = struct.unpack_from('=hbbbbbb', data, 13)
 
-if msg_id == 0xAC:
-    (command_torque, torque_feedback, power_timer) = struct.unpack_from('=hhi', data, 13)
+    if msg_id == 0xAB:
+        (post_lo, post_hi, run_lo, run_hi) = struct.unpack_from('=hhhh', data, 13)
 
-if msg_id == 0xAD:
-    (mod_index, flux_out, id_command, iq_command) = struct.unpack_from('=hhhh', data, 13)
+    if msg_id == 0xAC:
+        (command_torque, torque_feedback, power_timer) = struct.unpack_from('=hhi', data, 13)
 
-if msg_id == 0xAE:
-    (eprom_code, software_ver, date_mmdd, date_yyyy) = struct.unpack_from('=hhhh', data, 13)
+    if msg_id == 0xAD:
+        (mod_index, flux_out, id_command, iq_command) = struct.unpack_from('=hhhh', data, 13)
 
-if msg_id == 0xAF:
-    (id_ic, temp0, temp1) = struct.unpack_from('=hhh', data, 13)
+    if msg_id == 0xAE:
+        (eprom_code, software_ver, date_mmdd, date_yyyy) = struct.unpack_from('=hhhh', data, 13)
 
-if msg_id == 0xC0:
-    (torq_command, ang_vel, direct, invert_enable, command_limit) = struct.unpack_from('=hh?bh', data, 13)
+    if msg_id == 0xAF:
+        (id_ic, temp0, temp1) = struct.unpack_from('=hhh', data, 13)
 
-if msg_id == 0xC1:
-    (parameter_add, rw_command, reserved1, data) = struct.unpack_from('=h?bi', data, 13)
+    if msg_id == 0xC0:
+        (torq_command, ang_vel, direct, invert_enable, command_limit) = struct.unpack_from('=hh?bh', data, 13)
 
-if msg_id == 0xC2:
-    (parameter_add, write_suc, reserved1, data) = struct.unpack_from('=h?bi', data, 13)
+    if msg_id == 0xC1:
+        (parameter_add, rw_command, reserved1, data) = struct.unpack_from('=h?bi', data, 13)
+
+    if msg_id == 0xC2:
+        (parameter_add, write_suc, reserved1, data) = struct.unpack_from('=h?bi', data, 13)
 
 
 #define ID_BMS_ONBOARD_TEMPERATURES 0xD5
