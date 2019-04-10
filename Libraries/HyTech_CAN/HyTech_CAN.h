@@ -7,6 +7,12 @@
 /*
  * ECU state definitions // TODO make these enums?
  */
+#define MCU_STATE_TRACTIVE_SYSTEM_NOT_ACTIVE 1
+#define MCU_STATE_TRACTIVE_SYSTEM_ACTIVE 2
+#define MCU_STATE_ENABLING_INVERTER 3
+#define MCU_STATE_WAITING_READY_TO_DRIVE_SOUND 4
+#define MCU_STATE_READY_TO_DRIVE 5
+
 #define FCU_STATE_TRACTIVE_SYSTEM_NOT_ACTIVE 1
 #define FCU_STATE_TRACTIVE_SYSTEM_ACTIVE 2
 #define FCU_STATE_ENABLING_INVERTER 3
@@ -27,6 +33,8 @@
 /*
  * CAN ID definitions
  */
+#define ID_MCU_STATUS 0xC3
+#define ID_MCU_PEDAL_READINGS 0xC4
 #define ID_RCU_STATUS 0xD0
 #define ID_FCU_STATUS 0xD2
 #define ID_FCU_READINGS 0xD3
@@ -39,7 +47,10 @@
 #define ID_BMS_TEMPERATURES 0xD9
 #define ID_BMS_DETAILED_TEMPERATURES 0xDA
 #define ID_BMS_STATUS 0xDB
-#define ID_BMS_BALANCING_STATUS 0xDE
+#define ID_BMS_BALANCING_STATUS 0xDE // TODO rename to bms_balancing_cells when we're not in the middle of a development cycle
+#define ID_BMS_READ_WRITE_PARAMETER_COMMAND 0xE0 // TODO define this message
+#define ID_BMS_PARAMETER_RESPONSE 0xE1 // TODO define this message
+#define ID_BMS_COULOMB_COUNTS 0xE2
 #define ID_FH_WATCHDOG_TEST 0xDC
 #define ID_CCU_STATUS 0xDD
 #define ID_MC_TEMPERATURES_1 0xA0
@@ -61,6 +72,9 @@
 #define ID_MC_COMMAND_MESSAGE 0xC0
 #define ID_MC_READ_WRITE_PARAMETER_COMMAND 0xC1
 #define ID_MC_READ_WRITE_PARAMETER_RESPONSE 0xC2
+#define ID_GLV_CURRENT_READINGS 0xCC
+#define ID_ECU_GPS_READINGS_ALPHA 0xE7
+#define ID_ECU_GPS_READINGS_BETA 0xE8
 
 /*
 
@@ -84,6 +98,27 @@
  * CAN message structs and classes
  */
 #pragma pack(push,1)
+
+typedef struct CAN_message_mcu_status_t {
+    uint8_t state;
+    uint8_t flags;
+    int16_t temperature;
+    uint16_t glv_battery_voltage;
+} CAN_message_mcu_status_t;
+
+typedef struct CAN_message_mcu_pedal_readings_t {
+    uint16_t accelerator_pedal_raw_1;
+    uint16_t accelerator_pedal_raw_2;
+    uint16_t brake_pedal_raw;
+    uint8_t pedal_flags;
+    uint8_t torque_map_mode;
+} CAN_message_mcu_pedal_readings_t;
+
+typedef struct CAN_message_glv_current_readings_t {
+	uint16_t ecu_current_value;
+	uint16_t cooling_current_value;
+} CAN_message_glv_current_readings_t;
+
 typedef struct CAN_message_rcu_status_t {
     uint8_t state;
     uint8_t flags;
@@ -147,11 +182,17 @@ typedef struct CAN_message_bms_status_t {
 	uint8_t state;
     uint16_t error_flags;
     int16_t current;
+    uint8_t flags;
 } CAN_message_bms_status_t;
 
 typedef struct CAN_message_bms_balancing_status_t {
 	uint8_t balancing_status[5];
 } CAN_message_bms_balancing_status_t;
+
+typedef struct CAN_message_bms_coulomb_counts_t {
+    uint32_t total_charge;
+    uint32_t total_discharge;
+} CAN_message_bms_coulomb_counts_t;
 
 typedef struct CAN_message_ccu_status_t {
     bool charger_enabled;
@@ -287,6 +328,9 @@ typedef struct Telem_message {
     uint32_t msg_id;
     uint8_t length;
     union {
+        CAN_message_mcu_status_t                mcu_status;
+        CAN_message_mcu_pedal_readings_t        mcu_pedal_readings;
+        CAN_message_glv_current_readings_t      glv_current_readings;
         CAN_msg_rcu_status                      rcu_status;
         CAN_msg_fcu_status                      fcu_status;
         CAN_msg_fcu_readings                    fcu_readings;
@@ -298,6 +342,7 @@ typedef struct Telem_message {
         CAN_message_bms_onboard_detailed_temperatures_t bms_onboard_detailed_temperatures;
         CAN_message_bms_status_t                bms_status;
         CAN_message_bms_balancing_status_t      bms_balancing_status;
+        CAN_message_bms_coulomb_counts_t        bms_coulomb_counts;
         CAN_message_ccu_status_t                ccu_status;
         CAN_message_mc_temperatures_1_t         mc_temperatures_1;
         CAN_message_mc_temperatures_2_t         mc_temperatures_2;
@@ -326,6 +371,68 @@ typedef struct Telem_message {
 #pragma pack(pop)
 
 #ifdef __cplusplus
+
+class MCU_status {
+    public:
+        MCU_status();
+        MCU_status(uint8_t buf[8]);
+        MCU_status(uint8_t state, uint8_t flags, int16_t temperature, uint16_t glv_battery_voltage);
+        void load(uint8_t buf[8]);
+        void write(uint8_t buf[8]);
+        uint8_t get_state();
+        uint8_t get_flags();
+        bool get_bms_ok_high();
+        bool get_imd_okhs_high();
+        bool get_inverter_powered();
+        bool get_shutdown_b_above_threshold();
+        bool get_shutdown_c_above_threshold();
+        bool get_shutdown_d_above_threshold();
+        bool get_shutdown_e_above_threshold();
+        bool get_shutdown_f_above_threshold();
+        int16_t get_temperature();
+        uint16_t get_glv_battery_voltage();
+        void set_state(uint8_t state);
+        void set_flags(uint8_t flags);
+        void set_bms_ok_high(bool bms_ok_high);
+        void set_imd_okhs_high(bool imd_okhs_high);
+        void set_inverter_powered(bool inverter_powered);
+        void set_shutdown_b_above_threshold(bool shutdown_b_above_threshold);
+        void set_shutdown_c_above_threshold(bool shutdown_c_above_threshold);
+        void set_shutdown_d_above_threshold(bool shutdown_d_above_threshold);
+        void set_shutdown_e_above_threshold(bool shutdown_e_above_threshold);
+        void set_shutdown_f_above_threshold(bool shutdown_f_above_threshold);
+        void set_temperature(int16_t temperature);
+        void set_glv_battery_voltage(uint16_t glv_battery_voltage);
+    private:
+        CAN_message_mcu_status_t message;
+};
+
+class MCU_pedal_readings {
+    public:
+        MCU_pedal_readings();
+        MCU_pedal_readings(uint8_t buf[8]);
+        MCU_pedal_readings(uint16_t accelerator_pedal_raw_1, uint16_t accelerator_pedal_raw_2, uint16_t brake_pedal_raw, uint8_t pedal_flags, uint8_t torque_map_mode);
+        void load(uint8_t buf[8]);
+        void write(uint8_t buf[8]);
+        uint16_t get_accelerator_pedal_raw_1();
+        uint16_t get_accelerator_pedal_raw_2();
+        uint16_t get_brake_pedal_raw();
+        uint8_t get_pedal_flags();
+        bool get_accelerator_implausibility();
+        bool get_brake_implausibility();
+        bool get_brake_pedal_active();
+        uint8_t get_torque_map_mode();
+        void set_accelerator_pedal_raw_1(uint16_t accelerator_pedal_raw_1);
+        void set_accelerator_pedal_raw_2(uint16_t accelerator_pedal_raw_2);
+        void set_brake_pedal_raw(uint16_t brake_pedal_raw);
+        void set_pedal_flags(uint8_t pedal_flags);
+        void set_accelerator_implausibility(bool accelerator_implausibility);
+        void set_brake_implausibility(bool brake_implausibility);
+        void set_brake_pedal_active(bool brake_pedal_active);
+        void set_torque_map_mode(uint8_t torque_map_mode);
+    private:
+        CAN_message_mcu_pedal_readings_t message;
+};
 
 class RCU_status {
     public:
@@ -377,6 +484,21 @@ class FCU_status {
         void set_start_button_press_id(uint8_t start_button_press_id);
     private:
         CAN_message_fcu_status_t message;
+};
+
+class GLV_current_readings {
+	public:
+		GLV_current_readings();
+		GLV_current_readings(uint8_t buf[8]);
+		GLV_current_readings(uint16_t ecu_current_value, uint16_t cooling_current_value);
+		void load(uint8_t buf[8]);
+		void write(uint8_t buf[8]);
+		uint16_t get_ecu_current_value();
+		uint16_t get_cooling_current_value();
+		void set_ecu_current_value(uint16_t ecu_current_value);
+		void set_cooling_current_value(uint16_t cooling_current_value);
+	private:
+		CAN_message_glv_current_readings_t message;
 };
 
 class FCU_readings {
@@ -532,6 +654,9 @@ class BMS_status {
         bool get_undertemp();
         bool get_onboard_overtemp();
         int16_t get_current();
+        uint8_t get_flags();
+        bool get_shutdown_g_above_threshold();
+        bool get_shutdown_h_above_threshold();
 
         void set_state(uint8_t state);
         void set_error_flags(uint16_t error_flags);
@@ -545,6 +670,9 @@ class BMS_status {
         void set_undertemp(bool undertemp);
         void set_onboard_overtemp(bool onboard_overtemp);
         void set_current(int16_t current);
+        void set_flags(uint8_t flags);
+        void set_shutdown_g_above_threshold(bool shutdown_g_above_threshold);
+        void set_shutdown_h_above_threshold(bool shutdown_h_above_threshold);
     private:
         CAN_message_bms_status_t message;
 };
@@ -553,19 +681,35 @@ class BMS_balancing_status {
     public:
         BMS_balancing_status();
         BMS_balancing_status(uint8_t buf[]);
+        BMS_balancing_status(uint8_t group_id, int64_t balancing_status);
         void load(uint8_t buf[]);
         void write(uint8_t buf[]);
         uint8_t get_group_id();
-        uint64_t get_balancing_status();
-        uint32_t get_segment_balancing_status(uint8_t segment_id);
-        bool get_cell_balancing_status(uint8_t segment_id, uint16_t cell_id);
+        uint64_t get_balancing();
+        uint16_t get_ic_balancing(uint8_t ic_id);
+        bool get_cell_balancing(uint8_t ic_id, uint16_t cell_id);
 
         void set_group_id(uint8_t group_id);
-        void set_balancing_status(uint64_t balancing_status);
-        void set_segment_balancing_status(uint8_t segment_id, uint32_t balancing_status);
-        void set_cell_balancing_status(uint8_t segment_id, uint8_t cell_id, bool balancing_status);
+        void set_balancing(uint64_t balancing_status);
+        void set_ic_balancing(uint8_t ic_id, uint32_t balancing_status);
+        void set_cell_balancing(uint8_t ic_id, uint8_t cell_id, bool balancing_status);
     private:
-        CAN_message_bms_balancing_status_t message;
+        uint64_t message; // Using a 64-bit datatype here instead of CAN_message_bms_balancing_status_t because it is much easier than dealing with an array
+};
+
+class BMS_coulomb_counts {
+    public:
+        BMS_coulomb_counts();
+        BMS_coulomb_counts(uint8_t buf[]);
+        BMS_coulomb_counts(uint32_t total_charge, uint32_t total_discharge);
+        void load(uint8_t buf[]);
+        void write(uint8_t buf[]);
+        uint32_t get_total_charge();
+        uint32_t get_total_discharge();
+        void set_total_charge(uint32_t total_charge);
+        void set_total_discharge(uint32_t total_discharge);
+    private:
+        CAN_message_bms_coulomb_counts_t message;
 };
 
 class CCU_status {
