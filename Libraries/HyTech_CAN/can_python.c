@@ -158,29 +158,135 @@ static PyObject *can_decode(PyObject *self, PyObject *args)
             "current",      msg.bms_status.current,
             "flags",        msg.bms_status.flags);
     case ID_BMS_BALANCING_STATUS:
+//skipped
     case ID_BMS_READ_WRITE_PARAMETER_COMMAND:
+//can't find
     case ID_BMS_PARAMETER_RESPONSE:
+//can't find
     case ID_BMS_COULOMB_COUNTS:
+        msg_data = Py_BuildValue("",
+        "total_charge"          msg.bms_status.total_charge,
+        "total_discharge"       msg.bms_status.total_discharge);
+        
     case ID_FH_WATCHDOG_TEST:
+    //can't find
     case ID_CCU_STATUS:
+        msg_data = Py_BuildValue("",
+        "charge_enabled",        msg.bms_status.charge_enabled);
+
     case ID_MC_TEMPERATURES_1:
+        msg_data = Py_BuildValue("",
+        "module_a_temperature",          msg.bms_status.module_a_temperature,
+        "module_b_temperature",          msg.bms_status.module_b_temperature,
+        "module_c_temperature",          msg.bms_status.module_c_temperature,
+        "gate_driver_board_temperature", msg.bms_status.gate_driver_board_temperature);
+    
     case ID_MC_TEMPERATURES_2:
+        msg_data = Py_BuildValue("",
+        "control_board_temperature",    msg.bms_status.control_board_temperature,
+        "rtd_1_temperature",            msg.bms_status.rtd_1_temperature,
+        "rtd_2_temperature",            msg.bms_status.rtd_2_temperature,
+        "rtd_3_temperature",            msg.bms_status.rtd_3_temperature,);
+
     case ID_MC_TEMPERATURES_3:
+        msg_data = Py_BuildValue("",
+        "rtd_4_temperature",        msg.bms_status.rtd_4_temperature,
+        "rtd_5_temperature",        msg.bms_status.rtd_5_temperature,
+        "motor_temperature",        msg.bms_status.motor_temperature,
+        "torque_shudder",           msg.bms_status.torque_shudder);
+
     case ID_MC_ANALOG_INPUTS_VOLTAGES:
+        msg_data = Py_BuildValue("",
+        "analog_input_1",       msg.bms_status.analog_input_1,
+        "analog_input_2",       msg.bms_status.analog_input_2,
+        "analog_input_3",       msg.bms_status.analog_input_3,
+        "analog_input_4",       msg.bms_status.analog_input_4);
+
     case ID_MC_DIGITAL_INPUT_STATUS:
+        msg_data = Py_BuildValue("",
+        "digital_input_1"       msg.bms_status.digital_input_1,
+        "digital_input_2"       msg.bms_status.digital_input_2,
+        "digital_input_3"       msg.bms_status.digital_input_3,
+        "digital_input_4"       msg.bms_status.digital_input_4,
+        "digital_input_5"       msg.bms_status.digital_input_5,
+        "digital_input_6"       msg.bms_status.digital_input_6,
+        "digital_input_7"       msg.bms_status.digital_input_7,
+        "digital_input_8"       msg.bms_status.digital_input_8);
+
     case ID_MC_MOTOR_POSITION_INFORMATION:
+        msg_data = Py_BuildValue("",
+        "motor_angle",                      msg.bms_status.motor_angle,
+        "motor_speed",                      msg.bms_status.motor_speed,
+        "electrical_output_frequency",      msg.bms_status.electrical_output_frequency);
+
     case ID_MC_CURRENT_INFORMATION:
+        msg_data = Py_BuildValue("",
+        "phase_a_current",      msg.bms_status.phase_a_current,
+        "phase_b_current",      msg.bms_status.phase_b_current,
+        "phase_c_current",      msg.bms_status.phase_c_current,
+        "dc_bus_current",       msg.bms_status.dc_bus_current);
+
     case ID_MC_VOLTAGE_INFORMATION:
+        msg_data = Py_BuildValue("",
+        "dc_bus_voltage",       msg.bms_status.dc_bus_voltage,
+        "output_voltage",       msg.bms_status.output_voltage,
+        "phase_ab_voltage",     msg.bms_status.phase_ab_voltage,
+        "phase_bc_voltage",     msg.bms_status.phase_bc_voltage);
+
     case ID_MC_FLUX_INFORMATION:
+    //can't find
     case ID_MC_INTERNAL_VOLTAGES:
+    //can't find
     case ID_MC_INTERNAL_STATES:
+        msg_data = Py_BuildValue("",
+        "vsm_state",                            msg.bms_status.vsm_state,
+        "inverter_state",                       msg.bms_status.inverter_state,
+        "relay_state",                          msg.bms_status.relay_state,
+        "inverter_run_mode_discharge_state"     msg.bms_status.inverter_run_mode_discharge_state,
+        "inverter_command_mode",                msg.bms_status.inverter_command_mode,
+        "inverter_enable",                      msg.bms_status.inverter_enable,
+        "direction_command",                    msg.bms_status.direction_command);
+
     case ID_MC_FAULT_CODES:
+        msg_data = Py_BuildValue("",
+        "post_fault_lo",            msg.bms_status.post_fault_lo,
+        "post_fault_hi",            msg.bms_status.post_fault_hi,
+        "run_fault_lo",            msg.bms_status.run_fault_lo,
+        "run_fault_hi",            msg.bms_status.run_fault_hi,
+
     case ID_MC_TORQUE_TIMER_INFORMATION:
+        msg_data = Py_BuildValue("",
+        "command_torque",           msg.bms_status.command_torque,
+        "torque_feedback",          msg.bms_status.torque_feedback,
+        "power_on_timer",           msg.bms_status.power_on_timer);
+
     case ID_MC_MODULATION_INDEX_FLUX_WEAKENING_OUTPUT_INFORMATION:
+        msg_data = Py_BuildValue("",
+        "modulation_index",         msg.bms_status.modulation_index,
+        "flux_weakening_output",    msg.bms_status.flux_weakening_output,
+        "id_command",               msg.bms_status.id_command,
+        "iq_command",               msg.bms_status.iq_command);
+
     case ID_MC_FIRMWARE_INFORMATION:
+        msg_data = Py_BuildValue("",
+        "eeprom_version_project_code",      msg.bms_status.eeprom_version_project_code,
+        "software_version",                 msg.bms_status.software_version,
+        "date_code_mmdd",                   msg.bms_status.date_code_mmdd,
+        "date_code_yyyy",                   msg.bms_status.date_code_yyyy);
+
     case ID_MC_DIAGNOSTIC_DATA:
+//can't find
     case ID_MC_COMMAND_MESSAGE:
+        msg_data = Py_BuildValue("",
+        "torque_command",          msg.bms_status.torque_command,
+        "angular_velocity",        msg.bms_status.angular_velocity,
+        "direction",               msg.bms_status.direction,
+        "inverter_enable_discharge_enable", msg.bms_status.inverter_enable_discharge_enable,
+        "command_torque_limit",    msg.bms_status.command_torque_limit);
+
     case ID_MC_READ_WRITE_PARAMETER_COMMAND:
+        msg_data = Py_BuildValue("",
+        "parameter_address",       msg.bms_status.parameter
     case ID_MC_READ_WRITE_PARAMETER_RESPONSE:
     case ID_GLV_CURRENT_READINGS:
     case ID_ECU_GPS_READINGS_ALPHA:

@@ -1,10 +1,23 @@
 <html>
+<head>
 
+<script src="https://www.gstatic.com/firebasejs/5.9.4/firebase.js"></script>
+<script>
+  // Initialize Firebase
+  var config = {
+    apiKey: "AIzaSyCOAkRM2QjGI_Q8BKL6eFaM7xmLe5x9LhE",
+    authDomain: "hytechtelemetry.firebaseapp.com",
+    databaseURL: "https://hytechtelemetry.firebaseio.com",
+    projectId: "hytechtelemetry",
+    storageBucket: "hytechtelemetry.appspot.com",
+    messagingSenderId: "958207707171"
+  };
+  firebase.initializeApp(config);
+</script>
+</head>
 <body>
     <table>
-        {% for item in data %}
-        <tr><td>{% item["displayName"] %}</td><td id="{% item['id'] %}"></td></tr>
-        {% endfor %}
+        <tr><td>MODULE A TEMP</td><td id="module-a-temp"></td></tr>
         <tr><td>MODULE B TEMP</td><td id="module-b-temp"></td></tr>
         <tr><td>MODULE C TEMP</td><td id="module-c-temp"></td></tr>
         <tr><td>GATE DRIVER BOARD TEMP</td><td id="gate-driver-board-temp"></td></tr>
