@@ -152,6 +152,11 @@ static PyObject *can_decode(PyObject *self, PyObject *args)
             "temperature_2",    msg.bms_detailed_temperatures.temperature_2 / 100.f);
             break;
     case ID_BMS_STATUS:
+        msg_data = Py_BuildValue("",
+            "state",        msg.bms_status.state,
+            "error_flags",  msg.bms_status.error_flags,
+            "current",      msg.bms_status.current,
+            "flags",        msg.bms_status.flags);
     case ID_BMS_BALANCING_STATUS:
     case ID_BMS_READ_WRITE_PARAMETER_COMMAND:
     case ID_BMS_PARAMETER_RESPONSE:
