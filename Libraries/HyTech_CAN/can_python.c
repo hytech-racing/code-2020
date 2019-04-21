@@ -91,10 +91,10 @@ static PyObject *can_decode(PyObject *self, PyObject *args)
     PyObject *error = Py_BuildValue("{s: s}", "error", "Invalid message type");
     switch (msg.msg_id) {
     case ID_MCU_STATUS:
-        msg_data = Py_BuildValue("{s: B, s: B, s: h, s: f}",
+        msg_data = Py_BuildValue("{s: B, s: B, s: f, s: f}",
             "state",                msg.mcu_status.state,
             "flags",                msg.mcu_status.flags,
-            "temperature",          msg.mcu_status.temperature,
+            "temperature",          msg.mcu_status.temperature / 100.f,
             "glv_battery_voltage",  msg.mcu_status.glv_battery_voltage / 100.f);
         break;
     case ID_MCU_PEDAL_READINGS:
@@ -113,7 +113,7 @@ static PyObject *can_decode(PyObject *self, PyObject *args)
         msg_data = error;
         break;
     case ID_BMS_ONBOARD_TEMPERATURES:
-        msg_data = Py_BuildValue("{s: f, s: f, s: f}",
+        msg_data = Py_BuildValue("{s: h, s: h, s: h}",
             "average_temperature",  msg.bms_onboard_temperatures.average_temperature / 100.f,
             "low_temperature",      msg.bms_onboard_temperatures.low_temperature / 100.f,
             "high_temperature",     msg.bms_onboard_temperatures.high_temperature / 100.f);
@@ -125,34 +125,34 @@ static PyObject *can_decode(PyObject *self, PyObject *args)
             "temperature_1",    msg.bms_onboard_detailed_temperatures.temperature_1 / 100.f);
         break;
     case ID_BMS_VOLTAGES:
-        msg_data = Py_BuildValue("{s: f, s: f, s: f, s: f}",
+        msg_data = Py_BuildValue("{s: H, s: H, s: H, s: H}",
             "average_voltage",  msg.bms_voltages.average_voltage / 1000.f,
             "low_voltage",      msg.bms_voltages.low_voltage / 1000.f,
             "high_voltage",     msg.bms_voltages.high_voltage / 1000.f,
             "total_voltage",    msg.bms_voltages.total_voltage / 100.f);
         break;
     case ID_BMS_DETAILED_VOLTAGES:
-        msg_data = Py_BuildValue("{s: B, s: f, s: f, s: f}",
+        msg_data = Py_BuildValue("{s: B, s: H, s: H, s: H}",
             "ic_id_group_id",   msg.bms_detailed_voltages.ic_id_group_id,
             "voltage_0",        msg.bms_detailed_voltages.voltage_0 / 1000.f,
             "voltage_1",        msg.bms_detailed_voltages.voltage_1 / 1000.f,
             "voltage_2",        msg.bms_detailed_voltages.voltage_2 / 1000.f);
         break;
     case ID_BMS_TEMPERATURES:
-        msg_data = Py_BuildValue("{s: f, s: f, s: f}",
+        msg_data = Py_BuildValue("{s: h, s: h, s: h}",
             "average_temperature",  msg.bms_temperatures.average_temperature / 100.f,
             "low_temperature",      msg.bms_temperatures.low_temperature / 100.f,
             "high_temperature",     msg.bms_temperatures.high_temperature / 100.f);
         break;
     case ID_BMS_DETAILED_TEMPERATURES:
-        msg_data = Py_BuildValue("{s: B, s: f, s: f, s: f}",
+        msg_data = Py_BuildValue("{s: B, s: h, s: h, s: h}",
             "ic_id",            msg.bms_detailed_temperatures.ic_id,
             "temperature_0",    msg.bms_detailed_temperatures.temperature_0 / 100.f,
             "temperature_1",    msg.bms_detailed_temperatures.temperature_1 / 100.f,
             "temperature_2",    msg.bms_detailed_temperatures.temperature_2 / 100.f);
         break;
     case ID_BMS_STATUS:
-        msg_data = Py_BuildValue("{s: B, s: H, s: f, s: B}",
+        msg_data = Py_BuildValue("{s: B, s: H, s: , s: B}",
             "state",        msg.bms_status.state,
             "error_flags",  msg.bms_status.error_flags,
             "current",      msg.bms_status.current / 100.f,
@@ -180,7 +180,7 @@ static PyObject *can_decode(PyObject *self, PyObject *args)
     break;
 
     case ID_MC_TEMPERATURES_1:
-        msg_data = Py_BuildValue("{s: f, s: f, s: f, s: f}",
+        msg_data = Py_BuildValue("{s: h, s: h, s: h, s: h}",
             "module_a_temperature",          msg.bms_status.module_a_temperature / 10.f,
             "module_b_temperature",          msg.bms_status.module_b_temperature / 10.f,
             "module_c_temperature",          msg.bms_status.module_c_temperature / 10.f,
@@ -188,7 +188,7 @@ static PyObject *can_decode(PyObject *self, PyObject *args)
         break;
 
     case ID_MC_TEMPERATURES_2:
-        msg_data = Py_BuildValue("{s: f, s: f, s: f, s: f}",
+        msg_data = Py_BuildValue("{s: h, s: h, s: h, s: h}",
             "control_board_temperature",    msg.bms_status.control_board_temperature / 10.f,
             "rtd_1_temperature",            msg.bms_status.rtd_1_temperature / 10.f,
             "rtd_2_temperature",            msg.bms_status.rtd_2_temperature / 10.f,
@@ -196,7 +196,7 @@ static PyObject *can_decode(PyObject *self, PyObject *args)
         break;
 
     case ID_MC_TEMPERATURES_3:
-        msg_data = Py_BuildValue("{s: f, s: f, s: f, s: f}",
+        msg_data = Py_BuildValue("{s: h, s: h, s: h, s: h}",
             "rtd_4_temperature",        msg.bms_status.rtd_4_temperature / 10.f,
             "rtd_5_temperature",        msg.bms_status.rtd_5_temperature / 10.f,
             "motor_temperature",        msg.bms_status.motor_temperature / 10.f,
@@ -204,7 +204,7 @@ static PyObject *can_decode(PyObject *self, PyObject *args)
         break;
 
     case ID_MC_ANALOG_INPUTS_VOLTAGES:
-        msg_data = Py_BuildValue("",
+        msg_data = Py_BuildValue("{s: h,s: h,s: h,s: h}",
             "analog_input_1",       msg.bms_status.analog_input_1,
             "analog_input_2",       msg.bms_status.analog_input_2,
             "analog_input_3",       msg.bms_status.analog_input_3,
@@ -212,7 +212,7 @@ static PyObject *can_decode(PyObject *self, PyObject *args)
         break;
 
     case ID_MC_DIGITAL_INPUT_STATUS:
-        msg_data = Py_BuildValue("",
+        msg_data = Py_BuildValue("{s: p,s: p,s: p,s: p,s: p,s: p,s: p,s: p}",
             "digital_input_1"       msg.bms_status.digital_input_1,
             "digital_input_2"       msg.bms_status.digital_input_2,
             "digital_input_3"       msg.bms_status.digital_input_3,
@@ -224,26 +224,26 @@ static PyObject *can_decode(PyObject *self, PyObject *args)
         break;
 
     case ID_MC_MOTOR_POSITION_INFORMATION:
-        msg_data = Py_BuildValue("",
-            "motor_angle",                      msg.bms_status.motor_angle,
-            "motor_speed",                      msg.bms_status.motor_speed,
-            "electrical_output_frequency",      msg.bms_status.electrical_output_frequency);
+        msg_data = Py_BuildValue("{s: h, s: h, s: h}",
+            "motor_angle",                      msg.bms_status.motor_angle / 10.f,
+            "motor_speed",                      msg.bms_status.motor_speed / 10.f,
+            "electrical_output_frequency",      msg.bms_status.electrical_output_frequency / 10.f);
         break;
 
     case ID_MC_CURRENT_INFORMATION:
-        msg_data = Py_BuildValue("",
-            "phase_a_current",      msg.bms_status.phase_a_current,
-            "phase_b_current",      msg.bms_status.phase_b_current,
-            "phase_c_current",      msg.bms_status.phase_c_current,
-            "dc_bus_current",       msg.bms_status.dc_bus_current);
+        msg_data = Py_BuildValue("{s: h, s: h, s: h, s: h}",
+            "phase_a_current",      msg.bms_status.phase_a_current/ 10.f,
+            "phase_b_current",      msg.bms_status.phase_b_current/ 10.f,
+            "phase_c_current",      msg.bms_status.phase_c_current/ 10.f,
+            "dc_bus_current",       msg.bms_status.dc_bus_current)/ 10.f);
         break;
 
     case ID_MC_VOLTAGE_INFORMATION:
-        msg_data = Py_BuildValue("",
-            "dc_bus_voltage",       msg.bms_status.dc_bus_voltage,
-            "output_voltage",       msg.bms_status.output_voltage,
-            "phase_ab_voltage",     msg.bms_status.phase_ab_voltage,
-            "phase_bc_voltage",     msg.bms_status.phase_bc_voltage);
+        msg_data = Py_BuildValue("{s: h,s: h,s: h,s: h}",
+            "dc_bus_voltage",       msg.bms_status.dc_bus_voltage/ 10.f,
+            "output_voltage",       msg.bms_status.output_voltage/ 10.f,
+            "phase_ab_voltage",     msg.bms_status.phase_ab_voltage/ 10.f,
+            "phase_bc_voltage",     msg.bms_status.phase_bc_voltage/ 10.f);
         break;
 
     case ID_MC_FLUX_INFORMATION:
@@ -251,7 +251,7 @@ static PyObject *can_decode(PyObject *self, PyObject *args)
     case ID_MC_INTERNAL_VOLTAGES:
     //can't find
     case ID_MC_INTERNAL_STATES:
-        msg_data = Py_BuildValue("",
+        msg_data = Py_BuildValue("s: H,s: B,s: B,s: B,s: B,s: B,s: B"),
             "vsm_state",                            msg.bms_status.vsm_state,
             "inverter_state",                       msg.bms_status.inverter_state,
             "relay_state",                          msg.bms_status.relay_state,
@@ -262,21 +262,21 @@ static PyObject *can_decode(PyObject *self, PyObject *args)
         break;
 
     case ID_MC_FAULT_CODES:
-        msg_data = Py_BuildValue("",
+        msg_data = Py_BuildValue("{s: h,s: h,s: h,s: h}",
             "post_fault_lo",            msg.bms_status.post_fault_lo,
             "post_fault_hi",            msg.bms_status.post_fault_hi,
             "run_fault_lo",            msg.bms_status.run_fault_lo,
             "run_fault_hi",            msg.bms_status.run_fault_hi);
         break;
     case ID_MC_TORQUE_TIMER_INFORMATION:
-        msg_data = Py_BuildValue("",
+        msg_data = Py_BuildValue("{s: h,s: h,s: I}",
             "command_torque",           msg.bms_status.command_torque,
             "torque_feedback",          msg.bms_status.torque_feedback,
             "power_on_timer",           msg.bms_status.power_on_timer);
         break;
 
     case ID_MC_MODULATION_INDEX_FLUX_WEAKENING_OUTPUT_INFORMATION:
-        msg_data = Py_BuildValue("",
+        msg_data = Py_BuildValue("{s: H,s: h,s: h,s: h}",
             "modulation_index",         msg.bms_status.modulation_index,
             "flux_weakening_output",    msg.bms_status.flux_weakening_output,
             "id_command",               msg.bms_status.id_command,
@@ -284,7 +284,7 @@ static PyObject *can_decode(PyObject *self, PyObject *args)
         break;
 
     case ID_MC_FIRMWARE_INFORMATION:
-        msg_data = Py_BuildValue("",
+        msg_data = Py_BuildValue("{s: H,s: H,s: H,s: H}",
             "eeprom_version_project_code",      msg.bms_status.eeprom_version_project_code,
             "software_version",                 msg.bms_status.software_version,
             "date_code_mmdd",                   msg.bms_status.date_code_mmdd,
@@ -294,7 +294,7 @@ static PyObject *can_decode(PyObject *self, PyObject *args)
     case ID_MC_DIAGNOSTIC_DATA:
 //can't find
     case ID_MC_COMMAND_MESSAGE:
-        msg_data = Py_BuildValue("",
+        msg_data = Py_BuildValue("{s: h,s: h,s: p,s: B,s: h}",
             "torque_command",          msg.bms_status.torque_command,
             "angular_velocity",        msg.bms_status.angular_velocity,
             "direction",               msg.bms_status.direction,
@@ -303,7 +303,7 @@ static PyObject *can_decode(PyObject *self, PyObject *args)
         break;
 
     case ID_MC_READ_WRITE_PARAMETER_COMMAND:
-        msg_data = Py_BuildValue("",
+        msg_data = Py_BuildValue("{s: H,s: p,s: B,s: I}",
             "parameter_address",       msg.bms_status.parameter);
         break;
     case ID_MC_READ_WRITE_PARAMETER_RESPONSE:
