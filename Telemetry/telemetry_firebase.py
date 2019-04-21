@@ -41,7 +41,7 @@ def mqtt_message(client, userdata, msg):
     session_ref.child('messages').push(msg)
 
     for key in msg.data:
-        cv_ref.child(key).set(msg.data[key])
+        cv_ref.update({ key: msg.data[key] })
 
 client = mqtt.Client()
 client.connect("hytech-telemetry.ryangallaway.me", 1883, 60)
@@ -53,5 +53,8 @@ while True:
     try:
         pass
     except (KeyboardInterrupt, SystemExit):
+        session_ref.update({
+            'end': int(time.time())
+        })
         client.loop_stop()
         client.disconnect() # TODO unsure if this should be called
