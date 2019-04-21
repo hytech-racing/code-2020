@@ -1,0 +1,12 @@
+{
+  "type": "service_account",
+  "project_id": "hytech-telemetry",
+  "private_key_id": "6f431d6bce63cab5b9fdb0c970897066de993500",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQCSmZzfIXG0BmtU\nrova/+D96RrJaI8HjihFtkqELBXIFyRlgG3d/x6aMotbP2GMeNpOmlIt4U9Ugm5e\n+tcrWqcVhxuocJtogaH8Q7PjEZV22hzPzrVwoq5t6UkRDkD856kUeNqTRmcYxxFb\nkenpOSehoKh+lAj/losFMbxxekSgQvlIR24gg6j6FYDmainy8p89CH65W7VzbK6w\nE99zo++trlzMo78l6wHwEvD9tb5piaNITI/c+I4VUKLb30lZ1wXmnuRxh9Mn2lzg\nEc/AjkMOpd3BqxHZyL4STEmJatSkMzCMbq+IynHNGfY9Ey64wWN5k4NglFoWNdMh\nfgZkGPxjAgMBAAECggEARXhu+tv95lo+ZYg7dUHZjGl5DKW0Vde7ZOGwKTc88S9q\nS4FTTyaVCWxXVpvP7cHdbe86b0x8i+ctR2wmKADS+eQnKqiGNL1tlj49EickhYhx\nq9Zga+pjr2kj+2WeTVq4aJ+msLDlrTu0kYixaJhxm+mmvykGpJvh8Emz67CNscWj\nUUqNGLRs8tmtXqPhlXL/iVmg8LKblOaV+3fqjFF7ikvPomXXuF54rpylKNSr3rji\niRMsJK3NI0PR/xLNPwf+bFyeUqwQGn9q7CREY1wyZwyKqu1paGxSb4yKSRqv/m6I\nxiRP7fymYyM2Y+3SejDHrXf7k5tJPOGINxOhZXVlfQKBgQDKstqzQtXZQSpkNWso\nATSDnTiZl2YeqVWwRqVXY75kxzforJ9sjL3FKalDYyMzn+qemGvL+hfoLy/+53p1\ng/ODBg0WD8vIdFx821zTRpV6j38y3ywU2ehioFxpcqRO4aK7GxJlV+HLJwjXrgng\ntlbAG3Tg8Rd/obSIRg2zhRBytQKBgQC5JljCCyOepBhvQ3CenOmtNs+VYwRjGORU\nM2p76PCV1iJstGEjaMjLp7V6maV/3c5nyhB9lz+CrhRMZ/zY3Xl19RtT0mSjeRkK\n8H1GgIUsINfGlOU5VOnw3zHRIXqytVV/q8UdsENbwiAXtjOPL+Mdi0DMI/MZ3hAu\nPIfbmhgptwKBgQCEUFPqiEpH0v31A9m6925sK4jy2Z1Tjn3c34C2lumFp3WbcHNw\nzD5kIVnYHzKvVEg21pAnSk2oxoSyBDAv3b5rXNvV9uGzLCHjbt4dHAofQuRpNLz1\nr3i+SKeKPcd7plYvhPBxLvi5P/XJtFXGVcAzDrkwzK/mJIxQGEqBUO73sQKBgD02\n9HmTfT9iOcHvpjiK4KeoS5G0nyq0fClqpnY5WfHwTolqSgOPDXRoCpRyYEmaaDfg\nkvszGoh2TbfFWc/JyfK6C0L3eNajnygCwyigLWedpDm/2NnPvVkqMipWy15yncYM\nYKukL2ETGdE9KGbbClgmRlI4QJP425it4q00kXCZAoGBAJgN/nYzrrumozJi61Fn\nJONToMwaD0bM3A5I90MwKIidi2VNyw6G363vEYxBXwSedge7Jfu2PBWjCDXBkcKC\nn75JoDKtYOJm27XHVBKQ0x8RQBGcxfUhaowSVjT4YsOLCvl+R5JLhFBMQqupDr1s\nO6eyTJpFufKRjTy8PaTUlWpy\n-----END PRIVATE KEY-----\n",
+  "client_email": "firebase-adminsdk-xt9tw@hytech-telemetry.iam.gserviceaccount.com",
+  "client_id": "106342116505157121726",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-xt9tw%40hytech-telemetry.iam.gserviceaccount.com"
+}
