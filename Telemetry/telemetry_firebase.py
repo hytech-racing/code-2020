@@ -53,7 +53,8 @@ client.loop_start()
 while True:
     try:
         continue
-    except (KeyboardInterrput, SystemExit):
+    except (KeyboardInterrupt, SystemExit):
         client.loop_stop()
         client.disconnect() # TODO unsure if this should be called
         session_ref.child('end').set(int(time.time()))
+        break
