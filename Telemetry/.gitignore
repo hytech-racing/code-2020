@@ -1,3 +1,4 @@
 receiver
 *.o
 *.log
+can_messages.db
