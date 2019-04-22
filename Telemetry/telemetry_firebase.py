@@ -41,8 +41,8 @@ def mqtt_message(client, userdata, msg):
     print(can_msg)
     session_ref.child('messages').push(can_msg)
 
-    for key in msg.data:
-        cv_ref.update({ key: can_msg.data[key] })
+    for key in can_msg['data']:
+        cv_ref.child(key).set(can_msg['data'][key])
 
 client = mqtt.Client()
 client.connect("hytech-telemetry.ryangallaway.me", 1883, 60)
