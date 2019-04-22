@@ -364,7 +364,7 @@ typedef struct Telem_message {
         CAN_message_mc_read_write_parameter_response_t
                 mc_read_write_parameter_response;
         CAN_message_fcu_accelerometer_values_t  fcu_accelerometer_values;
-    } contents;
+    };
     uint16_t checksum;
 } Telem_message_t;
 

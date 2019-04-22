@@ -31,17 +31,18 @@ session_ref = db.reference('/canBus/sessions').push({
 })
 
 def mqtt_connect(client, userdata, flags, rc):
+    print('Connecting')
     client.subscribe("hytech_car/telemetry")
-    screen.addstr(0,47,' - CONNECTED')
     client.publish("hytech_car/telemetry", "Firebase client connected")
 
 def mqtt_message(client, userdata, msg):
     data = can.unpack(msg.payload)
-    msg = can.decode(data)
-    session_ref.child('messages').push(msg)
+    can_msg = can.decode(data)
+    print(can_msg)
+    session_ref.child('messages').push(can_msg)
 
     for key in msg.data:
-        cv_ref.update({ key: msg.data[key] })
+        cv_ref.update({ key: can_msg.data[key] })
 
 client = mqtt.Client()
 client.connect("hytech-telemetry.ryangallaway.me", 1883, 60)
@@ -49,12 +50,9 @@ client.on_connect = mqtt_connect
 client.on_message = mqtt_message
 client.loop_start()
 
-while True:
-    try:
-        pass
-    except (KeyboardInterrupt, SystemExit):
-        session_ref.update({
-            'end': int(time.time())
-        })
-        client.loop_stop()
-        client.disconnect() # TODO unsure if this should be called
+while input('') != 'q':
+    continue
+
+client.loop_stop()
+client.disconnect() # TODO unsure if this should be called
+session_ref.update({ 'end': int(time.time()) })

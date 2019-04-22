@@ -1,7 +1,12 @@
 CC = gcc -c
 LD = gcc
-CFLAGS = -O2
+CFLAGS = -O0 -g
 LIBS = -lpaho-mqtt3c
+
+all: receiver hytech_can.so
+
+hytech_can.so: ../Libraries/HyTech_CAN/can_python.c XBTools.o
+	gcc -shared -fPIC $(shell python3-config --includes) $(CFLAGS) -o $@ $^ $(shell python3-config --ldflags)
 
 receiver: telemetry.o XBTools.o
 	$(LD) -o $@ $^ $(LIBS)
