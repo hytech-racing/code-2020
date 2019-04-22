@@ -50,9 +50,10 @@ client.on_connect = mqtt_connect
 client.on_message = mqtt_message
 client.loop_start()
 
-while input('') != 'q':
-    continue
-
-client.loop_stop()
-client.disconnect() # TODO unsure if this should be called
-session_ref.update({ 'end': int(time.time()) })
+while True:
+    try:
+        continue
+    except (KeyboardInterrput, SystemExit):
+        client.loop_stop()
+        client.disconnect() # TODO unsure if this should be called
+        session_ref.child('end').set(int(time.time()))
