@@ -12,11 +12,10 @@
     };
     firebase.initializeApp(config);
 
-firebase.database().ref('/canBus/currentValues').once('value').then(function (snapshot) {
+firebase.database().ref('/canBus/currentValues').on('value').then(function (snapshot) {
     var currentValues = snapshot.val();
     console.log(currentValues);
     for (key in currentValues) {
         document.getElementById(key).innerHTML = currentValues[key];
     }
 });
-
