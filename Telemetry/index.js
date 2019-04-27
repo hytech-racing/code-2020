@@ -16,6 +16,10 @@ firebase.database().ref('/canBus/currentValues').on('value').then(function (snap
     var currentValues = snapshot.val();
     console.log(currentValues);
     for (key in currentValues) {
+        if (!document.getElementById(key)) {
+          console.log('missing: ' + key)
+          continue;
+        }
         document.getElementById(key).innerHTML = currentValues[key];
     }
 });
