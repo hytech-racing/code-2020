@@ -410,6 +410,16 @@ void parse_can_message() {
 
         if (rx_msg.id == ID_BMS_STATUS) {
             bms_status.load(rx_msg.buf);
+
+            /*
+             * Turn on fans when BMS is balancing
+             */
+            if (bms_satus.get_state() > BMS_STATE_CHARGING) {
+                digitalWrite(FAN_1, HIGH);
+            }
+            else {
+                digitalWrite(FAN_1, LOW);
+            }
         }
 
         if (rx_msg.id == ID_BMS_TEMPERATURES) {
