@@ -366,11 +366,6 @@ void loop() {
      */
     if (mcu_status.get_state() < MCU_STATE_READY_TO_DRIVE && timer_motor_controller_send.check()) {
         MC_command_message mc_command_message = MC_command_message(0, 0, 1, 0, 0, 0);
-
-        // if (mcu_status.get_state() >= MCU_STATE_ENABLING_INVERTER) {
-        //      mc_command_message.set_inverter_enable(true);
-        // }
-
         mc_command_message.write(tx_msg.buf);
         tx_msg.id = ID_MC_COMMAND_MESSAGE;
         tx_msg.len = 8;
@@ -412,9 +407,9 @@ void parse_can_message() {
             bms_status.load(rx_msg.buf);
 
             /*
-             * Turn on fans when BMS is balancing
+             * Turn on accumulator fans when BMS is balancing
              */
-            if (bms_satus.get_state() > BMS_STATE_CHARGING) {
+            if (bms_status.get_state() > BMS_STATE_CHARGING) {
                 digitalWrite(FAN_1, HIGH);
             }
             else {
@@ -531,9 +526,22 @@ void read_status_values() {
      mcu_status.set_shutdown_f_above_threshold(analogRead(SENSE_SHUTDOWN_F) > SHUTDOWN_F_HIGH);
 
      /*
-      * Measure the temperature from on-board thermistors
+      * Calculate the resistance of the thermistor based on the ADC reading
+      * R = 10k * ((5V / Vout) + 1)
       */
-     mcu_status.set_temperature(ADC.read_adc(ADC_TEMPSENSE_CHANNEL) * 100); // send temperatures in 0.01 C
+     double thermistor_resistance = 1e4 * ((4095.0 / ADC.read_adc(ADC_TEMPSENSE_CHANNEL)) + 1);
+
+     /*
+      * Temperature equation (in Kelvin) based on resistance is the following:
+      * 1/T = 1/T0 + (1/B) * ln(R/R0)      (R = thermistor resistance)
+      * T = 1/(1/T0 + (1/B) * ln(R/R0))
+      */
+     double T0 = 298.15; // 25C in Kelvin
+     double b = 3380;    // B constant of the thermistor
+     double R0 = 10000;  // Resistance of thermistor at 25C
+     double temperature = 1 / ((1 / T0) + (1 / b) * log(thermistor_resistance / R0)) - (double) 273.15;
+
+     mcu_status.set_temperature(temperature * 100); // send temperatures in 0.01 C
 }
 
 /*
