@@ -7,9 +7,8 @@
 
 FlexCAN CAN(500000);
 CAN_message_t msg;
-Metro timer_can = Metro(10);
+Metro timer_can = Metro(1000);
 Metro timer_light = Metro(3);
-long count = 0;
 
 void setup() {
     Serial.begin(115200); // Initialize serial for PC communication
@@ -22,7 +21,7 @@ void setup() {
 }
 
 void loop() {
-
+  
     if (timer_can.check()) { // Send a message on CAN
         uint32_t t = millis();
         msg.id = 0x1;
@@ -36,12 +35,9 @@ void loop() {
             Serial.print(msg.buf[i]);
             Serial.print(" ");
         }
-        Serial.print("MICROS: ");
-        Serial.print(micros() - count);
         Serial.println();
-        count = micros();
     }
-
+    
     while (CAN.read(msg)) { // Receive a message on CAN
         Serial.print("Received 0x");
         Serial.print(msg.id, HEX);
