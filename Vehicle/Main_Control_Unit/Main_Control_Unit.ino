@@ -62,14 +62,13 @@ BMS_coulomb_counts bms_coulomb_counts;
 /*
  * Constant definitions
  */
- // TODO some of these values need to be calibrated once hardware is installed
 #define BRAKE_ACTIVE 600                // Threshold for brake pedal active
-#define MIN_ACCELERATOR_PEDAL_1 1850     // Low accelerator implausibility threshold
-#define START_ACCELERATOR_PEDAL_1 2050   // Position to start acceleration
-#define END_ACCELERATOR_PEDAL_1 2400     // Position to max out acceleration
+#define MIN_ACCELERATOR_PEDAL_1 1850    // Low accelerator implausibility threshold
+#define START_ACCELERATOR_PEDAL_1 2050  // starting position for the accelerator sensor #1 when regen is OFF
+#define END_ACCELERATOR_PEDAL_1 2400    // Position to max out acceleration
 #define MAX_ACCELERATOR_PEDAL_1 2500    // High accelerator implausibility threshold
 #define MIN_ACCELERATOR_PEDAL_2 2250    // Low accelerator implausibility threshold
-#define START_ACCELERATOR_PEDAL_2 2050  // Position to start acceleration
+#define START_ACCELERATOR_PEDAL_2 2050  // starting position for the accelerator sensor #2 when regen is OFF
 #define END_ACCELERATOR_PEDAL_2 1700    // Position to max out acceleration
 #define MAX_ACCELERATOR_PEDAL_2 1590    // High accelerator implausibility threshold
 #define MIN_HV_VOLTAGE 500              // Volts in V * 0.1 - Used to check if Accumulator is energized
@@ -77,46 +76,44 @@ BMS_coulomb_counts bms_coulomb_counts;
 #define IMD_HIGH 134                    // ~3V on OKHS line
 #define SHUTDOWN_B_HIGH 530             // ~5V on SHUTDOWN_B line
 #define SHUTDOWN_C_HIGH 350             // ~5V on SHUTDOWN_C line
-#define SHUTDOWN_D_HIGH 350             // ~5V on SHUTDOWN_D line ??????
+#define SHUTDOWN_D_HIGH 350             // ~5V on SHUTDOWN_D line
 #define SHUTDOWN_E_HIGH 350             // ~5V on SHUTDOWN_E line
 #define SHUTDOWN_F_HIGH 350             // ~5V on SHUTDOWN_F line
-#define FAN_1_DUTY_CYCLE 127            // TODO: figure out correct duty cycle (0 = 0%, 255 = 100%)
-#define FAN_2_DUTY_CYCLE 127            // TODO: figure out correct duty cycle (0 = 0%, 255 = 100%)
+#define FAN_1_DUTY_CYCLE 127            // accumulator fan PWM duty cycle (0 = 0%, 255 = 100%)
+#define FAN_2_DUTY_CYCLE 127            // radiator fan PWM duty cycle (0 = 0%, 255 = 100%)
 #define BMS_HIGH_BATTERY_TEMPERATURE 50 // TODO: figure out correct value
-#define GLV_VOLTAGE_MULTIPLIER 5.5963   // TODO: calibrate this constant
-#define MIN_RPM_FOR_REGEN 100           // TODO: calibrate this constant
-#define START_ACCEL1_PEDAL_WITH_REGEN 190  // TODO: calibrate this constant
-#define START_ACCEL2_PEDAL_WITH_REGEN 3890 // TODO: calibrate this constant
-#define START_BRAKE_PEDAL_WITH_REGEN 450   // TODO: calibrate this constant
-#define END_BRAKE_PEDAL_WITH_REGEN 1000    // TODO: calibrate this constant
+#define GLV_VOLTAGE_MULTIPLIER 5.5963   // multiplier to convert GLV voltage reading
+#define MIN_RPM_FOR_REGEN 100           // min motor RPM for turning on regen TODO: adjust this value to comply with the rules
+#define START_ACCEL1_PEDAL_WITH_REGEN 190  // starting position for the accelerator sensor #1 when regen is ON
+#define START_ACCEL2_PEDAL_WITH_REGEN 3890 // starting posision for the accelerator sensor #2 when regen is ON
+#define START_BRAKE_PEDAL_WITH_REGEN 450   // starting position for the break pressure sensor when regen is ON
+#define END_BRAKE_PEDAL_WITH_REGEN 1000    // position to max out the break pedal when regen is ON
 #define ALPHA 0.9772                    // parameter for the sowftware filter used on ADC pedal channels
 #define EXPANDER_SPI_SPEED 9000000      // max SPI clock frequency for MCP23S17 is 10MHz in ideal conditions
 #define ADC_SPI_SPEED 1800000           // max SPI clokc frequency for MCP3208 is 2MHz in ideal conditions
-#define TORQUE_ADJUSTMENT_VOLTAGE 3.5242   //
-#define MAX_POSSIBLE_TORQUE 1600        //
+#define TORQUE_ADJUSTMENT_VOLTAGE 3.5242   // cell voltage at which the maximum torque needs to be adjusted to prevent overcurrent (feature is not complete yet)
+#define MAX_POSSIBLE_TORQUE 1600        // max possible torque in [Nm * 10^-1]
 
 /*
  * Timers
  */
-Metro timer_bms_imd_print_fault = Metro(500);
-Metro timer_btn_restart_inverter = Metro(100);
-Metro timer_btn_mode = Metro(100);
-Metro timer_btn_start = Metro(100);
-Metro timer_debug = Metro(200);
+Metro timer_btn_restart_inverter = Metro(100);    // timer for debouncing the restart inverter button
+Metro timer_btn_mode = Metro(100);                // timer for debouncing the torque mode button
+Metro timer_btn_start = Metro(100);               // timer for debouncing the start button
+Metro timer_debug = Metro(200);                   // timer to print debug information in debug mode
 Metro timer_debug_raw_torque = Metro(200);
 Metro timer_debug_torque = Metro(200);
-Metro timer_inverter_enable = Metro(2000); // Timeout failed inverter enable
-Metro timer_led_mode_blink_fast = Metro(150, 1);
-Metro timer_led_mode_blink_slow = Metro(400, 1);
-Metro timer_led_start_blink_fast = Metro(150);
-Metro timer_led_start_blink_slow = Metro(400);
-Metro timer_motor_controller_send = Metro(50);
-Metro timer_ready_sound = Metro(2000); // Time to play RTD sound
-Metro timer_can_update = Metro(100);
-Metro timer_bms_print_fault = Metro(500);
-Metro timer_imd_print_fault = Metro(500);
-Metro timer_restart_inverter = Metro(500, 1); // Allow the FCU to restart the inverter
-Metro timer_status_send = Metro(100);
+Metro timer_inverter_enable = Metro(2000);        // timeout failed inverter enable
+Metro timer_led_mode_blink_fast = Metro(150, 1);  // timer for fast blinking torque mode LED
+Metro timer_led_mode_blink_slow = Metro(400, 1);  // timer for slow blinking torque mode LED
+Metro timer_led_start_blink_fast = Metro(150);    // timer for fast blinking start LED
+Metro timer_led_start_blink_slow = Metro(400);    // timer for slow blinking start LED
+Metro timer_motor_controller_send = Metro(50);    // timer for sending torque commands to the motor controller
+Metro timer_ready_sound = Metro(2000);            // timer to play RTD sound
+Metro timer_can_update = Metro(100);              // timer to send board updates over CAN
+Metro timer_bms_print_fault = Metro(500);         // timer to print IMD fault
+Metro timer_imd_print_fault = Metro(500);         // timer to print BMS fault
+Metro timer_restart_inverter = Metro(500, 1);     // timer to allow the ECU to restart the inverter
 
 /*
  * Variables to store filtered values from ADC channels
@@ -130,7 +127,7 @@ bool btn_start_reading = true;
 bool btn_mode_reading = true;
 bool btn_restart_inverter_reading = true;
 bool imd_faulting = false;
-bool inverter_restart = false; // True when restarting the inverter
+bool inverter_restart = false; // true when restarting the inverter
 bool btn_start_debounced = false;
 bool btn_start_debouncing = false;
 bool btn_start_pressed = false;
@@ -141,17 +138,17 @@ bool btn_restart_inverter_pressed = false;
 bool debug = false;
 bool led_mode_active = false;
 bool led_start_active = false;
-uint8_t torque_mode = 0;
-uint8_t led_mode_type = 0;
+uint8_t torque_mode = 0;    // 0 for 40 Nm, 1 for 80 Nm, 3 for 160 Nm
+uint8_t led_mode_type = 0;  // 0 for off, 1 for steady, 2 for fast blink
 uint8_t led_start_type = 0; // 0 for off, 1 for steady, 2 for fast blink, 3 for slow blink
 
-uint16_t MAX_TORQUE = MAX_POSSIBLE_TORQUE; // Torque in Nm * 10
-int16_t MAX_REGEN_TORQUE = 0;
-int16_t MAX_ACCEL_REGEN = 0;
-int16_t MAX_BRAKE_REGEN = 0;
-uint16_t dash_values = 0;
-uint32_t total_charge_amount = 0;
-uint32_t total_discharge_amount = 0;
+uint16_t MAX_TORQUE = MAX_POSSIBLE_TORQUE; // torque in Nm * 10^-1
+int16_t MAX_REGEN_TORQUE = 0;              // max torque when regen is ON
+int16_t MAX_ACCEL_REGEN = 0;               // max allowed regen value from the accelerator pedal
+int16_t MAX_BRAKE_REGEN = 0;               // max allowd regen value from the brake pedal
+uint16_t dash_values = 0;                  // stores the readings of all pins of the I/O Expander
+uint32_t total_charge_amount = 0;          // total number of Coulombs went into charging the battery
+uint32_t total_discharge_amount = 0;       // total number of Coulombs went into discharging the battery
 
 static CAN_message_t rx_msg;
 static CAN_message_t tx_msg;
@@ -240,7 +237,7 @@ void loop() {
         tx_msg.len = sizeof(CAN_message_mcu_pedal_readings_t);
         CAN.write(tx_msg);
 
-        // Send couloumb counting information
+        // Send coulomb counting information
         bms_coulomb_counts.set_total_charge(total_charge_amount);
         bms_coulomb_counts.set_total_discharge(total_discharge_amount);
         tx_msg.id = ID_BMS_COULOMB_COUNTS;
@@ -315,7 +312,7 @@ void loop() {
 
             int calculated_torque = calculate_torque();
 
-            // FSAE EV2.5 APPS / Brake Pedal Plausibility Check
+            // FSAE EV2.5 APPS / Brake Pedal Plausibility Check; TODO: make sure that checks comply with the FSAE rules 2020
             if (mcu_pedal_readings.get_brake_implausibility() && calculated_torque < (MAX_TORQUE / 20)) {
                 mcu_pedal_readings.set_brake_implausibility(false); // Clear implausibility
             }
@@ -348,7 +345,7 @@ void loop() {
 
             // Serial.print("RPM: ");
             // Serial.println(mc_motor_position_information.get_motor_speed());
-            Serial.println(calculated_torque);
+            // Serial.println(calculated_torque);
 
             mc_command_message.set_torque_command(calculated_torque);
 
@@ -366,11 +363,6 @@ void loop() {
      */
     if (mcu_status.get_state() < MCU_STATE_READY_TO_DRIVE && timer_motor_controller_send.check()) {
         MC_command_message mc_command_message = MC_command_message(0, 0, 1, 0, 0, 0);
-
-        // if (mcu_status.get_state() >= MCU_STATE_ENABLING_INVERTER) {
-        //      mc_command_message.set_inverter_enable(true);
-        // }
-
         mc_command_message.write(tx_msg.buf);
         tx_msg.id = ID_MC_COMMAND_MESSAGE;
         tx_msg.len = 8;
@@ -410,6 +402,15 @@ void parse_can_message() {
 
         if (rx_msg.id == ID_BMS_STATUS) {
             bms_status.load(rx_msg.buf);
+
+            /*
+             * Turn on accumulator fans when BMS is balancing
+             */
+            if (bms_status.get_state() > BMS_STATE_CHARGING) {
+                digitalWrite(FAN_1, HIGH);
+            } else {
+                digitalWrite(FAN_1, LOW);
+            }
         }
 
         if (rx_msg.id == ID_BMS_TEMPERATURES) {
@@ -430,6 +431,9 @@ void parse_can_message() {
 
 }
 
+/*
+ * Cycle power to the inverter
+ */
 void reset_inverter() {
     inverter_restart = true;
     digitalWrite(SSR_INVERTER, LOW);
@@ -477,6 +481,9 @@ void read_pedal_values() {
     }
 }
 
+/*
+ * Read volage values from the ADC
+ */
 void read_status_values() {
 
     /*
@@ -484,7 +491,8 @@ void read_status_values() {
      */
     //filtered_glv_reading += ALPHA * filtered_glv_reading + (1 - ALPHA) * ADC.read_adc(ADC_12V_SUPPLY_CHANNEL);
 
-    mcu_status.set_glv_battery_voltage(ADC.read_adc(ADC_12V_SUPPLY_CHANNEL) * GLV_VOLTAGE_MULTIPLIER); // convert GLV voltage and to send it over CAN
+    // convert GLV voltage and to send it over CAN
+    mcu_status.set_glv_battery_voltage(ADC.read_adc(ADC_12V_SUPPLY_CHANNEL) * GLV_VOLTAGE_MULTIPLIER);
 
 
     /*
@@ -521,9 +529,22 @@ void read_status_values() {
      mcu_status.set_shutdown_f_above_threshold(analogRead(SENSE_SHUTDOWN_F) > SHUTDOWN_F_HIGH);
 
      /*
-      * Measure the temperature from on-board thermistors
+      * Calculate the resistance of the thermistor based on the ADC reading
+      * R = 10k * ((5V / Vout) + 1)
       */
-     mcu_status.set_temperature(ADC.read_adc(ADC_TEMPSENSE_CHANNEL) * 100); // send temperatures in 0.01 C
+     double thermistor_resistance = 1e4 * ((4095.0 / ADC.read_adc(ADC_TEMPSENSE_CHANNEL)) + 1);
+
+     /*
+      * Temperature equation (in Kelvin) based on resistance is the following:
+      * 1/T = 1/T0 + (1/B) * ln(R/R0)      (R = thermistor resistance)
+      * T = 1/(1/T0 + (1/B) * ln(R/R0))
+      */
+     double T0 = 298.15; // 25C in Kelvin
+     double b = 3380;    // B constant of the thermistor
+     double R0 = 10000;  // Resistance of thermistor at 25C
+     double temperature = 1 / ((1 / T0) + (1 / b) * log(thermistor_resistance / R0)) - (double) 273.15;
+
+     mcu_status.set_temperature(temperature * 100); // send temperatures in 0.01 C
 }
 
 /*
@@ -646,9 +667,13 @@ void set_state(uint8_t new_state) {
     }
 }
 
+/*
+ * Calculate requsted torque when regen is OFF
+ */
 int calculate_torque() {
     int calculated_torque = 0;
 
+    // TODO: return the implausibility check
     //if (!mcu_pedal_readings.get_accelerator_implausibility()) {
         int torque1 = map(round(filtered_accel1_reading), START_ACCELERATOR_PEDAL_1, END_ACCELERATOR_PEDAL_1, 0, MAX_TORQUE);
         int torque2 = map(round(filtered_accel2_reading), START_ACCELERATOR_PEDAL_2, END_ACCELERATOR_PEDAL_2, 0, MAX_TORQUE);
@@ -685,15 +710,24 @@ int calculate_torque() {
     return calculated_torque;
 }
 
+/*
+ * Read all dashboard inputs
+ */
 void read_dashboard_buttons() {
 
+    // doing a single read of all the pins at ones is much faster than reading pins one by one
     int dash_reading = EXPANDER.digitalRead();
 
+    /*
+     * extract individual button values
+     */
     btn_start_reading = (dash_reading >> EXPANDER_BTN_START) & 0x1;
     btn_mode_reading = (dash_reading >> EXPANDER_BTN_MODE) & 0x1;
     btn_restart_inverter_reading = (dash_reading >> EXPANDER_BTN_RESTART_INVERTER) & 0x1;
 
-    // debounce start button
+    /*
+     * debounce the start button
+     */
     if (btn_start_reading == btn_start_pressed && !btn_start_debouncing) { // Value is different than stored
         btn_start_debouncing = true;
         timer_btn_start.reset();
@@ -705,7 +739,9 @@ void read_dashboard_buttons() {
         btn_start_pressed = !btn_start_pressed;
     }
 
-    // debounce torque mode button
+    /*
+     * debounce the torque mode button and set the torque mode
+     */
     if (btn_mode_reading == btn_mode_pressed && !btn_mode_debouncing) {    // value different than stored
         btn_mode_debouncing = true;
         timer_btn_mode.reset();
@@ -743,7 +779,9 @@ void read_dashboard_buttons() {
         }
     }
 
-    // debounce restart inverter button
+    /*
+     * debounce the reset inverter button
+     */
     if (btn_restart_inverter_reading == btn_restart_inverter_pressed && !btn_restart_inverter_debouncing) { // value different than stored
         btn_restart_inverter_debouncing = true;
         timer_btn_restart_inverter.reset();
@@ -759,16 +797,18 @@ void read_dashboard_buttons() {
     }
 }
 
+/*
+ * Set all dashboard LEDs
+ */
 void set_dashboard_leds() {
 
     /*
-     * Set torque mode led
+     * Set torque mode LED value
      */
     if ((led_mode_type == 1 && timer_led_mode_blink_fast.check())) { //|| (led_mode_type == 3 && timer_led_mode_blink_slow.check())) {
         if (led_mode_active) {
             dash_values |= (1 << EXPANDER_LED_MODE);
-        }
-        else {
+        } else {
             dash_values &= ~(1 << EXPANDER_LED_MODE);
         }
 
@@ -779,19 +819,16 @@ void set_dashboard_leds() {
 
         if (led_mode_active) {
             dash_values |= (1 << EXPANDER_LED_MODE);
-        }
-        else {
+        } else {
             dash_values &= ~(1 << EXPANDER_LED_MODE);
         }
     }
-
     if (led_mode_type == 2) {
         led_mode_active = 1;
 
         if (led_mode_active) {
             dash_values |= (1 << EXPANDER_LED_MODE);
-        }
-        else {
+        } else {
             dash_values &= ~(1 << EXPANDER_LED_MODE);
         }
     }
@@ -802,8 +839,7 @@ void set_dashboard_leds() {
     if ((led_start_type == 2 && timer_led_start_blink_fast.check()) || (led_start_type == 3 && timer_led_start_blink_slow.check())) {
         if (led_start_active) {
             dash_values |= (1 << EXPANDER_LED_START);
-        }
-        else {
+        } else {
             dash_values &= ~(1 << EXPANDER_LED_START);
         }
         led_start_active = !led_start_active;
@@ -812,8 +848,7 @@ void set_dashboard_leds() {
         led_start_active = led_start_type;
         if (led_start_active) {
             dash_values |= (1 << EXPANDER_LED_START);
-        }
-        else {
+        } else {
             dash_values &= ~(1 << EXPANDER_LED_START);
         }
     }
@@ -823,21 +858,24 @@ void set_dashboard_leds() {
      */
     if (!mcu_status.get_bms_ok_high()) {
         dash_values |= (1 << EXPANDER_LED_BMS);
-    }
-    else {
+    } else {
         dash_values &= ~(1 << EXPANDER_LED_BMS);
     }
     if (!mcu_status.get_imd_okhs_high()) {
         dash_values |= (1 << EXPANDER_LED_IMD);
-    }
-    else {
+    } else {
         dash_values &= ~(1 << EXPANDER_LED_IMD);
     }
 
+    // writing to all expander pins at once is faster than writing to individual pins one by one
     EXPANDER.digitalWrite(dash_values);
 }
 
-// NOT TESTED YET
+/*
+ * Calculate torque requested with regen ON
+ *
+ * NOT FULLY TESTED YET; TODO: test more and make sure that it is rules compliant
+ */
 int calculate_torque_with_regen() {
     if (mc_motor_position_information.get_motor_speed() < MIN_RPM_FOR_REGEN) {
         MAX_ACCEL_REGEN = 0;
@@ -899,6 +937,9 @@ int calculate_torque_with_regen() {
     return calculated_torque;
 }
 
+/*
+ * Coulomb counting for the main battery
+ */
 void update_couloumb_count() {
     int new_current = mc_current_informtarion.get_dc_bus_current() * 10; // get current in Amps * 100
     if (new_current > 0) {
