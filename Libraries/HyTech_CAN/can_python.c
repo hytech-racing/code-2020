@@ -338,7 +338,8 @@ static PyObject *can_decode(PyObject *self, PyObject *args)
 
 static PyMethodDef can_methods[] = {
     { "unpack", can_unpack, METH_VARARGS, "Unpack a CAN message." },
-    { "decode", can_decode, METH_VARARGS, "Decode a CAN message." }
+    { "decode", can_decode, METH_VARARGS, "Decode a CAN message." },
+    { NULL,     NULL,       0,            NULL }
 };
 
 static struct PyModuleDef can_module = {
