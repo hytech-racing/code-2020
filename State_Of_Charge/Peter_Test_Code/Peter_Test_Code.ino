@@ -3,20 +3,19 @@
 #include "soc_table.h"
 #include "soc.h"
 
-soc_t *battery;
+soc_t bat;
+soc_t *battery = &bat;
 
 float soc_lut[SOC_N_POINTS] = SOC_LUT;
 
 int soc_init(soc_t *soc, float min_voltage, uint64_t time_ms) {
     if (!soc) {
-        //GTSR_PRINTF("Valid soc_t required for initialization!\n");
         return -1;
     }
 
     soc->q_net = 0.0f;
     soc->last_update_time = time_ms;
-    soc->initial_soc = soc_lookup(min_voltage) * SOC_PACK_AH;
-
+    soc->initial_soc = soc_lookup(min_voltage) * SOC_PACK_AH * 0.01;
     return 0;
 }
 
@@ -54,18 +53,27 @@ float soc_lookup(float voltage) {
 
     val += (mid) / (float) (SOC_N_POINTS - 1);
 
-    return val;
+    return val * 100;
 }
 
 void setup() {
   Serial.begin(9600);
-  int minVoltage = Serial.read();;
+  float minVoltage = 3.54;
   soc_init(battery, minVoltage, millis());
-
+  Serial.print(battery->initial_soc);
+  Serial.print(" Amp Hours, ");
+  Serial.print(soc_lookup(minVoltage));
+  Serial.println("%");
+  
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
-  int current = 0;
+  double current = 5;
   soc_update(battery, current, millis());
+  Serial.print(battery->initial_soc - battery->q_net);
+  Serial.print(" Amp Hours, ");
+  Serial.print((battery->initial_soc - battery->q_net) * 100 / 22);
+  Serial.println("%");
+  delay(1000);
 }
