@@ -189,10 +189,9 @@ void setup()
 ***********************************************************************/
 void loop()
 {
-
   if (Serial.available())           // Check for user input
   {
-    uint32_t user_command;
+    char user_command;
     user_command = read_int();      // Read the user command
     Serial.println(user_command);
     run_command(user_command);
@@ -237,258 +236,265 @@ void loop()
     Continuously loops through cells, balancing one cell at a time.
 
 *******************************************/
-void run_command(uint16_t cmd)
+void run_command(char cmd)
 {
   int8_t error = 0;
 
   char input = 0;
-  switch (cmd)
+  if (cmd == 'm' || cmd == 'M')
+  { 
+    print_menu();
+  }
+  else
   {
-
-    case 1:
-      wakeup_sleep();
-      LTC6804_wrcfg(TOTAL_IC, tx_cfg);
-      print_config();
-      break;
-
-    case 2:
-      wakeup_sleep();
-      error = LTC6804_rdcfg(TOTAL_IC, rx_cfg);
-      if (error == -1)
-      {
-        Serial.println("A PEC error was detected in the received data");
-      }
-      print_rxconfig();
-      break;
-
-    case 3:
-      wakeup_sleep();
-      LTC6804_adcv();
-      delay(3);
-      Serial.println("cell conversion completed");
-      Serial.println();
-      break;
-
-    case 4:
-      wakeup_sleep();
-      error = LTC6804_rdcv(0, TOTAL_IC, cell_codes); // Set to read back all cell voltage registers
-      if (error == -1)
-      {
-        Serial.println("A PEC error was detected in the received data");
-      }
-      print_cells();
-      break;
-
-    case 5:
-      wakeup_sleep();
-      LTC6804_adax();
-      delay(3);
-      Serial.println("aux conversion completed");
-      Serial.println();
-      break;
-
-    case 6:
-      wakeup_sleep();
-      error = LTC6804_rdaux(0, TOTAL_IC, aux_codes); // Set to read back all aux registers
-      if (error == -1)
-      {
-        Serial.println("A PEC error was detected in the received data");
-      }
-      print_aux();
-      break;
-
-    case 7:
-      Serial.println("transmit 'm' to quit");
-      wakeup_sleep();
-      LTC6804_wrcfg(TOTAL_IC, tx_cfg);
-      while (input != 'm')
-      {
-        if (Serial.available() > 0)
+    switch (cmd)
+    {
+    
+      case 1:
+        wakeup_sleep();
+        LTC6804_wrcfg(TOTAL_IC, tx_cfg);
+        print_config();
+        break;
+    
+      case 2:
+        wakeup_sleep();
+        error = LTC6804_rdcfg(TOTAL_IC, rx_cfg);
+        if (error == -1)
         {
-          input = read_char();
+          Serial.println("A PEC error was detected in the received data");
         }
-        wakeup_idle();
+        print_rxconfig();
+        break;
+    
+      case 3:
+        wakeup_sleep();
         LTC6804_adcv();
-        delay(10);
-        wakeup_idle();
-        error = LTC6804_rdcv(0, TOTAL_IC, cell_codes);
+        delay(3);
+        Serial.println("cell conversion completed");
+        Serial.println();
+        break;
+    
+      case 4:
+        wakeup_sleep();
+        error = LTC6804_rdcv(0, TOTAL_IC, cell_codes); // Set to read back all cell voltage registers
         if (error == -1)
         {
           Serial.println("A PEC error was detected in the received data");
         }
         print_cells();
-        Serial.print("[MCP3208 ADC] ");
-        for (int i = 0; i < 8; i++) {
-          int val = adc.read_adc(i);
-          Serial.print("C");
-          Serial.print(i);
-          Serial.print(": ");
-          Serial.print(val);
-          Serial.print('\t');
-        }
-        Serial.println();
-        Serial.println();
-        spi_enable(SPI_CLOCK_DIV16); // Set SPI back to 1MHz for next isoSPI call; It might be best practice to put this right before each isoSPI call
-        delay(500);
-      }
-      print_menu();
-      break;
-
-    case 8:
-      Serial.println("transmit 'm' to quit");
-      wakeup_sleep();
-      LTC6804_wrcfg(TOTAL_IC, tx_cfg);
-      delay(5);
-      while (input != 'm')
-      {
-        if (Serial.available() > 0)
-        {
-          input = read_char();
-        }
+        break;
+    
+      case 5:
+        wakeup_sleep();
         LTC6804_adax();
-        delay(10);
+        delay(3);
+        Serial.println("aux conversion completed");
+        Serial.println();
+        break;
+    
+      case 6:
+        wakeup_sleep();
         error = LTC6804_rdaux(0, TOTAL_IC, aux_codes); // Set to read back all aux registers
         if (error == -1)
         {
           Serial.println("A PEC error was detected in the received data");
         }
         print_aux();
-        delay(1000);
-      }
-      print_menu();
-      break;
-
-    case 9:
-      Serial.println("transmit 'm' to quit");
-      wakeup_sleep();
-      LTC6804_wrcfg(TOTAL_IC, tx_cfg);
-      delay(5);
-      while (input != 'm')
-      {
-        if (Serial.available() > 0)
+        break;
+    
+      case 7:
+        Serial.println("transmit 'm' to quit");
+        wakeup_sleep();
+        LTC6804_wrcfg(TOTAL_IC, tx_cfg);
+        while (input != 'm')
         {
-          input = read_char();
+          if (Serial.available() > 0)
+          {
+            input = read_char();
+          }
+          wakeup_idle();
+          LTC6804_adcv();
+          delay(10);
+          wakeup_idle();
+          error = LTC6804_rdcv(0, TOTAL_IC, cell_codes);
+          if (error == -1)
+          {
+            Serial.println("A PEC error was detected in the received data");
+          }
+          print_cells();
+          Serial.print("[MCP3208 ADC] ");
+          for (int i = 0; i < 8; i++) {
+            int val = adc.read_adc(i);
+            Serial.print("C");
+            Serial.print(i);
+            Serial.print(": ");
+            Serial.print(val);
+            Serial.print('\t');
+          }
+          Serial.println();
+          Serial.println();
+          spi_enable(SPI_CLOCK_DIV16); // Set SPI back to 1MHz for next isoSPI call; It might be best practice to put this right before each isoSPI call
+          delay(500);
         }
-        LTC6804_adax();
-        delay(10);
-        error = LTC6804_rdaux(0, TOTAL_IC, aux_codes); // Set to read back all aux registers
-        if (error == -1)
-        {
-          Serial.println("A PEC error was detected in the received data");
-        }
-        Serial.println("Reading back newly measured values:");
-        print_aux();
-        // Clear the registers and read back
+        print_menu();
+        break;
+    
+      case 8:
+        Serial.println("transmit 'm' to quit");
+        wakeup_sleep();
+        LTC6804_wrcfg(TOTAL_IC, tx_cfg);
         delay(5);
-        LTC6804_clraux();
-        delay(10);
-        error = LTC6804_rdaux(0, TOTAL_IC, aux_codes); // Set to read back all aux registers
-        if (error == -1)
+        while (input != 'm')
         {
-          Serial.println("A PEC error was detected in the received data");
+          if (Serial.available() > 0)
+          {
+            input = read_char();
+          }
+          LTC6804_adax();
+          delay(10);
+          error = LTC6804_rdaux(0, TOTAL_IC, aux_codes); // Set to read back all aux registers
+          if (error == -1)
+          {
+            Serial.println("A PEC error was detected in the received data");
+          }
+          print_aux();
+          delay(1000);
         }
-        Serial.println("Reading back cleared registers:");
-        print_aux();
-        Serial.println("--------------");
-        delay(1000);
-      }
-      print_menu();
-      break;
-
-    case 10:
-      Serial.println("transmit 'm' to quit");
-      wakeup_sleep();
-      LTC6804_wrcfg(TOTAL_IC, tx_cfg);
-      while (input != 'm')
-      {
-        if (Serial.available() > 0)
+        print_menu();
+        break;
+    
+      case 9:
+        Serial.println("transmit 'm' to quit");
+        wakeup_sleep();
+        LTC6804_wrcfg(TOTAL_IC, tx_cfg);
+        delay(5);
+        while (input != 'm')
         {
-          input = read_char();
-        }
-        for (int ic = 0; ic < TOTAL_IC; ic++) { // Turn off discharging on previous cell
-          if (balance_cell_index < 8) {
-            tx_cfg[ic][4] = tx_cfg[ic][4] & ~(0b1 << balance_cell_index );
-          } else {
-            tx_cfg[ic][5] = tx_cfg[ic][5] & ~(0b1 << (balance_cell_index - 8));
+          if (Serial.available() > 0)
+          {
+            input = read_char();
           }
-        }
-        balance_cell_index = (balance_cell_index + 1) % 12;
-        for (int ic = 0; ic < TOTAL_IC; ic++) { // Turn on discharging on next cell
-          if (balance_cell_index < 8) {
-            tx_cfg[ic][4] = tx_cfg[ic][4] | (0b1 << balance_cell_index);
-          } else {
-            tx_cfg[ic][5] = tx_cfg[ic][5] | (0b1 << (balance_cell_index - 8));
+          LTC6804_adax();
+          delay(10);
+          error = LTC6804_rdaux(0, TOTAL_IC, aux_codes); // Set to read back all aux registers
+          if (error == -1)
+          {
+            Serial.println("A PEC error was detected in the received data");
           }
+          Serial.println("Reading back newly measured values:");
+          print_aux();
+          // Clear the registers and read back
+          delay(5);
+          LTC6804_clraux();
+          delay(10);
+          error = LTC6804_rdaux(0, TOTAL_IC, aux_codes); // Set to read back all aux registers
+          if (error == -1)
+          {
+            Serial.println("A PEC error was detected in the received data");
+          }
+          Serial.println("Reading back cleared registers:");
+          print_aux();
+          Serial.println("--------------");
+          delay(1000);
+        }
+        print_menu();
+        break;
+    
+      case 10:
+        Serial.println("transmit 'm' to quit");
+        wakeup_sleep();
+        LTC6804_wrcfg(TOTAL_IC, tx_cfg);
+        while (input != 'm')
+        {
+          if (Serial.available() > 0)
+          {
+            input = read_char();
+          }
+          for (int ic = 0; ic < TOTAL_IC; ic++) { // Turn off discharging on previous cell
+            if (balance_cell_index < 8) {
+              tx_cfg[ic][4] = tx_cfg[ic][4] & ~(0b1 << balance_cell_index );
+            } else {
+              tx_cfg[ic][5] = tx_cfg[ic][5] & ~(0b1 << (balance_cell_index - 8));
+            }
+          }
+          balance_cell_index = (balance_cell_index + 1) % 12;
+          for (int ic = 0; ic < TOTAL_IC; ic++) { // Turn on discharging on next cell
+            if (balance_cell_index < 8) {
+              tx_cfg[ic][4] = tx_cfg[ic][4] | (0b1 << balance_cell_index);
+            } else {
+              tx_cfg[ic][5] = tx_cfg[ic][5] | (0b1 << (balance_cell_index - 8));
+            }
+          }
+          wakeup_sleep();
+          LTC6804_wrcfg(TOTAL_IC, tx_cfg);
+          Serial.print("Balancing cell ");
+          Serial.print(balance_cell_index);
+          Serial.println(" for all ICs");
+          delay(500);
+        }
+        for (int ic = 0; ic < TOTAL_IC; ic++) {
+          tx_cfg[ic][4] = 0;
+          tx_cfg[ic][5] = 0;
         }
         wakeup_sleep();
         LTC6804_wrcfg(TOTAL_IC, tx_cfg);
-        Serial.print("Balancing cell ");
-        Serial.print(balance_cell_index);
-        Serial.println(" for all ICs");
-        delay(500);
-      }
-      for (int ic = 0; ic < TOTAL_IC; ic++) {
-        tx_cfg[ic][4] = 0;
-        tx_cfg[ic][5] = 0;
-      }
-      wakeup_sleep();
-      LTC6804_wrcfg(TOTAL_IC, tx_cfg);
-      print_menu();
-      break;
-
-    case 11:
-      Serial.println("transmit 'm' to quit");
-      wakeup_sleep();
-      LTC6804_wrcfg(TOTAL_IC, tx_cfg);
-
-      while (input != 'm')
-      {
-        if (Serial.available() > 0)
-        {
-          input = read_char();
-        }
-        
-        if (balance_cell_index < 8) {
-          tx_cfg[IC_index][4] = tx_cfg[IC_index][4] & ~(0b1 << balance_cell_index );
-        } else {
-          tx_cfg[IC_index][5] = tx_cfg[IC_index][5] & ~(0b1 << (balance_cell_index - 8));
-        }
-
-        balance_cell_index = (balance_cell_index + 1);
-        if (balance_cell_index == 12) {
-          IC_index = (IC_index + 1) % TOTAL_IC;
-        }
-        balance_cell_index %= 12;
-
-        if (balance_cell_index < 8) {
-          tx_cfg[IC_index][4] = tx_cfg[IC_index][4] | (0b1 << balance_cell_index);
-        } else {
-          tx_cfg[IC_index][5] = tx_cfg[IC_index][5] | (0b1 << (balance_cell_index - 8));
-        }
-
+        print_menu();
+        break;
+    
+      case 11:
+        Serial.println("transmit 'm' to quit");
         wakeup_sleep();
         LTC6804_wrcfg(TOTAL_IC, tx_cfg);
-
-        Serial.print("Balancing cell ");
-        Serial.print(balance_cell_index);
-        Serial.print(" for IC ");
-        Serial.println(IC_index);
-        delay(500);
-      }
-
-      for (int ic = 0; ic < TOTAL_IC; ic++) {
-        tx_cfg[ic][4] = 0;
-        tx_cfg[ic][5] = 0;
-      }
-
-      wakeup_sleep();
-      LTC6804_wrcfg(TOTAL_IC, tx_cfg);
-      print_menu();
-      break;
-
-    default:
-      Serial.println("Incorrect Option");
-      break;
+    
+        while (input != 'm')
+        {
+          if (Serial.available() > 0)
+          {
+            input = read_char();
+          }
+          
+          if (balance_cell_index < 8) {
+            tx_cfg[IC_index][4] = tx_cfg[IC_index][4] & ~(0b1 << balance_cell_index );
+          } else {
+            tx_cfg[IC_index][5] = tx_cfg[IC_index][5] & ~(0b1 << (balance_cell_index - 8));
+          }
+    
+          balance_cell_index = (balance_cell_index + 1);
+          if (balance_cell_index == 12) {
+            IC_index = (IC_index + 1) % TOTAL_IC;
+          }
+          balance_cell_index %= 12;
+    
+          if (balance_cell_index < 8) {
+            tx_cfg[IC_index][4] = tx_cfg[IC_index][4] | (0b1 << balance_cell_index);
+          } else {
+            tx_cfg[IC_index][5] = tx_cfg[IC_index][5] | (0b1 << (balance_cell_index - 8));
+          }
+    
+          wakeup_sleep();
+          LTC6804_wrcfg(TOTAL_IC, tx_cfg);
+    
+          Serial.print("Balancing cell ");
+          Serial.print(balance_cell_index);
+          Serial.print(" for IC ");
+          Serial.println(IC_index);
+          delay(500);
+        }
+    
+        for (int ic = 0; ic < TOTAL_IC; ic++) {
+          tx_cfg[ic][4] = 0;
+          tx_cfg[ic][5] = 0;
+        }
+    
+        wakeup_sleep();
+        LTC6804_wrcfg(TOTAL_IC, tx_cfg);
+        print_menu();
+        break;
+    
+      default:
+        Serial.println("Incorrect Option");
+        break;
+    }
   }
 }
 
