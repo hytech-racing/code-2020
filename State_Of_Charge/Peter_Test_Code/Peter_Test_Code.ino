@@ -1,10 +1,16 @@
 #include <math.h>
-//#include "gtsr_debug.h"
+#include <ADC_SPI.h>
 #include "soc_table.h"
 #include "soc.h"
 
 soc_t bat;
 soc_t *battery = &bat;
+ADC_SPI adc;
+
+double voltage_conversion_factor      = 5.033333333333333333 / 4095;   // determined by testing
+double current_conversion_factor      = 150   / 1.500;  // L01Z150S05 current sensor outputs 4 V at 150 A, and 2.5 V at 0 A
+long int    current_offset            = 0;
+int    calibration_reads              = 500;    
 
 float soc_lut[SOC_N_POINTS] = SOC_LUT;
 
@@ -56,9 +62,30 @@ float soc_lookup(float voltage) {
     return val * 100;
 }
 
+double getBatteryCurrent() {
+  // Method to read the cell current in Amps
+  // Arguments: channel (Note: in the code, channels are numbered 0-3, when on the board they are 4-7 which are designated as current sense)
+  //double voltage_reading = ((double) adc.read_adc(4)) * voltage_conversion_factor;
+  double voltage_reading = (double) analogRead(4)* 500.0 / 1024;
+  voltage_reading = voltage_reading - current_offset;
+  double current_reading = voltage_reading;
+  //double current_reading = 0.997 * voltage_reading + 0.2621;
+  return current_reading;
+}
+
 void setup() {
+  pinMode(A3, INPUT);
   Serial.begin(9600);
-  float minVoltage = 3.54;
+  adc = ADC_SPI();
+
+  for (int j = 0; j < calibration_reads; j++){
+    current_offset = current_offset + (analogRead(4)* 500.0 / 1024);
+    delay(50);
+  }
+  current_offset = round(current_offset / (double)calibration_reads);
+
+  
+  float minVoltage = 4.16;
   soc_init(battery, minVoltage, millis());
   Serial.print(battery->initial_soc);
   Serial.print(" Amp Hours, ");
@@ -69,7 +96,10 @@ void setup() {
 
 void loop() {
   // put your main code here, to run repeatedly:
-  double current = 5;
+  //double current = analogRead(15)* 500.0 / 1024;
+  double current = getBatteryCurrent();
+  Serial.print("Current: ");
+  Serial.println(current);
   soc_update(battery, current, millis());
   Serial.print(battery->initial_soc - battery->q_net);
   Serial.print(" Amp Hours, ");
