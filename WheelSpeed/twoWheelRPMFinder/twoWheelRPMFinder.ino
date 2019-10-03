@@ -8,12 +8,14 @@ int prevTimeLeft = 0;
 int prevTimeRight = 0;
 double rpmLeft = 0;
 double rpmRight = 0;
+bool high = false;
 
 int numTeeth = 24;//CHANGE THIS FOR #OF TEETH PER REVOLUTION
 void setup()
 {
   pinMode(15, INPUT);
   pinMode(10, INPUT);
+  pinMode(13, OUTPUT);
   Serial.begin(9600);
 }
 
@@ -57,11 +59,25 @@ void loop()
   setStates();
   
   if (curStateLeft == 0 && prevStateLeft == 1) {
-    setRPMLeft();    
+    setRPMLeft();
+    if(high) {
+       digitalWrite(13, LOW);
+       high = false;
+    } else {
+       digitalWrite(13, HIGH);
+       high = true;
+    }  
   }
 
   if (curStateRight == 0 && prevStateRight == 1) {
-    setRPMRight();    
+    setRPMRight();
+    if(high) {
+       digitalWrite(13, LOW);
+       high = false;
+    } else {
+       digitalWrite(13, HIGH);
+       high = true;
+    }  
   }
 
   if (micros() - prevTimeLeft > 500000) {
