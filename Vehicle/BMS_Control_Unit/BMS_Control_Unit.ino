@@ -37,6 +37,10 @@
 #include <LT_SPI.h>
 #include <LTC68042.h>
 #include <Metro.h>
+#include <math.h>
+#include <ADC_SPI.h>
+#include "soc_table.h"
+#include "soc.h"
 
 /*************************************
  * Begin general configuration
@@ -221,6 +225,12 @@ bool fh_watchdog_test = false; // Initialize test mode to false - if set to true
 bool watchdog_high = true; // Initialize watchdog signal - this alternates every loop
 uint8_t balance_offcycle = 0; // Tracks which loops balancing will be disabled on
 bool charge_mode_entered = false; // Used to enter charge mode immediately at startup instead of waiting for timer
+soc_t bat;
+soc_t *battery = &bat;
+double voltage_conversion_factor      = 5.033333333333333333 / 4095;   // determined by testing
+double current_conversion_factor      = 1000.0 / 7.3;  // voltage slope = 6.667mV/A
+double    current_offset              = 2.31;
+float soc_lut[SOC_N_POINTS] = SOC_LUT;
 
 void setup() {
     ADC.read_adc(0); // TODO isoSPI doesn't work until some other SPI gets called. This is a placeholder until we fix the problem
@@ -326,6 +336,9 @@ void setup() {
         }
         Serial.println();
     }
+
+    process_voltages();
+    soc_init(battery, bms_voltages.get_low(), millis());
     
     Serial.println("Setup Complete!");
 }
@@ -861,6 +874,7 @@ void process_adc() {
     // Process current measurement
     int current = get_current();
     bms_status.set_current(current);
+    soc_update(battery, current, millis());
     bms_status.set_charge_overcurrent(false); // RESET these values, then check below if they should be set again
     bms_status.set_discharge_overcurrent(false);
     if (bms_status.get_current() < charge_current_constant_high && !MODE_ADC_IGNORE) {
@@ -1022,6 +1036,10 @@ void print_current() {
     Serial.println("A");
 }
 
+void print_soc() {
+    Serial.println();
+}
+
 void print_aux() {
     for (int current_ic = 0; current_ic < TOTAL_IC; current_ic++) {
         Serial.print("IC: ");
@@ -1126,9 +1144,14 @@ int16_t get_current() {
      * voltage = read_adc() * 5 / 4095
      * current = (voltage - 2.5) * 300 / 2
      */
+    /*
     double voltage = read_adc(CH_CUR_SENSE) / (double) 819;
     double current = (voltage - 2.5) * (double) 150;
     return (int16_t) (current * 100); // Current in Amps x 100
+    */
+    double voltage_reading = ((double) read_adc(CH_CUR_SENSE)) * voltage_conversion_factor;
+    voltage_reading = voltage_reading - current_offset;
+    return (int16_t) (voltage_reading * current_conversion_factor);
 }
 
 void integrate_current() {
@@ -1141,7 +1164,7 @@ void integrate_current() {
 }
 
 void process_coulombs() {
-    noInterrupts(); // Disable interrupts to ensure the values we are reading do not change while copying
+    /*noInterrupts(); // Disable interrupts to ensure the values we are reading do not change while copying
     total_charge_copy = total_charge;
     total_discharge_copy = total_discharge;
     interrupts();
@@ -1153,6 +1176,60 @@ void process_coulombs() {
 
     bms_coulomb_counts.set_total_charge(total_charge_copy);
     bms_coulomb_counts.set_total_discharge(total_discharge_copy);
+    */
+    bms_coulomb_counts.set_total_charge(battery->initial_soc);
+    bms_coulomb_counts.set_total_discharge(battery->q_net);
+    
+}
+
+int soc_init(soc_t *soc, float min_voltage, uint64_t time_ms) {
+    if (!soc) {
+        return -1;
+    }
+
+    soc->q_net = 0.0f;
+    soc->last_update_time = time_ms;
+    soc->initial_soc = soc_lookup(min_voltage) * SOC_PACK_AH * 0.01;
+    return 0;
+}
+
+void soc_update(soc_t *soc, float current, uint64_t time_ms) {
+    soc->q_net += (time_ms - soc->last_update_time) / 3600000.0f * current;
+    soc->last_update_time = time_ms;
+}
+
+
+
+float soc_lookup(float voltage) {
+    // Binary search
+    int16_t left = 0;
+    int16_t right = SOC_N_POINTS - 1;
+    int16_t mid = 0;
+    while (left <= right) {
+        mid = floor((left + right) / 2);
+        
+        if (soc_lut[mid] < voltage) {
+            left = mid + 1;
+        } else if (soc_lut[mid] > voltage) {
+            right = mid - 1;
+        } else {
+            break;
+        }
+    }
+
+    float val = 0.0f;
+    float matched_voltage = soc_lut[mid];
+
+    // Linear interp
+    if (mid < SOC_N_POINTS - 1 && voltage > matched_voltage) {
+        val = (1.0/(SOC_N_POINTS-1)) / (soc_lut[mid+1] - matched_voltage) * (voltage - matched_voltage);
+    } else if (mid > 0 && voltage < matched_voltage) {
+        val = (1.0/(SOC_N_POINTS-1)) / (matched_voltage - soc_lut[mid-1]) * (voltage - matched_voltage);
+    }
+
+    val += (mid) / (float) (SOC_N_POINTS - 1);
+
+    return val * 100;
 }
 
 /*
