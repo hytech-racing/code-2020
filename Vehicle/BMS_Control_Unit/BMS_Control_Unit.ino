@@ -229,7 +229,7 @@ soc_t bat;
 soc_t *battery = &bat;
 double voltage_conversion_factor      = 5.033333333333333333 / 4095;   // determined by testing
 double current_conversion_factor      = 1000.0 / 7.3;  // voltage slope = 6.667mV/A
-double    current_offset              = 2.51;
+double    current_offset              = 2038.97;
 float soc_lut[SOC_N_POINTS] = SOC_LUT;
 
 void setup() {
@@ -1149,10 +1149,8 @@ int16_t get_current() {
     double current = (voltage - 2.5) * (double) 150;
     return (int16_t) (current * 100); // Current in Amps x 100
     */
-    double voltage_reading = ((double) read_adc(CH_CUR_SENSE)) * voltage_conversion_factor;
-    voltage_reading = voltage_reading - current_offset;
-    Serial.print("My Current");
-    Serial.println(voltage_reading * current_conversion_factor);
+    double voltage_reading = ((double) (read_adc(CH_CUR_SENSE) - current_offset));
+    voltage_reading = voltage_reading * voltage_conversion_factor;
     return (int16_t) (voltage_reading * current_conversion_factor * 100.0);
 }
 
