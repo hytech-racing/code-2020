@@ -229,7 +229,7 @@ soc_t bat;
 soc_t *battery = &bat;
 double voltage_conversion_factor      = 5.033333333333333333 / 4095;   // determined by testing
 double current_conversion_factor      = 1000.0 / 7.3;  // voltage slope = 6.667mV/A
-double    current_offset              = 2038.97;
+double    current_offset              = 2037.40;
 float soc_lut[SOC_N_POINTS] = SOC_LUT;
 
 void setup() {
@@ -338,7 +338,10 @@ void setup() {
     }
 
     process_voltages();
-    soc_init(battery, bms_voltages.get_low(), millis());
+    double min_voltage = bms_voltages.get_low() / 10000.0;
+    
+    Serial.print("MINIMUM VOLTAGE IS: ");
+    soc_init(battery, min_voltage, millis());
     
     Serial.println("Setup Complete!");
 }
@@ -672,7 +675,7 @@ void process_voltages() {
 
     if (bms_voltages.get_low() < voltage_cutoff_low) {
         if (consecutive_faults_undervoltage >= IGNORE_FAULT_THRESHOLD) {
-            bms_status.set_undervoltage(true);
+            //bms_status.set_undervoltage(true);
         } else {
             consecutive_faults_undervoltage += 1;
         }
@@ -1031,9 +1034,21 @@ void print_cells() {
 }
 
 void print_current() {
+    Serial.print("\nRaw Current Sensor: ");
+    Serial.print((double) (read_adc(CH_CUR_SENSE)), 2);
+    Serial.println("A");
+ 
     Serial.print("\nCurrent Sensor: ");
     Serial.print(bms_status.get_current() / (double) 100, 2);
-    Serial.println("A");
+    Serial.println(" A");
+    
+    Serial.print("\nTotal Charge: ");
+    Serial.print(battery->initial_soc - battery->q_net);
+    Serial.println(" AH");
+
+    Serial.print("\nTotal Discharge: ");
+    Serial.print(battery->q_net);
+    Serial.println(" AH");
 }
 
 void print_soc() {
@@ -1149,9 +1164,11 @@ int16_t get_current() {
     double current = (voltage - 2.5) * (double) 150;
     return (int16_t) (current * 100); // Current in Amps x 100
     */
-    double voltage_reading = ((double) (read_adc(CH_CUR_SENSE) - current_offset));
-    voltage_reading = voltage_reading * voltage_conversion_factor;
-    return (int16_t) (voltage_reading * current_conversion_factor * 100.0);
+    double voltage_reading = (double) (read_adc(CH_CUR_SENSE));
+    voltage_reading = voltage_reading - current_offset;
+    voltage_reading = voltage_reading * 100 * voltage_conversion_factor;
+    double current_reading = voltage_reading * current_conversion_factor * -1;
+    return (int16_t) (current_reading);
 }
 
 void integrate_current() {
@@ -1193,8 +1210,8 @@ int soc_init(soc_t *soc, float min_voltage, uint64_t time_ms) {
     return 0;
 }
 
-void soc_update(soc_t *soc, float current, uint64_t time_ms) {
-    soc->q_net += (time_ms - soc->last_update_time) / 3600000.0f * current;
+void soc_update(soc_t *soc, int current, uint64_t time_ms) {
+    soc->q_net += (time_ms - soc->last_update_time) / 3600000.0f * (0.01 * current);
     soc->last_update_time = time_ms;
 }
 
