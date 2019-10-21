@@ -1049,6 +1049,10 @@ void print_current() {
     Serial.print("\nTotal Discharge: ");
     Serial.print(battery->q_net);
     Serial.println(" AH");
+
+    Serial.print("\nSOC:  ");
+    Serial.print((battery->initial_soc - battery->q_net)/22);
+    Serial.println(" %");
 }
 
 void print_soc() {
@@ -1206,7 +1210,7 @@ int soc_init(soc_t *soc, float min_voltage, uint64_t time_ms) {
 
     soc->q_net = 0.0f;
     soc->last_update_time = time_ms;
-    soc->initial_soc = soc_lookup(min_voltage) * SOC_PACK_AH * 0.01;
+    soc->initial_soc = soc_lookup(min_voltage) * SOC_PACK_AH * 0.01; //Pending Review
     return 0;
 }
 
