@@ -2,8 +2,7 @@
 #define __SOC_H
 
 #include <stdint.h>
-
-#include "soc_table.h"
+#include <Soc_Table_Average.h>
 
 #define SOC_LUT         SOC_LUT_LG_HG2
 #define SOC_N_POINTS    (SOC_LUT_LG_HG2_LEN)

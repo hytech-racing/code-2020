@@ -39,8 +39,8 @@
 #include <Metro.h>
 #include <math.h>
 #include <ADC_SPI.h>
-#include <soc_table_average.h>
-#include <soc.h>
+#include <Soc_Table_Average.h>
+#include <Soc.h>
 
 /*************************************
  * Begin general configuration
