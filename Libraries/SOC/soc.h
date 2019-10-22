@@ -8,7 +8,7 @@
 #define SOC_LUT         SOC_LUT_LG_HG2
 #define SOC_N_POINTS    (SOC_LUT_LG_HG2_LEN)
 
-#define SOC_PACK_AH     22.0f
+#define SOC_PACK_AH     14.56f
 
 typedef struct {
     // Net charge consumed since initialization in Ah
