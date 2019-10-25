@@ -19,7 +19,7 @@ void setup() {
 }
 
 void loop() {
-    if (timer_can.check()) { // Send a message on CAN
+    /*if (timer_can.check()) { // Send a message on CAN
         uint32_t t = millis();
         msg.id = 0x1;
         msg.len = sizeof(uint32_t);
@@ -33,7 +33,7 @@ void loop() {
             Serial.print(" ");
         }
         Serial.println();
-    }
+    }*/
     while (Can0.read(msg)) { // Receive a message on CAN
         Serial.print("Received 0x");
         Serial.print(msg.id, HEX);

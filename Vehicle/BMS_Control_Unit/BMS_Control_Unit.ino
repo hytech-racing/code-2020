@@ -1,3 +1,8 @@
+#include <Soc_Table_Average.h>
+
+
+#include <soc.h>
+
 /*
  * HyTech 2019 BMS Control Unit
  * Init 2017-04-11
@@ -352,6 +357,11 @@ void setup() {
  * Main BMS Control Loop
  */
 void loop() {
+    process_voltages(); // Poll controllers, process values, populate bms_voltages
+    balance_cells(); // Check local cell voltage data and balance individual cells as necessary
+    process_temps(); // Poll controllers, process values, populate populate bms_temperatures, bms_detailed_temperatures, bms_onboard_temperatures, and bms_onboard_detailed_temperatures
+    process_adc(); // Poll ADC, process values, populate bms_status
+    process_coulombs();
     parse_can_message();
 
     if (timer_charge_timeout.check() && bms_status.get_state() > BMS_STATE_DISCHARGING && !MODE_CHARGE_OVERRIDE) { // 1 second timeout - if timeout is reached, disable charging
@@ -371,7 +381,7 @@ void loop() {
         print_temps(); // Print cell and pcb temperatures to serial
         print_cells(); // Print the cell voltages and balancing status to serial
         print_current(); // Print measured current sensor value
-        //process_coulombs(); // Process new coulomb counts, sending over CAN and printing to Serial
+        process_coulombs(); // Process new coulomb counts, sending over CAN and printing to Serial
         print_uptime(); // Print the BMS uptime to serial
 
         Serial.print("State: ");
@@ -428,6 +438,14 @@ void loop() {
         tx_msg.id = ID_BMS_ONBOARD_TEMPERATURES;
         tx_msg.len = sizeof(CAN_message_bms_onboard_temperatures_t);
         CAN.write(tx_msg);
+
+        //Draft for sending SOC percentage
+        bms_coulomb_counts.write(tx_msg.buf);
+        tx_msg.id = ID_BMS_COULOMB_COUNTS;
+        tx_msg.len = sizeof(CAN_message_bms_coulomb_counts_t);
+        CAN.write(tx_msg);
+        
+        
 
         tx_msg.id = ID_BMS_DETAILED_VOLTAGES;
         tx_msg.len = sizeof(CAN_message_bms_detailed_voltages_t);
@@ -1051,7 +1069,7 @@ void print_current() {
     Serial.println(" AH");
 
     Serial.print("\nSOC:  ");
-    Serial.print((battery->initial_soc - battery->q_net)/22);
+    Serial.print(100*(battery->initial_soc - battery->q_net)/SOC_PACK_AH);
     Serial.println(" %");
 }
 
@@ -1199,8 +1217,10 @@ void process_coulombs() {
     bms_coulomb_counts.set_total_discharge(total_discharge_copy);
     */
     bms_coulomb_counts.set_total_charge(battery->initial_soc);
+    //bms_coulomb_counts.set_total_charge(0);
     bms_coulomb_counts.set_total_discharge(battery->q_net);
-    
+    //bms_coulomb_counts.set_total_discharge(0);
+    bms_coulomb_counts.set_SOC_Percentage(100*(battery->initial_soc-battery->q_net)/14);
 }
 
 int soc_init(soc_t *soc, float min_voltage, uint64_t time_ms) {

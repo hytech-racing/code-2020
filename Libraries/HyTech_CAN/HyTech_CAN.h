@@ -95,8 +95,9 @@ typedef struct CAN_message_bms_balancing_status_t {
 } CAN_message_bms_balancing_status_t;
 
 typedef struct CAN_message_bms_coulomb_counts_t {
-    uint32_t total_charge;
-    uint32_t total_discharge;
+    uint16_t total_charge;
+    uint16_t total_discharge;
+    uint8_t soc_percentage; //Chenchen change log
 } CAN_message_bms_coulomb_counts_t;
 
 typedef struct CAN_message_bms_detailed_temperatures_t {
@@ -129,6 +130,9 @@ typedef struct CAN_message_bms_status_t {
 	uint8_t state;
     uint16_t error_flags;
     int16_t current;
+    int16_t current_100;
+    uint16_t current_300;
+    uint16_t state_of_charge;
     uint8_t flags;
 } CAN_message_bms_status_t;
 
@@ -405,13 +409,16 @@ class BMS_coulomb_counts {
     public:
         BMS_coulomb_counts();
         BMS_coulomb_counts(uint8_t buf[]);
-        BMS_coulomb_counts(uint32_t total_charge, uint32_t total_discharge);
+        BMS_coulomb_counts(uint16_t total_charge, uint16_t total_discharge, uint8_t soc_percentage);
         void load(uint8_t buf[]);
         void write(uint8_t buf[]);
-        uint32_t get_total_charge();
-        uint32_t get_total_discharge();
-        void set_total_charge(uint32_t total_charge);
-        void set_total_discharge(uint32_t total_discharge);
+        uint16_t get_total_charge();
+        uint16_t get_total_discharge();
+        uint8_t get_SOC_Percentage();
+        void set_total_charge(uint16_t total_charge);
+        void set_total_discharge(uint16_t total_discharge);
+        void set_SOC_Percentage(uint8_t percentage);
+    
     private:
         CAN_message_bms_coulomb_counts_t message;
 };
