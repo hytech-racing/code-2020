@@ -1,8 +1,3 @@
-#include <Soc_Table_Average.h>
-
-
-#include <soc.h>
-
 /*
  * HyTech 2019 BMS Control Unit
  * Init 2017-04-11
@@ -235,6 +230,7 @@ soc_t *battery = &bat;
 double voltage_conversion_factor      = 5.033333333333333333 / 4095;   // determined by testing
 double current_conversion_factor      = 1000.0 / 7.3;  // voltage slope = 6.667mV/A
 double    current_offset              = 2037.40;
+int       calibration_reads           = 1000;
 float soc_lut[SOC_N_POINTS] = SOC_LUT;
 
 void setup() {
@@ -347,6 +343,8 @@ void setup() {
     
     Serial.print("MINIMUM VOLTAGE IS: ");
     soc_init(battery, min_voltage, millis());
+
+    calibrate_current_offset();
     
     Serial.println("Setup Complete!");
 }
@@ -1171,21 +1169,16 @@ void parse_can_message() {
     }
 }
 
+void calibrate_current_offset() {
+  current_offset = 0;
+  for (int i = 0; i < calibration_reads; i++){
+    current_offset = current_offset + (double) read_adc(CH_CUR_SENSE);
+    delay(2);
+  }
+  current_offset = (current_offset / (double)calibration_reads);
+}
+
 int16_t get_current() {
-    /*
-     * Current sensor: ISB-300-A-604
-     * Maximum positive current (300A) corresponds to 4.5V signal
-     * Maximum negative current (-300A) corresponds to 0.5V signal
-     * 0A current corresponds to 2.5V signal
-     *
-     * voltage = read_adc() * 5 / 4095
-     * current = (voltage - 2.5) * 300 / 2
-     */
-    /*
-    double voltage = read_adc(CH_CUR_SENSE) / (double) 819;
-    double current = (voltage - 2.5) * (double) 150;
-    return (int16_t) (current * 100); // Current in Amps x 100
-    */
     double voltage_reading = (double) (read_adc(CH_CUR_SENSE));
     voltage_reading = voltage_reading - current_offset;
     voltage_reading = voltage_reading * 100 * voltage_conversion_factor;
@@ -1203,19 +1196,6 @@ void integrate_current() {
 }
 
 void process_coulombs() {
-    /*noInterrupts(); // Disable interrupts to ensure the values we are reading do not change while copying
-    total_charge_copy = total_charge;
-    total_discharge_copy = total_discharge;
-    interrupts();
-
-    Serial.print("\nCoulombs charged: ");
-    Serial.println(total_charge_copy / 10000);
-    Serial.print("Coulombs discharged: ");
-    Serial.println(total_discharge_copy / 10000);
-
-    bms_coulomb_counts.set_total_charge(total_charge_copy);
-    bms_coulomb_counts.set_total_discharge(total_discharge_copy);
-    */
     bms_coulomb_counts.set_total_charge(battery->initial_soc);
     //bms_coulomb_counts.set_total_charge(0);
     bms_coulomb_counts.set_total_discharge(battery->q_net);
@@ -1238,8 +1218,6 @@ void soc_update(soc_t *soc, int current, uint64_t time_ms) {
     soc->q_net += (time_ms - soc->last_update_time) / 3600000.0f * (0.01 * current);
     soc->last_update_time = time_ms;
 }
-
-
 
 float soc_lookup(float voltage) {
     // Binary search
