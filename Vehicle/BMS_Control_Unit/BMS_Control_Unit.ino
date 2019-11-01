@@ -341,7 +341,7 @@ void setup() {
     process_voltages();
     double min_voltage = bms_voltages.get_low() / 10000.0;
     
-    Serial.print("MINIMUM VOLTAGE IS: ");
+    Serial.println("MINIMUM VOLTAGE IS: ");
     soc_init(battery, min_voltage, millis());
 
     calibrate_current_offset();
@@ -1176,6 +1176,8 @@ void calibrate_current_offset() {
     delay(2);
   }
   current_offset = (current_offset / (double)calibration_reads);
+  Serial.print("Current Offset: ");
+  Serial.println(current_offset);
 }
 
 int16_t get_current() {
