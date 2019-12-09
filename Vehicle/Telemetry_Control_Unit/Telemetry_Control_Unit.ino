@@ -16,6 +16,8 @@
 #include <Metro.h>
 #include <XBTools.h>
 #include <Adafruit_GPS.h>
+#include <Soc_Table_Average.h>
+#include <Soc.h>
 
 #define XB Serial2
 #define XBEE_PKT_LEN 15
@@ -28,6 +30,7 @@ static CAN_message_t msg_rx;
 static CAN_message_t msg_tx;
 static CAN_message_t xb_msg;
 File logger;
+File state_of_charge;
 
 Adafruit_ADXL345_Unified accel = Adafruit_ADXL345_Unified(12345);
 Adafruit_GPS GPS(&Serial1);
@@ -127,6 +130,10 @@ static int flag_gps;
 
 static bool pending_gps_data;
 
+soc_t bat;
+soc_t *battery = &bat;
+float soc_lut[SOC_N_POINTS] = SOC_LUT;
+
 void setup() {
     /* Set up real-time clock */
     //Teensy3Clock.set(9999999999); // set time (epoch) at powerup  (COMMENT OUT THIS LINE AND PUSH ONCE RTC HAS BEEN SET!!!!)
@@ -183,6 +190,14 @@ void setup() {
     }
     logger.println("time,msg.id,msg.len,data"); // Print CSV heading to the logfile
     logger.flush();
+
+    if(!SD.exists("state_of_charge.CSV")) {
+      state_of_charge = SD.open("state_of_charge.CSV", 0_WRITE | O_CREAT);  // Create file to store state of charge value
+      state_of_charge.println("-1"); //If the file is new, intialize soc as -1
+    } else {
+      state_of_charge = SD.open("state_of_charge.CSV", 0_WRITE | O_CREAT);  // Create file to store state of charge value
+    }
+    state_of_charge.flush();
 }
 
 void loop() {
@@ -230,6 +245,10 @@ void parse_can_message() {
         int time_now = Teensy3Clock.get(); // RTC
 
         // Identify received CAN messages and load contents into corresponding structs
+        if (msg_rx.id == ID_BMS_COULOMB_COUNTS) {
+            BMS_coulomb_counts.load(msg_rx.buf);
+            flag_BMS_coulomb_counts = time_now;
+        }
         if (msg_rx.id == ID_MCU_STATUS) {
             mcu_status.load(msg_rx.buf);
             flag_mcu_status = time_now;
@@ -752,4 +771,74 @@ void sd_date_time(uint16_t* date, uint16_t* time) {
 
     // return time using FAT_TIME macro to format fields
     *time = FAT_TIME(hour(), minute(), second());
+}
+
+void initialize_soc() {
+  soc_init(battery, min_voltage, millis());
+}
+
+int soc_init(soc_t *soc, float min_voltage, uint64_t time_ms) {
+    if (!soc) {
+        return -1;
+    }
+
+    soc->q_net = 0.0f;
+    soc->last_update_time = time_ms;
+    soc->initial_soc = soc_lookup(min_voltage) * SOC_PACK_AH * 0.01; //Pending Review
+    return 0;
+}
+
+float soc_lookup(float voltage) {
+    // Binary search
+    int16_t left = 0;
+    int16_t right = SOC_N_POINTS - 1;
+    int16_t mid = 0;
+    while (left <= right) {
+        mid = floor((left + right) / 2);
+        
+        if (soc_lut[mid] < voltage) {
+            left = mid + 1;
+        } else if (soc_lut[mid] > voltage) {
+            right = mid - 1;
+        } else {
+            break;
+        }
+    }
+
+    float val = 0.0f;
+    float matched_voltage = soc_lut[mid];
+
+    // Linear interp
+    if (mid < SOC_N_POINTS - 1 && voltage > matched_voltage) {
+        val = (1.0/(SOC_N_POINTS-1)) / (soc_lut[mid+1] - matched_voltage) * (voltage - matched_voltage);
+    } else if (mid > 0 && voltage < matched_voltage) {
+        val = (1.0/(SOC_N_POINTS-1)) / (matched_voltage - soc_lut[mid-1]) * (voltage - matched_voltage);
+    }
+
+    val += (mid) / (float) (SOC_N_POINTS - 1);
+
+    return val * 100;
+}
+
+void integrate_current(int16_t current) {
+    soc_update(battery, current, millis());
+}
+
+void soc_update(soc_t *soc, int current, uint64_t time_ms) {
+    soc->q_net += (time_ms - soc->last_update_time) / 3600000.0f * (0.01 * current);
+    soc->last_update_time = time_ms;
+}
+
+void  print_soc() {
+    Serial.print("\nTotal Charge: ");
+    Serial.print(battery->initial_soc - battery->q_net);
+    Serial.println(" AH");
+
+    Serial.print("\nTotal Discharge: ");
+    Serial.print(battery->q_net);
+    Serial.println(" AH");
+
+    Serial.print("\nSOC:  ");
+    Serial.print(100*(battery->initial_soc - battery->q_net)/SOC_PACK_AH);
+    Serial.println(" %");
 }
