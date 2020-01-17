@@ -332,10 +332,10 @@ typedef struct CAN_message_rcu_status_t {
     int16_t temperature;
 } CAN_msg_rcu_status;
 
-typedef struct CAN_message_tcu_rpm {
-    int16_t wheel_rpm_left
-    int16_t wheel_rpm_right
-};
+typedef struct CAN_message_tcu_wheel_rpm_t {
+    int16_t wheel_rpm_left;
+    int16_t wheel_rpm_right;
+} CAN_message_tcu_wheel_rpm_t;
 
 typedef struct Telem_message {
     //bool cobs_flag;
@@ -379,7 +379,7 @@ typedef struct Telem_message {
         CAN_message_mcu_pedal_readings_t        mcu_pedal_readings;
         CAN_message_mcu_status_t                mcu_status;
         CAN_msg_rcu_status                      rcu_status;
-        CAN_message_tcu_rpm                     tcu_rpm;
+        CAN_message_tcu_wheel_rpm_t             tcu_wheel_rpm;
     } contents;
     uint16_t checksum;
 } Telem_message_t;
@@ -1119,12 +1119,12 @@ class TCU_wheel_rpm {
         void load(uint8_t buf[8]);
         void write(uint8_t buf[8]);
         int16_t get_wheel_rpm_left();
-        int16_t get_wheel_rpm_void();
+        int16_t get_wheel_rpm_right();
         void set_wheel_rpm_left(uint16_t value);
         void set_wheel_rpm_right(uint16_t value);
     private:
         CAN_message_tcu_wheel_rpm_t message;
-}
+};
 
 #endif
 #endif
