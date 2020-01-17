@@ -1,3 +1,18 @@
+#include <HyTech_FlexCAN.h>
+#include <HyTech_CAN.h>
+#include <Metro.h>
+
+Metro timer_can_update_fast = Metro(100);
+
+/**
+ * CAN Variables
+ */
+FlexCAN CAN(500000);
+const CAN_filter_t can_filter_ccu_status = {0, 0, ID_CCU_STATUS}; // Note: If this is passed into CAN.begin() it will be treated as a mask. Instead, pass it into CAN.setFilter(), making sure to fill all slots 0-7 with duplicate filters as necessary
+static CAN_message_t tx_msg;
+
+TCU_wheel_rpm tcu_wheel_rpm;
+
 volatile byte curStateLeft = 0;
 volatile byte curStateRight = 0;
 volatile byte prevStateLeft = 0;
@@ -17,6 +32,8 @@ void setup()
   pinMode(10, INPUT);
   pinMode(13, OUTPUT);
   Serial.begin(9600);
+
+  CAN.begin();
 }
 
 void setStates() {
@@ -54,8 +71,7 @@ void setRPMRight() {
   }
 }
 
-void loop()
-{
+void updateWheelSpeeds() {
   setStates();
   
   if (curStateLeft == 0 && prevStateLeft == 1) {
@@ -102,4 +118,24 @@ void loop()
 
   prevStateLeft = curStateLeft;
   prevStateRight = curStateRight;
+}
+
+void loop()
+{
+  updateWheelSpeeds();
+  
+  if (timer_can_update_fast.check()) {
+
+        tx_msg.timeout = 2; // Use blocking mode, wait up to 2ms to send each message instead of immediately failing (keep in mind this is slower)
+
+        tcu_wheel_rpm.set_wheel_rpm_left(rpmLeft);
+        tcu_wheel_rpm.set_wheel_rpm_right(rpmRight);
+        
+        tcu_wheel_rpm.write(tx_msg.buf);
+        tx_msg.id = ID_TCU_WHEEL_RPM;
+        tx_msg.len = sizeof(CAN_message_tcu_wheel_rpm_t);
+        CAN.write(tx_msg);
+
+        tx_msg.timeout = 0;
+    }
 }
