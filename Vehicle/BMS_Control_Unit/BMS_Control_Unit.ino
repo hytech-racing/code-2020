@@ -17,6 +17,7 @@
  * Operation notes:
  * 1. BMS sensors can be powered at all times.
  * 2. Once Teensy gets power from external power lines, give BMS_OK signal.
+ * 3. No need to check DC bus voltage, because all batteries read their true voltages at all times. (They are continuous with each other at all times, due to no relay.)
  * 4. Once temperatures go too high, current goes too high, or cell voltages go too high or too low, drive the BMS_OK signal low.
  */
 
@@ -38,6 +39,8 @@
 #include <Metro.h>
 #include <math.h>
 #include <ADC_SPI.h>
+#include <Soc_Table_Average.h>
+#include <Soc.h>
 
 /*************************************
  * Begin general configuration
@@ -159,6 +162,11 @@ uint8_t consecutive_faults_total_voltage_high = 0;
 uint8_t consecutive_faults_thermistor = 0;
 uint8_t consecutive_faults_current = 0;
 
+volatile uint32_t total_charge = 0; // Total incoming coulombs since ECU powered // TODO make these better names
+volatile uint32_t total_discharge = 0; // Total outgoing coulombs since ECU powered
+uint32_t total_charge_copy;
+uint32_t total_discharge_copy;
+
 uint16_t cell_voltages[TOTAL_IC][12]; // contains 12 battery cell voltages. Numbers are stored in 0.1 mV units.
 uint16_t aux_voltages[TOTAL_IC][6]; // contains auxiliary pin voltages for each IC in this order: [Cell Term 1] [Cell Therm 2] [Cell Therm 3] [Onboard Therm 1] [Onboard Therm 2] [Voltage reference]
 
@@ -170,18 +178,15 @@ int8_t ignore_cell_therm[TOTAL_IC][THERMISTORS_PER_IC]; // Cell thermistors to b
   The tx_cfg[][6] store the LTC6804 configuration data that is going to be written
   to the LTC6804 ICs on the daisy chain. The LTC6804 configuration data that will be
   written should be stored in blocks of 6 bytes. The array should have the following format:
-
  |  tx_cfg[0][0]| tx_cfg[0][1] |  tx_cfg[0][2]|  tx_cfg[0][3]|  tx_cfg[0][4]|  tx_cfg[0][5]| tx_cfg[1][0] |  tx_cfg[1][1]|  tx_cfg[1][2]|  .....    |
  |--------------|--------------|--------------|--------------|--------------|--------------|--------------|--------------|--------------|-----------|
  |IC1 CFGR0     |IC1 CFGR1     |IC1 CFGR2     |IC1 CFGR3     |IC1 CFGR4     |IC1 CFGR5     |IC2 CFGR0     |IC2 CFGR1     | IC2 CFGR2    |  .....    |
-
 */
 uint8_t tx_cfg[TOTAL_IC][6]; // data defining how data will be written to daisy chain ICs.
 
 /*!<
   the rx_cfg[][8] array stores the data that is read back from a LTC6804
   The configuration data for each IC is stored in blocks of 8 bytes. Below is an table illustrating the array organization:
-
 |rx_config[0][0]|rx_config[0][1]|rx_config[0][2]|rx_config[0][3]|rx_config[0][4]|rx_config[0][5]|rx_config[0][6]  |rx_config[0][7] |rx_config[1][0]|rx_config[1][1]|  .....    |
 |---------------|---------------|---------------|---------------|---------------|---------------|-----------------|----------------|---------------|---------------|-----------|
 |IC1 CFGR0      |IC1 CFGR1      |IC1 CFGR2      |IC1 CFGR3      |IC1 CFGR4      |IC1 CFGR5      |IC1 PEC High     |IC1 PEC Low     |IC2 CFGR0      |IC2 CFGR1      |  .....    |
@@ -212,14 +217,18 @@ BMS_onboard_temperatures bms_onboard_temperatures;
 BMS_onboard_detailed_temperatures bms_onboard_detailed_temperatures[TOTAL_IC];
 BMS_voltages bms_voltages;
 BMS_balancing_status bms_balancing_status[(TOTAL_IC + 3) / 4]; // Round up TOTAL_IC / 4 since data from 4 ICs can fit in a single message
+BMS_coulomb_counts bms_coulomb_counts;
 bool fh_watchdog_test = false; // Initialize test mode to false - if set to true the BMS stops sending pulse to the watchdog timer in order to test its functionality
 bool watchdog_high = true; // Initialize watchdog signal - this alternates every loop
 uint8_t balance_offcycle = 0; // Tracks which loops balancing will be disabled on
 bool charge_mode_entered = false; // Used to enter charge mode immediately at startup instead of waiting for timer
+soc_t bat;
+soc_t *battery = &bat;
 double voltage_conversion_factor      = 5.033333333333333333 / 4095;   // determined by testing
 double current_conversion_factor      = 1000.0 / 7.3;  // voltage slope = 6.667mV/A
 double    current_offset              = 2037.40;
 int       calibration_reads           = 1000;
+float soc_lut[SOC_N_POINTS] = SOC_LUT;
 
 void setup() {
     ADC.read_adc(0); // TODO isoSPI doesn't work until some other SPI gets called. This is a placeholder until we fix the problem
@@ -328,7 +337,10 @@ void setup() {
 
     process_voltages();
     double min_voltage = bms_voltages.get_low() / 10000.0;
-    Serial.println("MINIMUM VOLTAGE IS: " + min_voltage);
+    
+    Serial.println("MINIMUM VOLTAGE IS: ");
+    soc_init(battery, min_voltage, millis());
+
     calibrate_current_offset();
     
     Serial.println("Setup Complete!");
@@ -344,6 +356,7 @@ void loop() {
     balance_cells(); // Check local cell voltage data and balance individual cells as necessary
     process_temps(); // Poll controllers, process values, populate populate bms_temperatures, bms_detailed_temperatures, bms_onboard_temperatures, and bms_onboard_detailed_temperatures
     process_adc(); // Poll ADC, process values, populate bms_status
+    process_coulombs();
     parse_can_message();
 
     if (timer_charge_timeout.check() && bms_status.get_state() > BMS_STATE_DISCHARGING && !MODE_CHARGE_OVERRIDE) { // 1 second timeout - if timeout is reached, disable charging
@@ -420,6 +433,14 @@ void loop() {
         tx_msg.id = ID_BMS_ONBOARD_TEMPERATURES;
         tx_msg.len = sizeof(CAN_message_bms_onboard_temperatures_t);
         CAN.write(tx_msg);
+
+        //Draft for sending SOC percentage
+        bms_coulomb_counts.write(tx_msg.buf);
+        tx_msg.id = ID_BMS_COULOMB_COUNTS;
+        tx_msg.len = sizeof(CAN_message_bms_coulomb_counts_t);
+        CAN.write(tx_msg);
+        
+        
 
         tx_msg.id = ID_BMS_DETAILED_VOLTAGES;
         tx_msg.len = sizeof(CAN_message_bms_detailed_voltages_t);
@@ -869,6 +890,7 @@ void process_adc() {
     // Process current measurement
     int current = get_current();
     bms_status.set_current(current);
+    soc_update(battery, current, millis());
     bms_status.set_charge_overcurrent(false); // RESET these values, then check below if they should be set again
     bms_status.set_discharge_overcurrent(false);
     if (bms_status.get_current() < charge_current_constant_high && !MODE_ADC_IGNORE) {
@@ -1032,6 +1054,22 @@ void print_current() {
     Serial.print("\nCurrent Sensor: ");
     Serial.print(bms_status.get_current() / (double) 100, 2);
     Serial.println(" A");
+    
+    Serial.print("\nTotal Charge: ");
+    Serial.print(battery->initial_soc - battery->q_net);
+    Serial.println(" AH");
+
+    Serial.print("\nTotal Discharge: ");
+    Serial.print(battery->q_net);
+    Serial.println(" AH");
+
+    Serial.print("\nSOC:  ");
+    Serial.print(100*(battery->initial_soc - battery->q_net)/SOC_PACK_AH);
+    Serial.println(" %");
+}
+
+void print_soc() {
+    Serial.println();
 }
 
 void print_aux() {
@@ -1145,6 +1183,71 @@ int16_t get_current() {
     voltage_reading = voltage_reading * 100 * voltage_conversion_factor;
     double current_reading = voltage_reading * current_conversion_factor * -1;
     return (int16_t) (current_reading);
+}
+
+void integrate_current() {
+    int delta = get_current();
+    if (delta > 0) {
+        total_discharge = total_discharge + delta;
+    } else {
+        total_charge = total_charge - delta; // Units will be 0.01A / (1 / (COULOUMB_COUNT_INTERVAL x 10^-6) s)
+    }
+}
+
+void process_coulombs() {
+    bms_coulomb_counts.set_total_charge(battery->initial_soc);
+    //bms_coulomb_counts.set_total_charge(0);
+    bms_coulomb_counts.set_total_discharge(battery->q_net);
+    //bms_coulomb_counts.set_total_discharge(0);
+    bms_coulomb_counts.set_SOC_Percentage(100*(battery->initial_soc-battery->q_net)/14);
+}
+
+int soc_init(soc_t *soc, float min_voltage, uint64_t time_ms) {
+    if (!soc) {
+        return -1;
+    }
+
+    soc->q_net = 0.0f;
+    soc->last_update_time = time_ms;
+    soc->initial_soc = soc_lookup(min_voltage) * SOC_PACK_AH * 0.01; //Pending Review
+    return 0;
+}
+
+void soc_update(soc_t *soc, int current, uint64_t time_ms) {
+    soc->q_net += (time_ms - soc->last_update_time) / 3600000.0f * (0.01 * current);
+    soc->last_update_time = time_ms;
+}
+
+float soc_lookup(float voltage) {
+    // Binary search
+    int16_t left = 0;
+    int16_t right = SOC_N_POINTS - 1;
+    int16_t mid = 0;
+    while (left <= right) {
+        mid = floor((left + right) / 2);
+        
+        if (soc_lut[mid] < voltage) {
+            left = mid + 1;
+        } else if (soc_lut[mid] > voltage) {
+            right = mid - 1;
+        } else {
+            break;
+        }
+    }
+
+    float val = 0.0f;
+    float matched_voltage = soc_lut[mid];
+
+    // Linear interp
+    if (mid < SOC_N_POINTS - 1 && voltage > matched_voltage) {
+        val = (1.0/(SOC_N_POINTS-1)) / (soc_lut[mid+1] - matched_voltage) * (voltage - matched_voltage);
+    } else if (mid > 0 && voltage < matched_voltage) {
+        val = (1.0/(SOC_N_POINTS-1)) / (matched_voltage - soc_lut[mid-1]) * (voltage - matched_voltage);
+    }
+
+    val += (mid) / (float) (SOC_N_POINTS - 1);
+
+    return val * 100;
 }
 
 /*
