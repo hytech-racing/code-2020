@@ -1195,11 +1195,8 @@ void integrate_current() {
 }
 
 void process_coulombs() {
-    bms_coulomb_counts.set_total_charge(battery->initial_soc);
-    //bms_coulomb_counts.set_total_charge(0);
     bms_coulomb_counts.set_total_discharge(battery->q_net);
-    //bms_coulomb_counts.set_total_discharge(0);
-    bms_coulomb_counts.set_SOC_Percentage(100*(battery->initial_soc-battery->q_net)/14);
+    bms_coulomb_counts.set_total_charge(battery->initial_soc-battery->q_net);
 }
 
 int soc_init(soc_t *soc, float min_voltage, uint64_t time_ms) {
