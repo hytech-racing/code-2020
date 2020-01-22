@@ -240,12 +240,12 @@ void loop() {
         tx_msg.len = sizeof(CAN_message_mcu_pedal_readings_t);
         CAN.write(tx_msg);
 
-        // Send couloumb counting information
-        bms_coulomb_counts.set_total_charge(total_charge_amount);
-        bms_coulomb_counts.set_total_discharge(total_discharge_amount);
-        tx_msg.id = ID_BMS_COULOMB_COUNTS;
-        tx_msg.len = sizeof(CAN_message_bms_coulomb_counts_t);
-        CAN.write(tx_msg);
+        // Coulomb counting is removed because SOC was implemented on BMS
+//        bms_coulomb_counts.set_total_charge(total_charge_amount);
+//        bms_coulomb_counts.set_total_discharge(total_discharge_amount);
+//        tx_msg.id = ID_BMS_COULOMB_COUNTS;
+//        tx_msg.len = sizeof(CAN_message_bms_coulomb_counts_t);
+//        CAN.write(tx_msg);
     }
 
     /*
