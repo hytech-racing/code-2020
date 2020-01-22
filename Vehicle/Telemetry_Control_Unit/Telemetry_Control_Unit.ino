@@ -423,7 +423,7 @@ void process_accelerometer() {
     */
 }
 
-void process_current() { //CHANGED THIS FUNCTION
+void process_current() {
     //self derived
 
     double current_ecu = ((double)(analogRead(A13)-96))*0.029412;
