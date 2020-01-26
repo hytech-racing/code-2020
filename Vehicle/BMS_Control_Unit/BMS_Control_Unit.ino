@@ -365,13 +365,15 @@ void loop() {
         digitalWrite(LED_STATUS, LOW);
     }
 
-    if (timer_process_cells_fast.check()) {}
+    if (timer_process_cells_fast.check()) {
+        process_adc(); // Poll ADC, process values, populate bms_status
+    }
 
     if (timer_process_cells_slow.check()) {
         process_voltages(); // Poll controllers, process values, populate bms_voltages
         balance_cells(); // Check local cell voltage data and balance individual cells as necessary
         process_temps(); // Poll controllers, process values, populate populate bms_temperatures, bms_detailed_temperatures, bms_onboard_temperatures, and bms_onboard_detailed_temperatures
-        process_adc(); // Poll ADC, process values, populate bms_status
+        //process_adc(); // Poll ADC, process values, populate bms_status
         process_coulombs(); // Process new coulomb counts, sending over CAN and printing to Serial
         
         print_temps(); // Print cell and pcb temperatures to serial
@@ -1068,10 +1070,6 @@ void print_current() {
     Serial.println(" %");
 }
 
-void print_soc() {
-    Serial.println();
-}
-
 void print_aux() {
     for (int current_ic = 0; current_ic < TOTAL_IC; current_ic++) {
         Serial.print("IC: ");
@@ -1195,8 +1193,8 @@ void integrate_current() {
 }
 
 void process_coulombs() {
-    bms_coulomb_counts.set_total_discharge(battery->q_net);
-    bms_coulomb_counts.set_total_charge(battery->initial_soc-battery->q_net);
+    bms_coulomb_counts.set_total_charge(battery->q_net * 100);
+    bms_coulomb_counts.set_total_discharge((battery->initial_soc-battery->q_net) * 100);
 }
 
 int soc_init(soc_t *soc, float min_voltage, uint64_t time_ms) {
