@@ -126,16 +126,17 @@ void loop()
   
   if (timer_can_update_fast.check()) {
 
-        tx_msg.timeout = 2; // Use blocking mode, wait up to 2ms to send each message instead of immediately failing (keep in mind this is slower)
+        tx_msg.timeout = 4; // Use blocking mode, wait up to 4ms to send each message instead of immediately failing (keep in mind this is slower)
 
-        tcu_wheel_rpm.set_wheel_rpm_left(rpmLeft);
-        tcu_wheel_rpm.set_wheel_rpm_right(rpmRight);
+        //tcu_wheel_rpm.set_wheel_rpm_left(rpmLeft);
+        //tcu_wheel_rpm.set_wheel_rpm_right(rpmRight);
+
+        tcu_wheel_rpm.set_wheel_rpm_left(1234);
+        tcu_wheel_rpm.set_wheel_rpm_right(4321);
         
         tcu_wheel_rpm.write(tx_msg.buf);
         tx_msg.id = ID_TCU_WHEEL_RPM;
         tx_msg.len = sizeof(CAN_message_tcu_wheel_rpm_t);
         CAN.write(tx_msg);
-
-        tx_msg.timeout = 0;
     }
 }
