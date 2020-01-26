@@ -253,11 +253,11 @@ void setup() {
         digitalWrite(LED_STATUS, HIGH);
     }
 
-    /*// Set up current-measuring timer
+    // Set up current-measuring timer
     current_timer.priority(255); // Priority range 0-255, 128 as default
     total_charge = 0;
     total_discharge = 0;
-    current_timer.begin(integrate_current, COULOUMB_COUNT_INTERVAL);*/
+    current_timer.begin(integrate_current, COULOUMB_COUNT_INTERVAL);
 
     /* Initialize the ic/group IDs for detailed voltage, temperature, and balancing CAN messages */
     for (int i = 0; i < TOTAL_IC; i++) {
@@ -326,7 +326,7 @@ void setup() {
         }
         Serial.println();
     }
-    
+
     Serial.println("Setup Complete!");
 }
 
@@ -351,11 +351,11 @@ void loop() {
         balance_cells(); // Check local cell voltage data and balance individual cells as necessary
         process_temps(); // Poll controllers, process values, populate populate bms_temperatures, bms_detailed_temperatures, bms_onboard_temperatures, and bms_onboard_detailed_temperatures
         process_adc(); // Poll ADC, process values, populate bms_status
-        
+        process_coulombs(); // Process new coulomb counts, sending over CAN and printing to Serial
+
         print_temps(); // Print cell and pcb temperatures to serial
         print_cells(); // Print the cell voltages and balancing status to serial
         print_current(); // Print measured current sensor value
-        //process_coulombs(); // Process new coulomb counts, sending over CAN and printing to Serial
         print_uptime(); // Print the BMS uptime to serial
 
         Serial.print("State: ");
@@ -435,7 +435,7 @@ void loop() {
             bms_onboard_detailed_temperatures[i].write(tx_msg.buf);
             CAN.write(tx_msg);
         }
-        
+
         tx_msg.id = ID_BMS_BALANCING_STATUS;
         tx_msg.len = sizeof(CAN_message_bms_balancing_status_t);
         for (int i = 0; i < (TOTAL_IC + 3) / 4; i++) {
@@ -849,7 +849,7 @@ double calculate_onboard_temp(double aux_voltage, double v_ref) {
     double b = 3380;    // B constant of the thermistor
     double R0 = 10000;  // Resistance of thermistor at 25C
     double temperature = 1 / ((1 / T0) + (1 / b) * log(thermistor_resistance / R0)) - (double) 273.15;
-    
+
     return (int16_t) (temperature * 100);
 }
 
