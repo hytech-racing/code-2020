@@ -352,11 +352,11 @@ void setup() {
  * Main BMS Control Loop
  */
 void loop() {
-    process_voltages(); // Poll controllers, process values, populate bms_voltages
-    balance_cells(); // Check local cell voltage data and balance individual cells as necessary
-    process_temps(); // Poll controllers, process values, populate populate bms_temperatures, bms_detailed_temperatures, bms_onboard_temperatures, and bms_onboard_detailed_temperatures
-    process_adc(); // Poll ADC, process values, populate bms_status
-    process_coulombs();
+//    process_voltages(); // Poll controllers, process values, populate bms_voltages
+//    balance_cells(); // Check local cell voltage data and balance individual cells as necessary
+//    process_temps(); // Poll controllers, process values, populate populate bms_temperatures, bms_detailed_temperatures, bms_onboard_temperatures, and bms_onboard_detailed_temperatures
+//    process_adc(); // Poll ADC, process values, populate bms_status
+//    process_coulombs();
     parse_can_message();
 
     if (timer_charge_timeout.check() && bms_status.get_state() > BMS_STATE_DISCHARGING && !MODE_CHARGE_OVERRIDE) { // 1 second timeout - if timeout is reached, disable charging
@@ -372,11 +372,11 @@ void loop() {
         balance_cells(); // Check local cell voltage data and balance individual cells as necessary
         process_temps(); // Poll controllers, process values, populate populate bms_temperatures, bms_detailed_temperatures, bms_onboard_temperatures, and bms_onboard_detailed_temperatures
         process_adc(); // Poll ADC, process values, populate bms_status
+        process_coulombs(); // Process new coulomb counts, sending over CAN and printing to Serial
         
         print_temps(); // Print cell and pcb temperatures to serial
         print_cells(); // Print the cell voltages and balancing status to serial
         print_current(); // Print measured current sensor value
-        process_coulombs(); // Process new coulomb counts, sending over CAN and printing to Serial
         print_uptime(); // Print the BMS uptime to serial
 
         Serial.print("State: ");
