@@ -129,7 +129,7 @@ Metro timer_charge_timeout = Metro(1000);
 /*
  * Interrupt timers
  */
-//IntervalTimer current_timer;
+IntervalTimer current_timer;
 
 /*
  * Global variables
@@ -411,6 +411,11 @@ void loop() {
         bms_onboard_temperatures.write(tx_msg.buf);
         tx_msg.id = ID_BMS_ONBOARD_TEMPERATURES;
         tx_msg.len = sizeof(CAN_message_bms_onboard_temperatures_t);
+        CAN.write(tx_msg);
+
+        bms_coulomb_counts.write(tx_msg.buf);
+        tx_msg.id = ID_BMS_COULOMB_COUNTS;
+        tx_msg.len = sizeof(CAN_message_bms_coulomb_counts_t);
         CAN.write(tx_msg);
 
         tx_msg.id = ID_BMS_DETAILED_VOLTAGES;
