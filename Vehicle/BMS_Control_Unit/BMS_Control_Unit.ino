@@ -22,15 +22,14 @@
  */
 
 /*
- * LTC6804 state / communication notes:
- * The operation of the LTC6804 is divided into two separate sections: the core circuit and the isoSPI circuit. Both sections have an independent set of operating states, as well as a shutdown timeout. See LTC6804 Datasheet Page 20.
+ * LTC6811 state / communication notes:
+ * The operation of the LTC6804 is divided into two separate sections: the core circuit and the isoSPI circuit. Both sections have an independent set of operating states, as well as a shutdown timeout. See LTC611 Datasheet Page 20.
  * When sending an ADC conversion or diagnostic command, wake up the core circuit by calling wakeup_sleep()
  * When sending any other command (such as reading or writing registers), wake up the isoSPI circuit by calling wakeup_idle().
  */
 
 #include <ADC_SPI.h>
 #include <Arduino.h>
-// #include <EEPROM.h> TODO add EEPROM functionality so we can configure parameters over CAN
 #include <HyTech_FlexCAN.h>
 #include <HyTech_CAN.h>
 #include <kinetis_flexcan.h>
@@ -48,13 +47,14 @@
  * Used to set pins correctly and only enable features compatible with board
  */
 #define BOARD_VERSION_HYTECH_2019_HV_REV_11
+//#define BOARD_VERSION_HYTECH_2019_HV_REV_12
 
 /*
  * Set Accumulator Version
  * If installing in an Accumulator, set the version here for BMS to ignore problematic sensor readings unique to each accumulator
  */
-//#define ACCUMULATOR_VERSION_HYTECH_2018_ACCUMULATOR
 #define ACCUMULATOR_VERSION_HYTECH_2019_ACCUMULATOR
+//#define ACCUMULATOR_VERSION_HYTECH_2020_ACCUMULATOR
 
 /*
  * Set Bench Test Mode
@@ -77,6 +77,13 @@
  * When the BMS is in ADC Ignore Mode, it will not use data received from the ADC for determining faults, or for restricting cell balancing
  */
 #define MODE_ADC_IGNORE true
+
+/*
+ * Set ADC Ignore Mode
+ * Set to true to place BMS in ADC Ignore Mode, set to false to disable
+ * When the BMS is in ADC Ignore Mode, it will not use data received from the ADC for determining faults, or for restricting cell balancing
+ */
+#define MODE_DEBUG true
 
 /*************************************
  * End general configuration
@@ -286,11 +293,6 @@ void setup() {
     // ignore_pcb_therm[2][0] = true; // Ignore IC 2 pcb thermistor 0
     // total_count_pcb_thermistors--; // Decrement pcb thermistor count (used for calculating averages)
 
-    /* Ignore cells or thermistors in 2018 accumulator */
-    #ifdef ACCUMULATOR_VERSION_HYTECH_2018_ACCUMULATOR
-    ignore_cell_therm[6][2] = true; // Ignore IC 6 cell thermistor 2 due to faulty connector
-    total_count_cell_thermistors -= 1;
-    #endif
 
     /* Ignore cells or thermistors in 2019 accumulator */
     #ifdef ACCUMULATOR_VERSION_HYTECH_2019_ACCUMULATOR
