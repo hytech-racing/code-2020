@@ -42,12 +42,20 @@
  *************************************/
 
 /*
- * Set Board Version
- * Uncomment whichever board this code is being uploaded to
+ * Set HV Board Version
+ * Uncomment whichever HV board this code is being uploaded to
  * Used to set pins correctly and only enable features compatible with board
  */
 #define BOARD_VERSION_HYTECH_2019_HV_REV_11
-//#define BOARD_VERSION_HYTECH_2019_HV_REV_12
+//#define BOARD_VERSION_HYTECH_2020_HV_REV_12
+
+/*
+ * Set BMS Board Version
+ * Uncomment whichever BMS board this code is being uploaded to
+ * Used to set pins correctly and only enable features compatible with board
+ */
+#define BOARD_VERSION_HYTECH_2019_BMS_REV_10
+//#define BOARD_VERSION_HYTECH_2020_HV_REV_11
 
 /*
  * Set Accumulator Version
@@ -79,9 +87,9 @@
 #define MODE_ADC_IGNORE true
 
 /*
- * Set ADC Ignore Mode
- * Set to true to place BMS in ADC Ignore Mode, set to false to disable
- * When the BMS is in ADC Ignore Mode, it will not use data received from the ADC for determining faults, or for restricting cell balancing
+ * Set Debug Mode
+ * Set to true to place BMS in Debug Mode, set to false to disable
+ * When the BMS is in Debug Mode, it will print data that is sent over CAN to serial for ease of debugging
  */
 #define MODE_DEBUG true
 
@@ -101,14 +109,20 @@
 #endif
 
 /*
- * Constant definitions
+ * BMS Constant definitions
  */
+#ifdef BOARD_VERSION_HYTECH_2019_BMS_REV_10 // 2019 BMS Board rev10
 #define TOTAL_IC 8                      // Number of ICs in the system
 #define CELLS_PER_IC 9                  // Number of cells per IC
 #define THERMISTORS_PER_IC 3            // Number of cell thermistors per IC
 #define PCB_THERM_PER_IC 2              // Number of PCB thermistors per IC
+#endif
+
+/*
+ * Constant definitions
+ */
 #define IGNORE_FAULT_THRESHOLD 10       // Number of fault-worthy values to read in succession before faulting
-#define CURRENT_FAULT_THRESHOLD 5       // Number of fault-worthy electrical current values to read in succession before faulting
+#define CURRENT_FAULT_THRESHOLD 10      // Number of fault-worthy electrical current values to read in succession before faulting
 #define SHUTDOWN_HIGH_THRESHOLD 1500    // Value returned by ADC above which the shutdown circuit is considered powered (balancing not allowed when AIRs open)
 #define BALANCE_LIMIT_FACTOR 3          // Reciprocal of the cell balancing duty cycle (3 means balancing can happen during 1 out of every 3 loops, etc)
 #define COULOUMB_COUNT_INTERVAL 10000   // Microseconds between current readings
@@ -244,13 +258,6 @@ void setup() {
         CAN.setFilter(can_filter_ccu_status, i);
     }
 
-    /* Configure CAN rx interrupt */
-    /*interrupts();
-    NVIC_ENABLE_IRQ(IRQ_CAN_MESSAGE);
-    attachInterruptVector(IRQ_CAN_MESSAGE,parse_can_message);
-    FLEXCAN0_IMASK1 = FLEXCAN_IMASK1_BUF5M;*/
-    /* Configure CAN rx interrupt */
-
     delay(100);
     Serial.println("CAN system and serial communication initialized");
 
@@ -346,14 +353,16 @@ void loop() {
         digitalWrite(LED_STATUS, LOW);
     }
 
-    if (timer_process_cells_fast.check()) {}
+    if (timer_process_cells_fast.check()) {
+        process_adc(); // Poll ADC, process values, populate bms_status
+    }
 
     if (timer_process_cells_slow.check()) {
         process_voltages(); // Poll controllers, process values, populate bms_voltages
         balance_cells(); // Check local cell voltage data and balance individual cells as necessary
         process_temps(); // Poll controllers, process values, populate populate bms_temperatures, bms_detailed_temperatures, bms_onboard_temperatures, and bms_onboard_detailed_temperatures
         process_adc(); // Poll ADC, process values, populate bms_status
-        process_coulombs(); // Process new coulomb counts, sending over CAN and printing to Serial
+        process_coulombs(); // Process new coulomb counts, sending over CAN and printing to serial
 
         print_temps(); // Print cell and pcb temperatures to serial
         print_cells(); // Print the cell voltages and balancing status to serial
