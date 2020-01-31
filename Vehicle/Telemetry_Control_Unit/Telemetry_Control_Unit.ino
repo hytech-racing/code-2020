@@ -281,6 +281,7 @@ void parse_can_message() {
             flag_bms_balancing_status = time_now;
         }
         if (msg_rx.id == ID_BMS_COULOMB_COUNTS) {
+            Serial.println("Coulomb");
             bms_coulomb_counts.load(msg_rx.buf);
             flag_bms_coulomb_counts = time_now;
         }
@@ -359,8 +360,9 @@ void parse_can_message() {
             flag_fcu_accelerometer_values = time_now;
         }
         if (msg_rx.id == ID_TCU_WHEEL_RPM) {
-          tcu_wheel_rpm.load(msg_rx.buf);
-          flag_tcu_wheel_rpm = time_now;
+            Serial.println("RPM");
+            tcu_wheel_rpm.load(msg_rx.buf);
+            flag_tcu_wheel_rpm = time_now;
         }
     }
 }

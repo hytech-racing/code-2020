@@ -128,27 +128,15 @@ void loop()
         Serial.println("Sending CAN");
         tx_msg.timeout = 10; // Use blocking mode, wait up to ?ms to send each message instead of immediately failing (keep in mind this is slower)
 
-<<<<<<< HEAD
-        tx_msg.timeout = 4; // Use blocking mode, wait up to 4ms to send each message instead of immediately failing (keep in mind this is slower)
-
         //tcu_wheel_rpm.set_wheel_rpm_left(rpmLeft);
         //tcu_wheel_rpm.set_wheel_rpm_right(rpmRight);
 
         tcu_wheel_rpm.set_wheel_rpm_left(1234);
         tcu_wheel_rpm.set_wheel_rpm_right(4321);
-=======
-        tcu_wheel_rpm.set_wheel_rpm_left(50);
-        tcu_wheel_rpm.set_wheel_rpm_right(100);
->>>>>>> 6514705747b5e82c2a311882dc91d35835f126b7
         
         tcu_wheel_rpm.write(tx_msg.buf);
         tx_msg.id = ID_TCU_WHEEL_RPM;
         tx_msg.len = sizeof(CAN_message_tcu_wheel_rpm_t);
         CAN.write(tx_msg);
-<<<<<<< HEAD
-=======
-
-        tx_msg.timeout = 10;
->>>>>>> 6514705747b5e82c2a311882dc91d35835f126b7
     }
 }
