@@ -259,7 +259,7 @@ def decode(msg):
         ret.append(["IC_" + str(ic) + "_THERM 2",        (b2ui16(msg[10:12]) / 100.),     "C"     ])
     elif (id == 0xDB):
         ret.append(["BMS_STATE",                        msg[5]                                  ])
-        ret.append(["BMS_ERROR_FLAGS",                  "0x" + binascii.hexlify(msg[7]).upper() + binascii.hexlify(msg[6]).upper()])
+        ret.append(["BMS_ERROR_FLAGS",                  "0x" + hex(msg[7]).upper()[2:] + hex(msg[6]).upper()[2:] ])
         ret.append(["BMS_CURRENT",                      (b2i16(msg[8:10]) / 100.),      "A"     ])
     elif (id == 0xDE):
         data = b2ui64(msg[5:13])
