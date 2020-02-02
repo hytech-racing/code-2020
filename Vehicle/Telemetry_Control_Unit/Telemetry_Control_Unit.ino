@@ -231,6 +231,14 @@ void parse_can_message() {
         write_to_SD(&msg_rx); // Write to SD card buffer (if the buffer fills up, triggering a flush to disk, this will take 8ms)
         int time_now = Teensy3Clock.get(); // RTC
 
+        if(msg_rx.id == 226) {
+          Serial.println(msg_rx.id, HEX);
+        }
+
+        if(msg_rx.id == 234) {
+          Serial.println(msg_rx.id, HEX);
+        }
+        
         // Identify received CAN messages and load contents into corresponding structs
         if (msg_rx.id == ID_MCU_STATUS) {
             mcu_status.load(msg_rx.buf);

@@ -31,6 +31,7 @@ void setup()
   pinMode(15, INPUT);
   pinMode(10, INPUT);
   pinMode(13, OUTPUT);
+  digitalWrite(13, HIGH);
   Serial.begin(9600);
 
   CAN.begin();
@@ -77,10 +78,8 @@ void updateWheelSpeeds() {
   if (curStateLeft == 0 && prevStateLeft == 1) {
     setRPMLeft();
     if(high) {
-       digitalWrite(13, LOW);
        high = false;
     } else {
-       digitalWrite(13, HIGH);
        high = true;
     }  
   }
@@ -88,10 +87,8 @@ void updateWheelSpeeds() {
   if (curStateRight == 0 && prevStateRight == 1) {
     setRPMRight();
     if(high) {
-       digitalWrite(13, LOW);
        high = false;
     } else {
-       digitalWrite(13, HIGH);
        high = true;
     }  
   }
@@ -125,7 +122,6 @@ void loop()
   updateWheelSpeeds();
   
   if (timer_can_update_fast.check()) {
-        Serial.println("Sending CAN");
         tx_msg.timeout = 10; // Use blocking mode, wait up to ?ms to send each message instead of immediately failing (keep in mind this is slower)
 
         //tcu_wheel_rpm.set_wheel_rpm_left(rpmLeft);
@@ -133,10 +129,13 @@ void loop()
 
         tcu_wheel_rpm.set_wheel_rpm_left(1234);
         tcu_wheel_rpm.set_wheel_rpm_right(4321);
+        Serial.println("Can sent");
         
         tcu_wheel_rpm.write(tx_msg.buf);
         tx_msg.id = ID_TCU_WHEEL_RPM;
         tx_msg.len = sizeof(CAN_message_tcu_wheel_rpm_t);
         CAN.write(tx_msg);
+
+        tx_msg.timeout = 0;
     }
 }
