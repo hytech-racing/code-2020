@@ -190,10 +190,10 @@ def decode(msg):
         ret.append(["INVERTER_LOCKOUT",                 ((msg[11] & 0x80) >> 7)                 ])
         ret.append(["DIRECTION_COMMAND",                msg[12]                                 ])
     elif (id == 0xAB):
-        ret.append(["POST_FAULT_LO",                    "0x" + binascii.hexlify(msg[6]).upper() + binascii.hexlify(msg[5]).upper()])
-        ret.append(["POST_FAULT_HI",                    "0x" + binascii.hexlify(msg[8]).upper() + binascii.hexlify(msg[7]).upper()])
-        ret.append(["RUN_FAULT_LO",                     "0x" + binascii.hexlify(msg[10]).upper() + binascii.hexlify(msg[9]).upper()])
-        ret.append(["RUN_FAULT_HI",                     "0x" + binascii.hexlify(msg[12]).upper() + binascii.hexlify(msg[11]).upper()])
+        ret.append("POST FAULT LO: 0x" + hex(msg[6]).upper()[2:] + hex(msg[5]).upper()[2:])
+        ret.append("POST FAULT HI: 0x" + hex(msg[8]).upper()[2:] + hex(msg[7]).upper()[2:])
+        ret.append("RUN FAULT LO: 0x" + hex(msg[10]).upper()[2:] + hex(msg[9]).upper()[2:])
+        ret.append("RUN FAULT HI: 0x" + hex(msg[12]).upper()[2:] + hex(msg[11]).upper()[2:])
     elif (id == 0xAC):
         ret.append(["COMMANDED_TORQUE",                 (b2i16(msg[5:7]) / 10.),         "Nm"    ])
         ret.append(["TORQUE_FEEDBACK",                  (b2i16(msg[7:9]) / 10.),         "Nm"    ])
@@ -210,25 +210,25 @@ def decode(msg):
         ret.append(["MCU_TEMPERATURE",                  b2i16(msg[7:9])                         ])
         ret.append(["MCU_GLV_VOLTAGE",                  (b2ui16(msg[9:11]) / 100.),"V"           ])
     elif (id == 0xC4):
+        ret.append(["MCU_PEDAL_ACCEL_1",                b2ui16(msg[5:7])                        ])
         ret.append(["MCU_PEDAL_ACCEL_2",                b2ui16(msg[7:9])                        ])
         ret.append(["MCU_PEDAL_BRAKE",                  b2ui16(msg[9:11])                       ])
-        ret.append(["MCU_PEDAL_ACCEL_1",                b2ui16(msg[5:7])                        ])
-        ret.append(["MCU_BRAKE_ACT",                    ((msg[12] & 0x4) >> 2)                  ])
-        ret.append(["MCU_IMPLAUS_ACCEL",                (msg[12] & 0x1)                         ])
-        ret.append(["MCU_IMPLAUS_BRAKE",                ((msg[12] & 0x2) >> 1)                  ])
-        ret.append(["MCU_TORQUE_MAP_MODE",              msg[13]                                 ])
+        ret.append(["MCU_IMPLAUS_ACCEL",                (msg[11] & 0x1)                         ])
+        ret.append(["MCU_IMPLAUS_BRAKE",                ((msg[11] & 0x2) >> 1)                  ])
+        ret.append(["MCU_BRAKE_ACT",                    ((msg[11] & 0x4) >> 2)                  ])
+        ret.append(["MCU_TORQUE_MAP_MODE",              msg[12]                                 ])
     elif (id == 0xCC):
         ret.append(["ECU_CURRENT",                      (b2ui16(msg[5:7]) / 100.),"A"            ])
         ret.append(["COOLING_CURRENT",                  (b2ui16(msg[7:9]) / 100.),"A"            ])
     elif (id == 0xD0):
         ret.append(["RCU_STATE",                        msg[5]                                  ])
-        ret.append(["RCU_FLAGS",                        "0x" + binascii.hexlify(msg[6]).upper() ])
+        ret.append(["RCU_FLAGS",                        "0x" + hex(msg[6]).upper()[2:]          ])
         ret.append(["GLV_BATT_VOLTAGE",                 (b2ui16(msg[7:9]) / 100.),"V"           ])
         ret.append(["RCU_BMS_FAULT",                    (not msg[6] & 0x1)                      ])
         ret.append(["RCU_IMD_FAULT",                    (not (msg[6] & 0x2) >> 1)               ])
     elif (id == 0xD2):
         ret.append(["FCU_STATE",                        msg[5]                                  ])
-        ret.append(["FCU_FLAGS",                        "0x{}".format(binascii.hexlify(msg[6]).upper())])
+        ret.append(["FCU_FLAGS",                        "0x{}".format(hex(msg[6]).upper()[2:])  ])
         ret.append(["FCU_START_BUTTON_ID",              msg[7]                                  ])
         ret.append(["FCU_BRAKE_ACT",                    ((msg[6] & 0x8) >> 3)                    ])
         ret.append(["FCU_IMPLAUS_ACCEL",                (msg[6] & 0x1)                           ])
@@ -270,8 +270,8 @@ def decode(msg):
                 state = ("OFF" if (((data >> (0x4 + 0x9 * ic)) & 0x1FF) >> cell) & 0x1 == 1 else "ON")
                 ret.append([bal, state])
     elif (id == 0xE2):
-        ret.append("BMS_TOTAL_CHARGE: " + str(b2ui32(msg[5:9]) / 10000. + " C"))
-        ret.append("BMS_TOTAL_DISCHARGE: " + str(b2ui32(msg[9:13]) / 10000. + " C"))
+        ret.append(["BMS_TOTAL_CHARGE",                  b2ui32(msg[5:9]) / 10000.,       " C"    ])
+        ret.append(["BMS_TOTAL_DISCHARGE",               b2ui32(msg[9:13]) / 10000.,      " C"    ])
     return ret
 
 def b2i8(data):

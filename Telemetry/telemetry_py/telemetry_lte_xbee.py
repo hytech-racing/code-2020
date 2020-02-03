@@ -722,13 +722,13 @@ def decode(msg):
         ret.append("COOLING CURRENT: " + str(b2ui16(msg[7:9]) / 100.) + " A")
     if (id == 0xD0):
         ret.append("RCU STATE: " + str(ord(msg[5])))
-        ret.append("RCU FLAGS: 0x" + binascii.hexlify(msg[6]).upper())
+        ret.append("RCU FLAGS: 0x" + hex(msg[6]).upper()[2:])
         ret.append("GLV BATT VOLTAGE: " + str(b2ui16(msg[7:9]) / 100.) + " V")
         ret.append("RCU BMS FAULT: " + str(not ord(msg[6]) & 0x1))
         ret.append("RCU IMD FAULT: " + str(not (ord(msg[6]) & 0x2) >> 1))
     if (id == 0xD2):
         ret.append("FCU STATE: " + str(ord(msg[5])))
-        ret.append("FCU FLAGS: 0x" + binascii.hexlify(msg[6]).upper())
+        ret.append("FCU FLAGS: 0x" + hex(msg[6]).upper()[2:])
         ret.append("FCU START BUTTON ID: " + str(ord(msg[7])))
         ret.append("FCU BRAKE ACT: " + str((ord(msg[6]) & 0x8) >> 3))
         ret.append("FCU IMPLAUS ACCEL: " + str(ord(msg[6]) & 0x1))
