@@ -66,6 +66,7 @@
 #define ID_MCU_GPS_READINGS_ALPHA 0xE7
 #define ID_MCU_GPS_READINGS_BETA 0xE8
 #define ID_MCU_GPS_READINGS_GAMMA 0xE9
+#define ID_THERMOCOUPLE_READING	0xF1
 
 /*
 
@@ -89,6 +90,11 @@
  * CAN message structs and classes
  */
 #pragma pack(push,1)
+
+typedef struct CAN_message_thermocouple_reading_t {
+	uint16_t reading_plug_1;
+	uint16_t reading_plug_2;
+} CAN_message_thermocouple_reading_t;
 
 typedef struct CAN_message_bms_balancing_status_t {
 	uint8_t balancing_status[5];
@@ -373,6 +379,7 @@ typedef struct Telem_message {
         CAN_message_mcu_pedal_readings_t        mcu_pedal_readings;
         CAN_message_mcu_status_t                mcu_status;
         CAN_msg_rcu_status                      rcu_status;
+				CAN_message_thermocouple_reading_t			thermocouple_reading;
     } contents;
     uint16_t checksum;
 } Telem_message_t;
@@ -380,6 +387,22 @@ typedef struct Telem_message {
 #pragma pack(pop)
 
 #ifdef __cplusplus
+
+class Thermocouple_reading {
+		public:
+			Thermocouple_reading();
+			Thermocouple_reading(uint8_t buf[]);
+			Thermocouple_reading(uint16_t reading_plug_1, uint16_t reading_plug_2);
+			void load(uint8_t buf[]);
+			void write(uint8_t buf[]);
+			uint16_t get_reading_plug_1();
+			uint16_t get_reading_plug_2();
+
+			void set_reading_plug_1(uint16_t reading_plug_1);
+			void set_reading_plug_2(uint16_t reading_plug_2);
+		private:
+			CAN_message_thermocouple_reading_t message;
+};
 
 class BMS_balancing_status {
     public:
