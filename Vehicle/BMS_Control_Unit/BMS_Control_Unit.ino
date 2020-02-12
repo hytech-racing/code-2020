@@ -124,7 +124,7 @@
  */
 Metro timer_can_update_fast = Metro(100);
 Metro timer_can_update_slow = Metro(1000);
-Metro timer_process_cells_fast = Metro(100);
+Metro timer_process_cells_fast = Metro(10);
 Metro timer_process_cells_slow = Metro(1000);
 Metro timer_watchdog_timer = Metro(250);
 Metro timer_charge_enable_limit = Metro(30000, 1); // Don't allow charger to re-enable more than once every 30 seconds
