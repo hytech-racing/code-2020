@@ -344,7 +344,9 @@ void loop() {
         digitalWrite(LED_STATUS, LOW);
     }
 
-    if (timer_process_cells_fast.check()) {}
+    if (timer_process_cells_fast.check()) {
+        process_adc(); // Poll ADC, process values, populate bms_status
+        }
 
     if (timer_process_cells_slow.check()) {
         process_voltages(); // Poll controllers, process values, populate bms_voltages
