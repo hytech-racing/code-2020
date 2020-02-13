@@ -157,7 +157,7 @@ IntervalTimer current_timer;
  */
 uint16_t voltage_cutoff_low = 29800; // 2.9800V
 uint16_t voltage_cutoff_high = 42000; // 4.2000V
-uint16_t total_voltage_cutoff = 30000; // 300.00V
+uint16_t total_voltage_cutoff = 29952; // 299.52V
 uint16_t discharge_current_constant_high = 22000; // 220.00A
 int16_t charge_current_constant_high = -11000; // 110.00A
 uint16_t charge_temp_cell_critical_high = 4400; // 44.00C
@@ -300,11 +300,6 @@ void setup() {
     // ignore_pcb_therm[2][0] = true; // Ignore IC 2 pcb thermistor 0
     // total_count_pcb_thermistors--; // Decrement pcb thermistor count (used for calculating averages)
 
-
-    /* Ignore cells or thermistors in 2019 accumulator */
-    #ifdef ACCUMULATOR_VERSION_HYTECH_2019_ACCUMULATOR
-    #endif
-
     /* Set up isoSPI */
     initialize(); // Call our modified initialize function instead of the default Linear function
     init_cfg(); // Initialize and write configuration registers to LTC6804 chips
@@ -364,30 +359,36 @@ void loop() {
         process_adc(); // Poll ADC, process values, populate bms_status
         process_coulombs(); // Process new coulomb counts, sending over CAN and printing to serial
 
-        print_temps(); // Print cell and pcb temperatures to serial
-        print_cells(); // Print the cell voltages and balancing status to serial
-        print_current(); // Print measured current sensor value
-        print_uptime(); // Print the BMS uptime to serial
+        if(MODE_DEBUG) {
+            print_temps(); // Print cell and pcb temperatures to serial
+            print_cells(); // Print the cell voltages and balancing status to serial
+            print_current(); // Print measured current sensor value
+            print_uptime(); // Print the BMS uptime to serial
 
-        Serial.print("State: ");
-        if (bms_status.get_state() == BMS_STATE_DISCHARGING) {Serial.println("DISCHARGING");}
-        if (bms_status.get_state() == BMS_STATE_CHARGING) {Serial.println("CHARGING");}
-        if (bms_status.get_state() == BMS_STATE_BALANCING) {Serial.println("BALANCING");}
-        if (bms_status.get_state() == BMS_STATE_BALANCING_OVERHEATED) {Serial.println("BALANCING_OVERHEATED");}
+            Serial.print("State: ");
+            if (bms_status.get_state() == BMS_STATE_DISCHARGING) {Serial.println("DISCHARGING");}
+            if (bms_status.get_state() == BMS_STATE_CHARGING) {Serial.println("CHARGING");}
+            if (bms_status.get_state() == BMS_STATE_BALANCING) {Serial.println("BALANCING");}
+            if (bms_status.get_state() == BMS_STATE_BALANCING_OVERHEATED) {Serial.println("BALANCING_OVERHEATED");}
+        }
 
         if (bms_status.get_error_flags()) { // BMS error - drive BMS_OK signal low
             error_flags_history |= bms_status.get_error_flags();
             digitalWrite(BMS_OK, LOW);
-            Serial.print("---------- STATUS NOT GOOD * Error Code 0x");
-            Serial.print(bms_status.get_error_flags(), HEX);
-            Serial.println(" ----------");
+            if(MODE_DEBUG) {
+                Serial.print("---------- STATUS NOT GOOD * Error Code 0x");
+                Serial.print(bms_status.get_error_flags(), HEX);
+                Serial.println(" ----------");
+            }
         } else {
             digitalWrite(BMS_OK, HIGH);
-            Serial.println("---------- STATUS GOOD ----------");
-            if (error_flags_history) {
-                Serial.println("An Error Occured But Has Been Cleared");
-                Serial.print("Error code: 0x");
-                Serial.println(error_flags_history, HEX);
+            if(MODE_DEBUG) {
+                Serial.println("---------- STATUS GOOD ----------");
+                if (error_flags_history) {
+                    Serial.println("An Error Occured But Has Been Cleared");
+                    Serial.print("Error code: 0x");
+                    Serial.println(error_flags_history, HEX);
+                }
             }
         }
     }
@@ -1140,11 +1141,12 @@ int16_t get_current() {
      * 0A current corresponds to 2.5V signal
      *
      * voltage = read_adc() * 5 / 4095
-     * current = (voltage - 2.5) * 300 / 2
+     * current = -1 * (voltage - 2.5) * 300 / 2
+     * Negative 1 is due to current sensor being installed backwards
      */
     double voltage = read_adc(CH_CUR_SENSE) / (double) 819;
     double current = (voltage - 2.5) * (double) 150;
-    return (int16_t) (current * 100); // Current in Amps x 100
+    return -1 * (int16_t) (current * 100); // Current in Amps x 100
 }
 
 void integrate_current() {
