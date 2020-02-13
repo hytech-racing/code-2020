@@ -12,5 +12,5 @@ void loop() {
   float voltage = analogRead(14) * REFERENCE / ADC_RESOLUTION; // read output of current sensor
   float current = -1 * CURRENT_LIMIT + (voltage - REFERENCE * 0.1) / slope; // calculate current value
   Serial.println(current);
-  delay(1000);
+  delay(500);
 }

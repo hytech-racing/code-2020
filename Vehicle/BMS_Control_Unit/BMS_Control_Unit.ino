@@ -300,7 +300,6 @@ void setup() {
     // ignore_pcb_therm[2][0] = true; // Ignore IC 2 pcb thermistor 0
     // total_count_pcb_thermistors--; // Decrement pcb thermistor count (used for calculating averages)
 
-    /* Set up isoSPI */
     initialize(); // Call our modified initialize function instead of the default Linear function
     init_cfg(); // Initialize and write configuration registers to LTC6804 chips
 
@@ -610,7 +609,7 @@ void poll_cell_voltages() {
     wakeup_idle(); // Wake up isoSPI
     delayMicroseconds(1200); // Wait 4*t_wake for wakeup command to propogate and all 4 chips to wake up - See LTC6804 Datasheet page 54
     uint8_t error = LTC6804_rdcv(0, TOTAL_IC, cell_voltages); // Reads voltages from ADC registers and stores in cell_voltages.
-    if (error == -1) {
+    if (error == -1 && MODE_DEBUGs) {
         Serial.println("A PEC error was detected in cell voltage data");
     }
     // Move C7-C10 down by one in the array, skipping C6. This abstracts the missing cell from the rest of the program.
@@ -667,9 +666,12 @@ void process_voltages() {
         } else {
             consecutive_faults_overvoltage += 1;
         }
-        Serial.println("VOLTAGE FAULT too high!!!!!!!!!!!!!!!!!!!");
-        Serial.print("max IC: "); Serial.println(maxIC);
-        Serial.print("max Cell: "); Serial.println(maxCell); Serial.println();
+        if(MODE_DEBUG) {
+            Serial.println("VOLTAGE FAULT too high!!!!!!!!!!!!!!!!!!!");
+            Serial.print("max IC: "); Serial.println(maxIC);
+            Serial.print("max Cell: "); Serial.println(maxCell);
+            Serial.println();
+        }
     } else {
         consecutive_faults_overvoltage = 0;
     }
@@ -680,9 +682,12 @@ void process_voltages() {
         } else {
             consecutive_faults_undervoltage += 1;
         }
-        Serial.println("VOLTAGE FAULT too low!!!!!!!!!!!!!!!!!!!");
-        Serial.print("min IC: "); Serial.println(minIC);
-        Serial.print("min Cell: "); Serial.println(minCell); Serial.println();
+        if(MODE_DEBUG) {
+            Serial.println("VOLTAGE FAULT too low!!!!!!!!!!!!!!!!!!!");
+            Serial.print("min IC: "); Serial.println(minIC);
+            Serial.print("min Cell: "); Serial.println(minCell);
+            Serial.println();
+        }
     } else {
         consecutive_faults_undervoltage = 0;
     }
@@ -693,7 +698,9 @@ void process_voltages() {
         } else {
             consecutive_faults_total_voltage_high += 1;
         }
-        Serial.println("VOLTAGE FAULT!!!!!!!!!!!!!!!!!!!");
+        if(MODE_DEBUG) {
+            Serial.println("VOLTAGE FAULT!!!!!!!!!!!!!!!!!!!");
+        }
     }else {
         consecutive_faults_total_voltage_high = 0;
     }
@@ -701,16 +708,17 @@ void process_voltages() {
 
 void poll_aux_voltages() {
     wakeup_sleep();
-    //delayMicroseconds(200) // TODO try this if we are still having intermittent 6.5535 issues, maybe the last ADC isn't being given enough time to wake up
     LTC6804_adax(); // Start GPIO ADC conversion
     delay(202); // Need to wait at least 201.317ms for conversion to finish, due to filtered sampling mode (26Hz) - See LTC6804 Datasheet Table 5
     wakeup_idle(); // Wake up isoSPI
     delayMicroseconds(1200); // Wait 4*t_wake for wakeup command to propogate and all 4 chips to wake up - See LTC6804 Datasheet page 54
     uint8_t error = LTC6804_rdaux(0, TOTAL_IC, aux_voltages);
-    if (error == -1) {
+    if (error == -1 && MODE_DEBUG) {
         Serial.println("A PEC error was detected in auxiliary voltage data");
     }
-    // print_aux();
+    if(MODE_DEBUG) {
+        print_aux();
+    }
     delay(200);
 }
 
@@ -755,7 +763,9 @@ void process_cell_temps() { // Note: For up-to-date information you must poll th
         if (bms_temperatures.get_high_temperature() > discharge_temp_cell_critical_high) {
             if (consecutive_faults_thermistor >= IGNORE_FAULT_THRESHOLD) {
                 bms_status.set_discharge_overtemp(true);
-                Serial.println("TEMPERATURE FAULT!!!!!!!!!!!!!!!!!!!");
+                if(MODE_DEBUG) {
+                    Serial.println("TEMPERATURE FAULT!!!!!!!!!!!!!!!!!!!");
+                }
             } else {
                 consecutive_faults_thermistor++;
             }
@@ -764,7 +774,9 @@ void process_cell_temps() { // Note: For up-to-date information you must poll th
         if (bms_temperatures.get_high_temperature() > charge_temp_cell_critical_high) {
             if (consecutive_faults_thermistor >= IGNORE_FAULT_THRESHOLD) {
                 bms_status.set_charge_overtemp(true);
-                Serial.println("TEMPERATURE FAULT!!!!!!!!!!!!!!!!!!!");
+                if(MODE_DEBUG) {
+                    Serial.println("TEMPERATURE FAULT!!!!!!!!!!!!!!!!!!!");
+                }
             } else {
                 consecutive_faults_thermistor++;
             }
@@ -828,7 +840,9 @@ void process_onboard_temps() { // Note: For up-to-date information you must poll
     if (bms_onboard_temperatures.get_high_temperature() > onboard_temp_critical_high) {
         if (consecutive_faults_thermistor >= IGNORE_FAULT_THRESHOLD) {
             bms_status.set_onboard_overtemp(true);
-            Serial.println("TEMPERATURE FAULT!!!!!!!!!!!!!!!!!!!");
+            if(MODE_DEBUG) {
+                Serial.println("TEMPERATURE FAULT!!!!!!!!!!!!!!!!!!!");
+            }
         } else {
             consecutive_faults_thermistor++;
         }
@@ -839,12 +853,16 @@ void process_onboard_temps() { // Note: For up-to-date information you must poll
     if (bms_status.get_state() == BMS_STATE_BALANCING) {
         if (bms_onboard_temperatures.get_high_temperature() >= onboard_temp_balance_disable) {
             bms_status.set_state(BMS_STATE_BALANCING_OVERHEATED);
-            Serial.println("WARNING: Onboard temperature too high; disabling balancing");
+            if(MODE_DEBUG) {
+                Serial.println("WARNING: Onboard temperature too high; disabling balancing");
+            }
         }
     } else if (bms_status.get_state() == BMS_STATE_BALANCING_OVERHEATED) {
         if (bms_onboard_temperatures.get_high_temperature() < onboard_temp_balance_reenable) {
             bms_status.set_state(BMS_STATE_BALANCING);
-            Serial.println("CLEARED: Onboard temperature OK; reenabling balancing");
+            if(MODE_DEBUG) {
+                Serial.println("CLEARED: Onboard temperature OK; reenabling balancing");
+            }
         }
     }
 }
@@ -883,14 +901,18 @@ void process_adc() {
     if (bms_status.get_current() < charge_current_constant_high && !MODE_ADC_IGNORE) {
         if (consecutive_faults_current >= CURRENT_FAULT_THRESHOLD) {
             bms_status.set_charge_overcurrent(true);
-            Serial.println("CHARGE CURRENT HIGH FAULT!!!!!!!!!!!!!!!!!!!");
+            if(MODE_DEBUG) {
+                Serial.println("CHARGE CURRENT HIGH FAULT!!!!!!!!!!!!!!!!!!!");
+            }
         } else {
             consecutive_faults_current++;
         }
     } else if (bms_status.get_current() > discharge_current_constant_high && !MODE_ADC_IGNORE) {
         if (consecutive_faults_current >= CURRENT_FAULT_THRESHOLD) {
             bms_status.set_discharge_overcurrent(true);
-            Serial.println("DISCHARGE CURRENT HIGH FAULT!!!!!!!!!!!!!!!!!!!");
+            if(MODE_DEBUG) {
+                Serial.println("DISCHARGE CURRENT HIGH FAULT!!!!!!!!!!!!!!!!!!!");
+            }
         } else {
             consecutive_faults_current++;
         }
@@ -1150,7 +1172,7 @@ int16_t get_current() {
 }
 
 void integrate_current() {
-    int delta = get_current();
+    int delta = get_current() / 100;
     if (delta > 0) {
         total_discharge = total_discharge + delta;
     } else {
@@ -1164,10 +1186,12 @@ void process_coulombs() {
     total_discharge_copy = total_discharge;
     interrupts();
 
-    Serial.print("\nCoulombs charged: ");
-    Serial.println(total_charge_copy / 10000);
-    Serial.print("Coulombs discharged: ");
-    Serial.println(total_discharge_copy / 10000);
+    if(MODE_DEBUG) {
+        Serial.print("\nCoulombs charged: ");
+        Serial.println(total_charge_copy / 10000);
+        Serial.print("Coulombs discharged: ");
+        Serial.println(total_discharge_copy / 10000);
+    }
 
     bms_coulomb_counts.set_total_charge(total_charge_copy);
     bms_coulomb_counts.set_total_discharge(total_discharge_copy);
