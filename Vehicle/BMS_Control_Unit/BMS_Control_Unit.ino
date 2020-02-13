@@ -30,7 +30,6 @@
 
 #include <ADC_SPI.h>
 #include <Arduino.h>
-// #include <EEPROM.h> TODO add EEPROM functionality so we can configure parameters over CAN
 #include <HyTech_FlexCAN.h>
 #include <HyTech_CAN.h>
 #include <kinetis_flexcan.h>
@@ -53,7 +52,6 @@
  * Set Accumulator Version
  * If installing in an Accumulator, set the version here for BMS to ignore problematic sensor readings unique to each accumulator
  */
-//#define ACCUMULATOR_VERSION_HYTECH_2018_ACCUMULATOR
 #define ACCUMULATOR_VERSION_HYTECH_2019_ACCUMULATOR
 
 /*
@@ -286,12 +284,6 @@ void setup() {
     // ignore_pcb_therm[2][0] = true; // Ignore IC 2 pcb thermistor 0
     // total_count_pcb_thermistors--; // Decrement pcb thermistor count (used for calculating averages)
 
-    /* Ignore cells or thermistors in 2018 accumulator */
-    #ifdef ACCUMULATOR_VERSION_HYTECH_2018_ACCUMULATOR
-    ignore_cell_therm[6][2] = true; // Ignore IC 6 cell thermistor 2 due to faulty connector
-    total_count_cell_thermistors -= 1;
-    #endif
-
     /* Ignore cells or thermistors in 2019 accumulator */
     #ifdef ACCUMULATOR_VERSION_HYTECH_2019_ACCUMULATOR
     #endif
@@ -326,7 +318,7 @@ void setup() {
         }
         Serial.println();
     }
-    
+
     Serial.println("Setup Complete!");
 }
 
@@ -353,7 +345,7 @@ void loop() {
         balance_cells(); // Check local cell voltage data and balance individual cells as necessary
         process_temps(); // Poll controllers, process values, populate populate bms_temperatures, bms_detailed_temperatures, bms_onboard_temperatures, and bms_onboard_detailed_temperatures
         process_adc(); // Poll ADC, process values, populate bms_status
-        
+
         print_temps(); // Print cell and pcb temperatures to serial
         print_cells(); // Print the cell voltages and balancing status to serial
         print_current(); // Print measured current sensor value
@@ -437,7 +429,7 @@ void loop() {
             bms_onboard_detailed_temperatures[i].write(tx_msg.buf);
             CAN.write(tx_msg);
         }
-        
+
         tx_msg.id = ID_BMS_BALANCING_STATUS;
         tx_msg.len = sizeof(CAN_message_bms_balancing_status_t);
         for (int i = 0; i < (TOTAL_IC + 3) / 4; i++) {
@@ -851,7 +843,7 @@ double calculate_onboard_temp(double aux_voltage, double v_ref) {
     double b = 3380;    // B constant of the thermistor
     double R0 = 10000;  // Resistance of thermistor at 25C
     double temperature = 1 / ((1 / T0) + (1 / b) * log(thermistor_resistance / R0)) - (double) 273.15;
-    
+
     return (int16_t) (temperature * 100);
 }
 
@@ -1126,11 +1118,12 @@ int16_t get_current() {
      * 0A current corresponds to 2.5V signal
      *
      * voltage = read_adc() * 5 / 4095
-     * current = (voltage - 2.5) * 300 / 2
+     * current = -1 * (voltage - 2.5) * 300 / 2
+     * Negative 1 is due to current sensor being installed backwards
      */
     double voltage = read_adc(CH_CUR_SENSE) / (double) 819;
     double current = (voltage - 2.5) * (double) 150;
-    return (int16_t) (current * 100); // Current in Amps x 100
+    return -1 * (int16_t) (current * 100); // Current in Amps x 100
 }
 
 void integrate_current() {
