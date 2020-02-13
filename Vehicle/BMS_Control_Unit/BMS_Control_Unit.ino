@@ -89,7 +89,7 @@
 /*
  * Set Debug Mode
  * Set to true to place BMS in Debug Mode, set to false to disable
- * When the BMS is in Debug Mode, it will print data that is sent over CAN to serial for ease of debugging
+ * When the BMS is in Debug Mode, it will print data to serial for ease of debugging
  */
 #define MODE_DEBUG true
 
@@ -342,7 +342,9 @@ void loop() {
     parse_can_message();
 
     if (timer_charge_timeout.check() && bms_status.get_state() > BMS_STATE_DISCHARGING && !MODE_CHARGE_OVERRIDE) { // 1 second timeout - if timeout is reached, disable charging
-        Serial.println("Disabling charge mode - CCU timeout");
+        if(MODE_DEBUG) {
+            Serial.println("Disabling charge mode - CCU timeout");
+        }
         bms_status.set_state(BMS_STATE_DISCHARGING);
         digitalWrite(LED_STATUS, LOW);
     }
