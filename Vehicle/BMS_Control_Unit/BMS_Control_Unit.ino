@@ -268,10 +268,10 @@ void setup() {
     }
 
     // Set up current-measuring timer
-    current_timer.priority(255); // Priority range 0-255, 128 as default
-    total_charge = 0;
-    total_discharge = 0;
-    current_timer.begin(integrate_current, COULOUMB_COUNT_INTERVAL);
+    // current_timer.priority(255); // Priority range 0-255, 128 as default
+    // total_charge = 0;
+    // total_discharge = 0;
+    // current_timer.begin(integrate_current, COULOUMB_COUNT_INTERVAL);
 
     /* Initialize the ic/group IDs for detailed voltage, temperature, and balancing CAN messages */
     for (int i = 0; i < TOTAL_IC; i++) {
@@ -333,8 +333,6 @@ void setup() {
     Serial.println("Setup Complete!");
 }
 
-// TODO Implement Coulomb counting to track state of charge of battery.
-
 /*
  * Main BMS Control Loop
  */
@@ -358,7 +356,6 @@ void loop() {
         balance_cells(); // Check local cell voltage data and balance individual cells as necessary
         process_temps(); // Poll controllers, process values, populate populate bms_temperatures, bms_detailed_temperatures, bms_onboard_temperatures, and bms_onboard_detailed_temperatures
         process_adc(); // Poll ADC, process values, populate bms_status
-        process_coulombs(); // Process new coulomb counts, sending over CAN and printing to serial
 
         if(MODE_DEBUG) {
             print_temps(); // Print cell and pcb temperatures to serial
@@ -424,11 +421,6 @@ void loop() {
         bms_onboard_temperatures.write(tx_msg.buf);
         tx_msg.id = ID_BMS_ONBOARD_TEMPERATURES;
         tx_msg.len = sizeof(CAN_message_bms_onboard_temperatures_t);
-        CAN.write(tx_msg);
-
-        bms_coulomb_counts.write(tx_msg.buf);
-        tx_msg.id = ID_BMS_COULOMB_COUNTS;
-        tx_msg.len = sizeof(CAN_message_bms_coulomb_counts_t);
         CAN.write(tx_msg);
 
         tx_msg.id = ID_BMS_DETAILED_VOLTAGES;
@@ -1166,37 +1158,10 @@ int16_t get_current() {
      *
      * voltage = read_adc() * 5 / 4095
      * current = -1 * (voltage - 2.5) * 300 / 2
-     * Negative 1 is due to current sensor being installed backwards
      */
     double voltage = read_adc(CH_CUR_SENSE) / (double) 819;
     double current = (voltage - 2.5) * (double) 150;
-    return -1 * (int16_t) (current * 100); // Current in Amps x 100
-}
-
-void integrate_current() {
-    int delta = get_current() / 100;
-    if (delta > 0) {
-        total_discharge = total_discharge + delta;
-    } else {
-        total_charge = total_charge - delta; // Units will be 0.01A / (1 / (COULOUMB_COUNT_INTERVAL x 10^-6) s)
-    }
-}
-
-void process_coulombs() {
-    noInterrupts(); // Disable interrupts to ensure the values we are reading do not change while copying
-    total_charge_copy = total_charge;
-    total_discharge_copy = total_discharge;
-    interrupts();
-
-    if(MODE_DEBUG) {
-        Serial.print("\nCoulombs charged: ");
-        Serial.println(total_charge_copy / 10000);
-        Serial.print("Coulombs discharged: ");
-        Serial.println(total_discharge_copy / 10000);
-    }
-
-    bms_coulomb_counts.set_total_charge(total_charge_copy);
-    bms_coulomb_counts.set_total_discharge(total_discharge_copy);
+    return (int16_t) (current * 100); // Current in Amps x 100
 }
 
 /*
