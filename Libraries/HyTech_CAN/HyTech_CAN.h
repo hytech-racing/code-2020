@@ -97,7 +97,7 @@ typedef struct CAN_message_bms_balancing_status_t {
 typedef struct CAN_message_bms_coulomb_counts_t {
     uint16_t total_charge;
     uint16_t total_discharge;
-    uint8_t soc_percentage; //Chenchen change log
+    uint8_t soc_percentage;
 } CAN_message_bms_coulomb_counts_t;
 
 typedef struct CAN_message_bms_detailed_temperatures_t {
@@ -132,7 +132,6 @@ typedef struct CAN_message_bms_status_t {
     int16_t current;
     int16_t current_100;
     uint16_t current_300;
-    uint16_t state_of_charge;
     uint8_t flags;
 } CAN_message_bms_status_t;
 
@@ -418,7 +417,7 @@ class BMS_coulomb_counts {
         void set_total_charge(uint16_t total_charge);
         void set_total_discharge(uint16_t total_discharge);
         void set_SOC_Percentage(uint8_t percentage);
-    
+
     private:
         CAN_message_bms_coulomb_counts_t message;
 };
