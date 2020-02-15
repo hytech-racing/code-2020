@@ -83,7 +83,7 @@ void loop() {
   tx_msg.len = sizeof(CAN_message_thermocouple_reading_t);
   CAN.write(tx_msg);
 
-  delay(500);
+  delay(100);
   
   /*
   if (timer_can_update_fast.check()) { //for some reason, putting it in this loop makes the temp print wrong?
