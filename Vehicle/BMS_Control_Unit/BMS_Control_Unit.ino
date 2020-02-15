@@ -341,7 +341,8 @@ void setup() {
     process_voltages();
     double min_voltage = bms_voltages.get_low() / 10000.0;
     
-    Serial.println("MINIMUM VOLTAGE IS: ");
+    Serial.print("Minimum voltage is: ");
+    Serial.println(min_voltage);
     soc_init(battery, min_voltage, millis());
 
     calibrate_current_offset();
