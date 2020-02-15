@@ -122,9 +122,11 @@
 /*
  * Timers
  */
+Metro timer_can_update_turbo = Metro(10);
 Metro timer_can_update_fast = Metro(100);
 Metro timer_can_update_slow = Metro(1000);
-Metro timer_process_cells_fast = Metro(10);
+Metro timer_process_cells_turbo = Metro(10);
+Metro timer_process_cells_fast = Metro(100);
 Metro timer_process_cells_slow = Metro(1000);
 Metro timer_watchdog_timer = Metro(250);
 Metro timer_charge_enable_limit = Metro(30000, 1); // Don't allow charger to re-enable more than once every 30 seconds
@@ -365,8 +367,12 @@ void loop() {
         digitalWrite(LED_STATUS, LOW);
     }
 
+    if (timer_process_cells_turbo.check()) {
+        process_adc(); // Poll ADC, process values, populate 
+    }
+
     if (timer_process_cells_fast.check()) {
-        process_adc(); // Poll ADC, process values, populate bms_status
+        //process_adc(); // Poll ADC, process values, populate bms_status
     }
 
     if (timer_process_cells_slow.check()) {
@@ -436,14 +442,11 @@ void loop() {
         tx_msg.len = sizeof(CAN_message_bms_onboard_temperatures_t);
         CAN.write(tx_msg);
 
-        //Draft for sending SOC percentage
         bms_coulomb_counts.write(tx_msg.buf);
         tx_msg.id = ID_BMS_COULOMB_COUNTS;
         tx_msg.len = sizeof(CAN_message_bms_coulomb_counts_t);
         CAN.write(tx_msg);
         
-        
-
         tx_msg.id = ID_BMS_DETAILED_VOLTAGES;
         tx_msg.len = sizeof(CAN_message_bms_detailed_voltages_t);
         for (int i = 0; i < TOTAL_IC; i++) {
