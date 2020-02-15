@@ -126,7 +126,9 @@ static int flag_mc_read_write_parameter_response;
 static int flag_fcu_accelerometer_values;
 static int flag_gps;
 static int flag_tcu_wheel_rpm;
+static int last_time;
 
+static double total_revs;
 static bool pending_gps_data;
 
 void setup() {
@@ -185,6 +187,9 @@ void setup() {
     }
     logger.println("time,msg.id,msg.len,data"); // Print CSV heading to the logfile
     logger.flush();
+
+    total_revs = 0;
+    int last_time = Teensy3Clock.get(); 
 }
 
 void loop() {
@@ -231,14 +236,6 @@ void parse_can_message() {
         write_to_SD(&msg_rx); // Write to SD card buffer (if the buffer fills up, triggering a flush to disk, this will take 8ms)
         int time_now = Teensy3Clock.get(); // RTC
 
-        if(msg_rx.id == 226) {
-          Serial.println(msg_rx.id, HEX);
-        }
-
-        if(msg_rx.id == 234) {
-          Serial.println(msg_rx.id, HEX);
-        }
-        
         // Identify received CAN messages and load contents into corresponding structs
         if (msg_rx.id == ID_MCU_STATUS) {
             mcu_status.load(msg_rx.buf);
@@ -368,7 +365,23 @@ void parse_can_message() {
             flag_fcu_accelerometer_values = time_now;
         }
         if (msg_rx.id == ID_TCU_WHEEL_RPM) {
-            Serial.println("RPM");
+            TCU_wheel_rpm rpms = TCU_wheel_rpm(msg_rx.buf);
+            int current_time = millis();
+            double time_passed = current_time + 0.5 - last_time;
+            last_time = current_time;
+            double current_rpm = (rpms.get_wheel_rpm_left() + rpms.get_wheel_rpm_right()) / 2.0;
+            total_revs += (current_rpm * time_passed) / (60 * 1000);
+            //Serial.println(total_revs);
+            logger.print(Teensy3Clock.get());
+            logger.print(",");
+            logger.print("FF");
+            logger.print(",");
+            logger.print(8);
+            logger.print(",");
+            uint8_t sd_revs = total_revs * 1000;
+            logger.print(sd_revs, HEX);
+            logger.println();
+            
             tcu_wheel_rpm.load(msg_rx.buf);
             flag_tcu_wheel_rpm = time_now;
         }

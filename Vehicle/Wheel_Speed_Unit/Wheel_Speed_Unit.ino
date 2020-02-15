@@ -2,7 +2,7 @@
 #include <HyTech_CAN.h>
 #include <Metro.h>
 
-Metro timer_can_update_fast = Metro(100);
+Metro timer_can_update_fast = Metro(10);
 
 /**
  * CAN Variables
@@ -33,7 +33,7 @@ void setup()
   pinMode(13, OUTPUT);
   digitalWrite(13, HIGH);
   Serial.begin(9600);
-
+  Serial.println("Starting up");
   CAN.begin();
 }
 
@@ -124,11 +124,8 @@ void loop()
   if (timer_can_update_fast.check()) {
         tx_msg.timeout = 10; // Use blocking mode, wait up to ?ms to send each message instead of immediately failing (keep in mind this is slower)
 
-        //tcu_wheel_rpm.set_wheel_rpm_left(rpmLeft);
-        //tcu_wheel_rpm.set_wheel_rpm_right(rpmRight);
-
-        tcu_wheel_rpm.set_wheel_rpm_left(1234);
-        tcu_wheel_rpm.set_wheel_rpm_right(4321);
+        tcu_wheel_rpm.set_wheel_rpm_left(rpmLeft);
+        tcu_wheel_rpm.set_wheel_rpm_right(rpmRight);
         
         tcu_wheel_rpm.write(tx_msg.buf);
         tx_msg.id = ID_TCU_WHEEL_RPM;
