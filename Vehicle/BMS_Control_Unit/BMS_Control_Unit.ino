@@ -22,15 +22,14 @@
  */
 
 /*
- * LTC6804 state / communication notes:
- * The operation of the LTC6804 is divided into two separate sections: the core circuit and the isoSPI circuit. Both sections have an independent set of operating states, as well as a shutdown timeout. See LTC6804 Datasheet Page 20.
+ * LTC6811 state / communication notes:
+ * The operation of the LTC6804 is divided into two separate sections: the core circuit and the isoSPI circuit. Both sections have an independent set of operating states, as well as a shutdown timeout. See LTC611 Datasheet Page 20.
  * When sending an ADC conversion or diagnostic command, wake up the core circuit by calling wakeup_sleep()
  * When sending any other command (such as reading or writing registers), wake up the isoSPI circuit by calling wakeup_idle().
  */
 
 #include <ADC_SPI.h>
 #include <Arduino.h>
-// #include <EEPROM.h> TODO add EEPROM functionality so we can configure parameters over CAN
 #include <HyTech_FlexCAN.h>
 #include <HyTech_CAN.h>
 #include <kinetis_flexcan.h>
@@ -47,18 +46,27 @@
  *************************************/
 
 /*
- * Set Board Version
- * Uncomment whichever board this code is being uploaded to
+ * Set HV Board Version
+ * Uncomment whichever HV board this code is being uploaded to
  * Used to set pins correctly and only enable features compatible with board
  */
 #define BOARD_VERSION_HYTECH_2019_HV_REV_11
+//#define BOARD_VERSION_HYTECH_2020_HV_REV_12
+
+/*
+ * Set BMS Board Version
+ * Uncomment whichever BMS board this code is being uploaded to
+ * Used to set pins correctly and only enable features compatible with board
+ */
+#define BOARD_VERSION_HYTECH_2019_BMS_REV_10
+//#define BOARD_VERSION_HYTECH_2020_HV_REV_11
 
 /*
  * Set Accumulator Version
  * If installing in an Accumulator, set the version here for BMS to ignore problematic sensor readings unique to each accumulator
  */
-//#define ACCUMULATOR_VERSION_HYTECH_2018_ACCUMULATOR
 #define ACCUMULATOR_VERSION_HYTECH_2019_ACCUMULATOR
+//#define ACCUMULATOR_VERSION_HYTECH_2020_ACCUMULATOR
 
 /*
  * Set Bench Test Mode
@@ -82,6 +90,13 @@
  */
 #define MODE_ADC_IGNORE true
 
+/*
+ * Set Debug Mode
+ * Set to true to place BMS in Debug Mode, set to false to disable
+ * When the BMS is in Debug Mode, it will print data to serial for ease of debugging
+ */
+#define MODE_DEBUG true
+
 /*************************************
  * End general configuration
  *************************************/
@@ -98,14 +113,20 @@
 #endif
 
 /*
- * Constant definitions
+ * BMS Constant definitions
  */
+#ifdef BOARD_VERSION_HYTECH_2019_BMS_REV_10 // 2019 BMS Board rev10
 #define TOTAL_IC 8                      // Number of ICs in the system
 #define CELLS_PER_IC 9                  // Number of cells per IC
 #define THERMISTORS_PER_IC 3            // Number of cell thermistors per IC
 #define PCB_THERM_PER_IC 2              // Number of PCB thermistors per IC
+#endif
+
+/*
+ * Constant definitions
+ */
 #define IGNORE_FAULT_THRESHOLD 10       // Number of fault-worthy values to read in succession before faulting
-#define CURRENT_FAULT_THRESHOLD 5       // Number of fault-worthy electrical current values to read in succession before faulting
+#define CURRENT_FAULT_THRESHOLD 10      // Number of fault-worthy electrical current values to read in succession before faulting
 #define SHUTDOWN_HIGH_THRESHOLD 1500    // Value returned by ADC above which the shutdown circuit is considered powered (balancing not allowed when AIRs open)
 #define BALANCE_LIMIT_FACTOR 3          // Reciprocal of the cell balancing duty cycle (3 means balancing can happen during 1 out of every 3 loops, etc)
 #define COULOUMB_COUNT_INTERVAL 10000   // Microseconds between current readings
@@ -122,10 +143,8 @@
 /*
  * Timers
  */
-Metro timer_can_update_turbo = Metro(10);
 Metro timer_can_update_fast = Metro(100);
 Metro timer_can_update_slow = Metro(1000);
-Metro timer_process_cells_turbo = Metro(10);
 Metro timer_process_cells_fast = Metro(100);
 Metro timer_process_cells_slow = Metro(1000);
 Metro timer_watchdog_timer = Metro(250);
@@ -135,14 +154,14 @@ Metro timer_charge_timeout = Metro(1000);
 /*
  * Interrupt timers
  */
-//IntervalTimer current_timer;
+IntervalTimer current_timer;
 
 /*
  * Global variables
  */
 uint16_t voltage_cutoff_low = 29800; // 2.9800V
 uint16_t voltage_cutoff_high = 42000; // 4.2000V
-uint16_t total_voltage_cutoff = 30000; // 300.00V
+uint16_t total_voltage_cutoff = 29952; // 299.52V
 uint16_t discharge_current_constant_high = 22000; // 220.00A
 int16_t charge_current_constant_high = -11000; // 110.00A
 uint16_t charge_temp_cell_critical_high = 4400; // 44.00C
@@ -247,13 +266,6 @@ void setup() {
         CAN.setFilter(can_filter_ccu_status, i);
     }
 
-    /* Configure CAN rx interrupt */
-    /*interrupts();
-    NVIC_ENABLE_IRQ(IRQ_CAN_MESSAGE);
-    attachInterruptVector(IRQ_CAN_MESSAGE,parse_can_message);
-    FLEXCAN0_IMASK1 = FLEXCAN_IMASK1_BUF5M;*/
-    /* Configure CAN rx interrupt */
-
     delay(100);
     Serial.println("CAN system and serial communication initialized");
 
@@ -263,11 +275,11 @@ void setup() {
         digitalWrite(LED_STATUS, HIGH);
     }
 
-    /*// Set up current-measuring timer
-    current_timer.priority(255); // Priority range 0-255, 128 as default
-    total_charge = 0;
-    total_discharge = 0;
-    current_timer.begin(integrate_current, COULOUMB_COUNT_INTERVAL);*/
+    // Set up current-measuring timer
+    // current_timer.priority(255); // Priority range 0-255, 128 as default
+    // total_charge = 0;
+    // total_discharge = 0;
+    // current_timer.begin(integrate_current, COULOUMB_COUNT_INTERVAL);
 
     /* Initialize the ic/group IDs for detailed voltage, temperature, and balancing CAN messages */
     for (int i = 0; i < TOTAL_IC; i++) {
@@ -296,17 +308,6 @@ void setup() {
     // ignore_pcb_therm[2][0] = true; // Ignore IC 2 pcb thermistor 0
     // total_count_pcb_thermistors--; // Decrement pcb thermistor count (used for calculating averages)
 
-    /* Ignore cells or thermistors in 2018 accumulator */
-    #ifdef ACCUMULATOR_VERSION_HYTECH_2018_ACCUMULATOR
-    ignore_cell_therm[6][2] = true; // Ignore IC 6 cell thermistor 2 due to faulty connector
-    total_count_cell_thermistors -= 1;
-    #endif
-
-    /* Ignore cells or thermistors in 2019 accumulator */
-    #ifdef ACCUMULATOR_VERSION_HYTECH_2019_ACCUMULATOR
-    #endif
-
-    /* Set up isoSPI */
     initialize(); // Call our modified initialize function instead of the default Linear function
     init_cfg(); // Initialize and write configuration registers to LTC6804 chips
 
@@ -336,7 +337,7 @@ void setup() {
         }
         Serial.println();
     }
-
+  
     process_voltages();
     double min_voltage = bms_voltages.get_low() / 10000.0;
     
@@ -344,68 +345,65 @@ void setup() {
     soc_init(battery, min_voltage, millis());
 
     calibrate_current_offset();
-    
+   
     Serial.println("Setup Complete!");
 }
-
-// TODO Implement Coulomb counting to track state of charge of battery.
 
 /*
  * Main BMS Control Loop
  */
 void loop() {
-//    process_voltages(); // Poll controllers, process values, populate bms_voltages
-//    balance_cells(); // Check local cell voltage data and balance individual cells as necessary
-//    process_temps(); // Poll controllers, process values, populate populate bms_temperatures, bms_detailed_temperatures, bms_onboard_temperatures, and bms_onboard_detailed_temperatures
-//    process_adc(); // Poll ADC, process values, populate bms_status
-//    process_coulombs();
     parse_can_message();
 
     if (timer_charge_timeout.check() && bms_status.get_state() > BMS_STATE_DISCHARGING && !MODE_CHARGE_OVERRIDE) { // 1 second timeout - if timeout is reached, disable charging
-        Serial.println("Disabling charge mode - CCU timeout");
+        if(MODE_DEBUG) {
+            Serial.println("Disabling charge mode - CCU timeout");
+        }
         bms_status.set_state(BMS_STATE_DISCHARGING);
         digitalWrite(LED_STATUS, LOW);
     }
 
-    if (timer_process_cells_turbo.check()) {
-        process_adc(); // Poll ADC, process values, populate 
-    }
-
     if (timer_process_cells_fast.check()) {
-        //process_adc(); // Poll ADC, process values, populate bms_status
+        process_adc(); // Poll ADC, process values, populate bms_status
     }
 
     if (timer_process_cells_slow.check()) {
         process_voltages(); // Poll controllers, process values, populate bms_voltages
         balance_cells(); // Check local cell voltage data and balance individual cells as necessary
         process_temps(); // Poll controllers, process values, populate populate bms_temperatures, bms_detailed_temperatures, bms_onboard_temperatures, and bms_onboard_detailed_temperatures
-        //process_adc(); // Poll ADC, process values, populate bms_status
+        process_adc(); // Poll ADC, process values, populate bms_status
         process_coulombs(); // Process new coulomb counts, sending over CAN and printing to Serial
-        
-        print_temps(); // Print cell and pcb temperatures to serial
-        print_cells(); // Print the cell voltages and balancing status to serial
-        print_current(); // Print measured current sensor value
-        print_uptime(); // Print the BMS uptime to serial
 
-        Serial.print("State: ");
-        if (bms_status.get_state() == BMS_STATE_DISCHARGING) {Serial.println("DISCHARGING");}
-        if (bms_status.get_state() == BMS_STATE_CHARGING) {Serial.println("CHARGING");}
-        if (bms_status.get_state() == BMS_STATE_BALANCING) {Serial.println("BALANCING");}
-        if (bms_status.get_state() == BMS_STATE_BALANCING_OVERHEATED) {Serial.println("BALANCING_OVERHEATED");}
+        if(MODE_DEBUG) {
+            print_temps(); // Print cell and pcb temperatures to serial
+            print_cells(); // Print the cell voltages and balancing status to serial
+            print_current(); // Print measured current sensor value
+            print_uptime(); // Print the BMS uptime to serial
+
+            Serial.print("State: ");
+            if (bms_status.get_state() == BMS_STATE_DISCHARGING) {Serial.println("DISCHARGING");}
+            if (bms_status.get_state() == BMS_STATE_CHARGING) {Serial.println("CHARGING");}
+            if (bms_status.get_state() == BMS_STATE_BALANCING) {Serial.println("BALANCING");}
+            if (bms_status.get_state() == BMS_STATE_BALANCING_OVERHEATED) {Serial.println("BALANCING_OVERHEATED");}
+        }
 
         if (bms_status.get_error_flags()) { // BMS error - drive BMS_OK signal low
             error_flags_history |= bms_status.get_error_flags();
             digitalWrite(BMS_OK, LOW);
-            Serial.print("---------- STATUS NOT GOOD * Error Code 0x");
-            Serial.print(bms_status.get_error_flags(), HEX);
-            Serial.println(" ----------");
+            if(MODE_DEBUG) {
+                Serial.print("---------- STATUS NOT GOOD * Error Code 0x");
+                Serial.print(bms_status.get_error_flags(), HEX);
+                Serial.println(" ----------");
+            }
         } else {
             digitalWrite(BMS_OK, HIGH);
-            Serial.println("---------- STATUS GOOD ----------");
-            if (error_flags_history) {
-                Serial.println("An Error Occured But Has Been Cleared");
-                Serial.print("Error code: 0x");
-                Serial.println(error_flags_history, HEX);
+            if(MODE_DEBUG) {
+                Serial.println("---------- STATUS GOOD ----------");
+                if (error_flags_history) {
+                    Serial.println("An Error Occured But Has Been Cleared");
+                    Serial.print("Error code: 0x");
+                    Serial.println(error_flags_history, HEX);
+                }
             }
         }
     }
@@ -469,7 +467,7 @@ void loop() {
             bms_onboard_detailed_temperatures[i].write(tx_msg.buf);
             CAN.write(tx_msg);
         }
-        
+
         tx_msg.id = ID_BMS_BALANCING_STATUS;
         tx_msg.len = sizeof(CAN_message_bms_balancing_status_t);
         for (int i = 0; i < (TOTAL_IC + 3) / 4; i++) {
@@ -627,7 +625,7 @@ void poll_cell_voltages() {
     wakeup_idle(); // Wake up isoSPI
     delayMicroseconds(1200); // Wait 4*t_wake for wakeup command to propogate and all 4 chips to wake up - See LTC6804 Datasheet page 54
     uint8_t error = LTC6804_rdcv(0, TOTAL_IC, cell_voltages); // Reads voltages from ADC registers and stores in cell_voltages.
-    if (error == -1) {
+    if (error == -1 && MODE_DEBUG) {
         Serial.println("A PEC error was detected in cell voltage data");
     }
     // Move C7-C10 down by one in the array, skipping C6. This abstracts the missing cell from the rest of the program.
@@ -684,9 +682,12 @@ void process_voltages() {
         } else {
             consecutive_faults_overvoltage += 1;
         }
-        Serial.println("VOLTAGE FAULT too high!!!!!!!!!!!!!!!!!!!");
-        Serial.print("max IC: "); Serial.println(maxIC);
-        Serial.print("max Cell: "); Serial.println(maxCell); Serial.println();
+        if(MODE_DEBUG) {
+            Serial.println("VOLTAGE FAULT too high!!!!!!!!!!!!!!!!!!!");
+            Serial.print("max IC: "); Serial.println(maxIC);
+            Serial.print("max Cell: "); Serial.println(maxCell);
+            Serial.println();
+        }
     } else {
         consecutive_faults_overvoltage = 0;
     }
@@ -697,9 +698,12 @@ void process_voltages() {
         } else {
             consecutive_faults_undervoltage += 1;
         }
-        Serial.println("VOLTAGE FAULT too low!!!!!!!!!!!!!!!!!!!");
-        Serial.print("min IC: "); Serial.println(minIC);
-        Serial.print("min Cell: "); Serial.println(minCell); Serial.println();
+        if(MODE_DEBUG) {
+            Serial.println("VOLTAGE FAULT too low!!!!!!!!!!!!!!!!!!!");
+            Serial.print("min IC: "); Serial.println(minIC);
+            Serial.print("min Cell: "); Serial.println(minCell);
+            Serial.println();
+        }
     } else {
         consecutive_faults_undervoltage = 0;
     }
@@ -710,7 +714,9 @@ void process_voltages() {
         } else {
             consecutive_faults_total_voltage_high += 1;
         }
-        Serial.println("VOLTAGE FAULT!!!!!!!!!!!!!!!!!!!");
+        if(MODE_DEBUG) {
+            Serial.println("VOLTAGE FAULT!!!!!!!!!!!!!!!!!!!");
+        }
     }else {
         consecutive_faults_total_voltage_high = 0;
     }
@@ -718,16 +724,17 @@ void process_voltages() {
 
 void poll_aux_voltages() {
     wakeup_sleep();
-    //delayMicroseconds(200) // TODO try this if we are still having intermittent 6.5535 issues, maybe the last ADC isn't being given enough time to wake up
     LTC6804_adax(); // Start GPIO ADC conversion
     delay(202); // Need to wait at least 201.317ms for conversion to finish, due to filtered sampling mode (26Hz) - See LTC6804 Datasheet Table 5
     wakeup_idle(); // Wake up isoSPI
     delayMicroseconds(1200); // Wait 4*t_wake for wakeup command to propogate and all 4 chips to wake up - See LTC6804 Datasheet page 54
     uint8_t error = LTC6804_rdaux(0, TOTAL_IC, aux_voltages);
-    if (error == -1) {
+    if (error == -1 && MODE_DEBUG) {
         Serial.println("A PEC error was detected in auxiliary voltage data");
     }
-    // print_aux();
+    if(MODE_DEBUG) {
+        print_aux();
+    }
     delay(200);
 }
 
@@ -772,7 +779,9 @@ void process_cell_temps() { // Note: For up-to-date information you must poll th
         if (bms_temperatures.get_high_temperature() > discharge_temp_cell_critical_high) {
             if (consecutive_faults_thermistor >= IGNORE_FAULT_THRESHOLD) {
                 bms_status.set_discharge_overtemp(true);
-                Serial.println("TEMPERATURE FAULT!!!!!!!!!!!!!!!!!!!");
+                if(MODE_DEBUG) {
+                    Serial.println("TEMPERATURE FAULT!!!!!!!!!!!!!!!!!!!");
+                }
             } else {
                 consecutive_faults_thermistor++;
             }
@@ -781,7 +790,9 @@ void process_cell_temps() { // Note: For up-to-date information you must poll th
         if (bms_temperatures.get_high_temperature() > charge_temp_cell_critical_high) {
             if (consecutive_faults_thermistor >= IGNORE_FAULT_THRESHOLD) {
                 bms_status.set_charge_overtemp(true);
-                Serial.println("TEMPERATURE FAULT!!!!!!!!!!!!!!!!!!!");
+                if(MODE_DEBUG) {
+                    Serial.println("TEMPERATURE FAULT!!!!!!!!!!!!!!!!!!!");
+                }
             } else {
                 consecutive_faults_thermistor++;
             }
@@ -845,7 +856,9 @@ void process_onboard_temps() { // Note: For up-to-date information you must poll
     if (bms_onboard_temperatures.get_high_temperature() > onboard_temp_critical_high) {
         if (consecutive_faults_thermistor >= IGNORE_FAULT_THRESHOLD) {
             bms_status.set_onboard_overtemp(true);
-            Serial.println("TEMPERATURE FAULT!!!!!!!!!!!!!!!!!!!");
+            if(MODE_DEBUG) {
+                Serial.println("TEMPERATURE FAULT!!!!!!!!!!!!!!!!!!!");
+            }
         } else {
             consecutive_faults_thermistor++;
         }
@@ -856,12 +869,16 @@ void process_onboard_temps() { // Note: For up-to-date information you must poll
     if (bms_status.get_state() == BMS_STATE_BALANCING) {
         if (bms_onboard_temperatures.get_high_temperature() >= onboard_temp_balance_disable) {
             bms_status.set_state(BMS_STATE_BALANCING_OVERHEATED);
-            Serial.println("WARNING: Onboard temperature too high; disabling balancing");
+            if(MODE_DEBUG) {
+                Serial.println("WARNING: Onboard temperature too high; disabling balancing");
+            }
         }
     } else if (bms_status.get_state() == BMS_STATE_BALANCING_OVERHEATED) {
         if (bms_onboard_temperatures.get_high_temperature() < onboard_temp_balance_reenable) {
             bms_status.set_state(BMS_STATE_BALANCING);
-            Serial.println("CLEARED: Onboard temperature OK; reenabling balancing");
+            if(MODE_DEBUG) {
+                Serial.println("CLEARED: Onboard temperature OK; reenabling balancing");
+            }
         }
     }
 }
@@ -883,7 +900,7 @@ double calculate_onboard_temp(double aux_voltage, double v_ref) {
     double b = 3380;    // B constant of the thermistor
     double R0 = 10000;  // Resistance of thermistor at 25C
     double temperature = 1 / ((1 / T0) + (1 / b) * log(thermistor_resistance / R0)) - (double) 273.15;
-    
+
     return (int16_t) (temperature * 100);
 }
 
@@ -901,14 +918,18 @@ void process_adc() {
     if (bms_status.get_current() < charge_current_constant_high && !MODE_ADC_IGNORE) {
         if (consecutive_faults_current >= CURRENT_FAULT_THRESHOLD) {
             bms_status.set_charge_overcurrent(true);
-            Serial.println("CHARGE CURRENT HIGH FAULT!!!!!!!!!!!!!!!!!!!");
+            if(MODE_DEBUG) {
+                Serial.println("CHARGE CURRENT HIGH FAULT!!!!!!!!!!!!!!!!!!!");
+            }
         } else {
             consecutive_faults_current++;
         }
     } else if (bms_status.get_current() > discharge_current_constant_high && !MODE_ADC_IGNORE) {
         if (consecutive_faults_current >= CURRENT_FAULT_THRESHOLD) {
             bms_status.set_discharge_overcurrent(true);
-            Serial.println("DISCHARGE CURRENT HIGH FAULT!!!!!!!!!!!!!!!!!!!");
+            if(MODE_DEBUG) {
+                Serial.println("DISCHARGE CURRENT HIGH FAULT!!!!!!!!!!!!!!!!!!!");
+            }
         } else {
             consecutive_faults_current++;
         }
