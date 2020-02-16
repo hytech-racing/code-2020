@@ -246,6 +246,10 @@ static void loadLookupTable() {
     definition(2, 4, true, "TIMESTAMP SECONDS"),
     definition(0, 2, true, "TIMESTAMP MILLISECONDS")
   });
+  CAN_MSG_DEFINITION[0xF1] = pair<string, vector<definition>> ("ID_THERMOCOUPLE_READING", {
+    definition(2, 2, false, "THERMOCOUPLE PLUG 1 READING", "C", 0.01),
+    definition(0, 2, false, "THERMOCOUPLE PLUG 2 READING", "C", 0.01)
+  });
 }
 
 #endif
