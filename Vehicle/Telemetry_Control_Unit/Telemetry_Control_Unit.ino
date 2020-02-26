@@ -51,6 +51,8 @@ Metro timer_debug_rms_temperatures_1 = Metro(3000);
 Metro timer_debug_rms_temperatures_3 = Metro(3000);
 Metro timer_debug_rms_torque_timer_information = Metro(200);
 Metro timer_debug_rms_voltage_information = Metro(100);
+Metro timer_debug_tcu_wheel_rpm_rear = Metro(200);
+Metro timer_debug_tcu_wheel_rpm_front = Metro(200);
 Metro timer_detailed_voltages = Metro(1000);
 Metro timer_status_send = Metro(100);
 Metro timer_status_send_xbee = Metro(2000);
@@ -91,7 +93,8 @@ FCU_accelerometer_values fcu_accelerometer_values;
 MCU_GPS_readings_alpha mcu_gps_readings_alpha;
 MCU_GPS_readings_beta mcu_gps_readings_beta;
 MCU_GPS_readings_gamma mcu_gps_readings_gamma;
-TCU_wheel_rpm tcu_wheel_rpm;
+TCU_wheel_rpm tcu_wheel_rpm_front;
+TCU_wheel_rpm tcu_wheel_rpm_rear;
 
 // flags double in function as timestamps
 static int flag_mcu_status;
@@ -125,7 +128,8 @@ static int flag_mc_read_write_parameter_command;
 static int flag_mc_read_write_parameter_response;
 static int flag_fcu_accelerometer_values;
 static int flag_gps;
-static int flag_tcu_wheel_rpm;
+static int flag_tcu_wheel_rpm_rear;
+static int flag_tcu_wheel_rpm_front;
 static int last_time;
 
 static double total_revs;
@@ -189,7 +193,7 @@ void setup() {
     logger.flush();
 
     total_revs = 0;
-    int last_time = Teensy3Clock.get(); 
+    int last_time = Teensy3Clock.get();
 }
 
 void loop() {
@@ -364,7 +368,7 @@ void parse_can_message() {
             fcu_accelerometer_values.load(msg_rx.buf);
             flag_fcu_accelerometer_values = time_now;
         }
-        if (msg_rx.id == ID_TCU_WHEEL_RPM) {
+        if (msg_rx.id == ID_TCU_WHEEL_RPM_REAR) {
             TCU_wheel_rpm rpms = TCU_wheel_rpm(msg_rx.buf);
             int current_time = millis();
             double time_passed = current_time + 0.5 - last_time;
@@ -381,9 +385,30 @@ void parse_can_message() {
             uint8_t sd_revs = total_revs * 1000;
             logger.print(sd_revs, HEX);
             logger.println();
-            
-            tcu_wheel_rpm.load(msg_rx.buf);
-            flag_tcu_wheel_rpm = time_now;
+
+            tcu_wheel_rpm_rear.load(msg_rx.buf);
+            flag_tcu_wheel_rpm_rear = time_now;
+        }
+        if (msg_rx.id == ID_TCU_WHEEL_RPM_FRONT) {
+            TCU_wheel_rpm rpms = TCU_wheel_rpm(msg_rx.buf);
+            int current_time = millis();
+            double time_passed = current_time + 0.5 - last_time;
+            last_time = current_time;
+            double current_rpm = (rpms.get_wheel_rpm_left() + rpms.get_wheel_rpm_right()) / 2.0;
+            total_revs += (current_rpm * time_passed) / (60 * 1000);
+            //Serial.println(total_revs);
+            logger.print(Teensy3Clock.get());
+            logger.print(",");
+            logger.print("FF");
+            logger.print(",");
+            logger.print(8);
+            logger.print(",");
+            uint8_t sd_revs = total_revs * 1000;
+            logger.print(sd_revs, HEX);
+            logger.println();
+
+            tcu_wheel_rpm_front.load(msg_rx.buf);
+            flag_tcu_wheel_rpm_front = time_now;
         }
     }
 }
@@ -774,6 +799,20 @@ void send_xbee() {
             xb_msg.id = ID_BMS_BALANCING_STATUS;
             write_xbee_data();
         }
+    }
+
+    if (timer_debug_tcu_wheel_rpm_rear.check()) {
+        tcu_wheel_rpm_rear.write(xb_msg.buf);
+        xb_msg.len = sizeof(CAN_message_tcu_wheel_rpm_t);
+        xb_msg.id = ID_TCU_WHEEL_RPM_REAR;
+        write_xbee_data();
+    }
+
+    if (timer_debug_tcu_wheel_rpm_front.check()) {
+        tcu_wheel_rpm_front.write(xb_msg.buf);
+        xb_msg.len = sizeof(CAN_message_tcu_wheel_rpm_t);
+        xb_msg.id = ID_TCU_WHEEL_RPM_FRONT;
+        write_xbee_data();
     }
 }
 
