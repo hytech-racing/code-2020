@@ -22,6 +22,8 @@ INFLUX_HOST = 'localhost'
 INFLUX_PORT = 8086
 INFLUX_DB_NAME = 'hytech_telemetry'
 
+TIMEZONE = 0
+
 def influx_connect():
     while True:
         print('Attempting to connect to database at {}:{}'.format(INFLUX_HOST, INFLUX_PORT))
@@ -58,12 +60,12 @@ def mqtt_message(client, userdata, msg):
     s = ""
     for c in frame:
         s += chr(c)
-    #  print(s)
+    # print(s)
     data = unpack(s)
     # print(data)
 
     if data != -1:
-        timestamp = int(timestamp.decode()) + 946771200 - 68359 #  LTE Module stuck in 1990. Fix if you can.
+        timestamp = int(timestamp.decode()) + 946684800000 + TIMEZONE #  LTE Module stuck in 1990. Fix if you can.
         json_body = []
         for readout in decode(data):
             if len(str(readout[1])) == 0:
@@ -88,16 +90,29 @@ def mqtt_message(client, userdata, msg):
             # if (not id_map[data[0]]):
                 # print (hex(data[0]).upper())
                 # id_map[data[0]] = True
-        print("Writing document: ")
-        print(json_body)
+        # print("Writing document: ")
+        # print(json_body)
         try:
-            influx_client.write_points(points=json_body, time_precision='s')
+            influx_client.write_points(points=json_body, time_precision='ms')
         except Exception as e:
             print("Operation failed. Printing error:")
             print(e)
 
+def tz_connect(client, userdata, flags, rc):
+    client.subscribe('hytech_car/timezone_registration')
+
+def tz_message(client, userdata, msg):
+    global TIMEZONE
+    TIMEZONE = (int(time.time()) - (int(msg.payload.decode()) + 946684800)) // 3600 * 3600000
+
 def live():
     # Set up mqtt connection
+    tz_client = mqtt.Client()
+    tz_client.connect(MQTT_SERVER, MQTT_PORT, 60)
+    tz_client.on_connect = tz_connect
+    tz_client.on_message = tz_message
+    tz_client.loop_start()
+
     mqtt_client = mqtt.Client()
     mqtt_client.connect(MQTT_SERVER, MQTT_PORT, 60)
     mqtt_client.on_connect = mqtt_connect
@@ -109,6 +124,7 @@ def live():
     # Wait for q to quit
     # input()
 
+    # Time to quit, disconnect MQTT
     # Time to quit, disconnect MQTT
     # print("Loop stop")
     # client.loop_stop()
@@ -190,10 +206,10 @@ def decode(msg):
         ret.append(["INVERTER_LOCKOUT",                 ((msg[11] & 0x80) >> 7)                 ])
         ret.append(["DIRECTION_COMMAND",                msg[12]                                 ])
     elif (id == 0xAB):
-        ret.append(["POST_FAULT_LO",                    "0x" + binascii.hexlify(msg[6]).upper() + binascii.hexlify(msg[5]).upper()])
-        ret.append(["POST_FAULT_HI",                    "0x" + binascii.hexlify(msg[8]).upper() + binascii.hexlify(msg[7]).upper()])
-        ret.append(["RUN_FAULT_LO",                     "0x" + binascii.hexlify(msg[10]).upper() + binascii.hexlify(msg[9]).upper()])
-        ret.append(["RUN_FAULT_HI",                     "0x" + binascii.hexlify(msg[12]).upper() + binascii.hexlify(msg[11]).upper()])
+        ret.append("POST FAULT LO", "0x" + hex(msg[6]).upper()[2:] + hex(msg[5]).upper()[2:])
+        ret.append("POST FAULT HI", "0x" + hex(msg[8]).upper()[2:] + hex(msg[7]).upper()[2:])
+        ret.append("RUN FAULT LO", "0x" + hex(msg[10]).upper()[2:] + hex(msg[9]).upper()[2:])
+        ret.append("RUN FAULT HI", "0x" + hex(msg[12]).upper()[2:] + hex(msg[11]).upper()[2:])
     elif (id == 0xAC):
         ret.append(["COMMANDED_TORQUE",                 (b2i16(msg[5:7]) / 10.),         "Nm"    ])
         ret.append(["TORQUE_FEEDBACK",                  (b2i16(msg[7:9]) / 10.),         "Nm"    ])
@@ -210,25 +226,25 @@ def decode(msg):
         ret.append(["MCU_TEMPERATURE",                  b2i16(msg[7:9])                         ])
         ret.append(["MCU_GLV_VOLTAGE",                  (b2ui16(msg[9:11]) / 100.),"V"           ])
     elif (id == 0xC4):
+        ret.append(["MCU_PEDAL_ACCEL_1",                b2ui16(msg[5:7])                        ])
         ret.append(["MCU_PEDAL_ACCEL_2",                b2ui16(msg[7:9])                        ])
         ret.append(["MCU_PEDAL_BRAKE",                  b2ui16(msg[9:11])                       ])
-        ret.append(["MCU_PEDAL_ACCEL_1",                b2ui16(msg[5:7])                        ])
-        ret.append(["MCU_BRAKE_ACT",                    ((msg[12] & 0x4) >> 2)                  ])
-        ret.append(["MCU_IMPLAUS_ACCEL",                (msg[12] & 0x1)                         ])
-        ret.append(["MCU_IMPLAUS_BRAKE",                ((msg[12] & 0x2) >> 1)                  ])
-        ret.append(["MCU_TORQUE_MAP_MODE",              msg[13]                                 ])
+        ret.append(["MCU_IMPLAUS_ACCEL",                (msg[11] & 0x1)                         ])
+        ret.append(["MCU_IMPLAUS_BRAKE",                ((msg[11] & 0x2) >> 1)                  ])
+        ret.append(["MCU_BRAKE_ACT",                    ((msg[11] & 0x4) >> 2)                  ])
+        ret.append(["MCU_TORQUE_MAP_MODE",              msg[12]                                 ])
     elif (id == 0xCC):
         ret.append(["ECU_CURRENT",                      (b2ui16(msg[5:7]) / 100.),"A"            ])
         ret.append(["COOLING_CURRENT",                  (b2ui16(msg[7:9]) / 100.),"A"            ])
     elif (id == 0xD0):
         ret.append(["RCU_STATE",                        msg[5]                                  ])
-        ret.append(["RCU_FLAGS",                        "0x" + binascii.hexlify(msg[6]).upper() ])
+        ret.append(["RCU_FLAGS",                        "0x" + hex(msg[6]).upper()[2:]          ])
         ret.append(["GLV_BATT_VOLTAGE",                 (b2ui16(msg[7:9]) / 100.),"V"           ])
         ret.append(["RCU_BMS_FAULT",                    (not msg[6] & 0x1)                      ])
         ret.append(["RCU_IMD_FAULT",                    (not (msg[6] & 0x2) >> 1)               ])
     elif (id == 0xD2):
         ret.append(["FCU_STATE",                        msg[5]                                  ])
-        ret.append(["FCU_FLAGS",                        "0x{}".format(binascii.hexlify(msg[6]).upper())])
+        ret.append(["FCU_FLAGS",                        "0x{}".format(hex(msg[6]).upper()[2:])  ])
         ret.append(["FCU_START_BUTTON_ID",              msg[7]                                  ])
         ret.append(["FCU_BRAKE_ACT",                    ((msg[6] & 0x8) >> 3)                    ])
         ret.append(["FCU_IMPLAUS_ACCEL",                (msg[6] & 0x1)                           ])
@@ -254,12 +270,12 @@ def decode(msg):
         ret.append(["BMS_HIGH_TEMPERATURE",             (b2i16(msg[9:11]) / 100.),      "C"     ])
     elif (id == 0xDA):
         ic = msg[5]
-        ret.append(["IC_" + str(ic) + "_THERM 0",        (b2ui16(msg[6:8]) / 100.),       "C"     ])
-        ret.append(["IC_" + str(ic) + "_THERM 1",        (b2ui16(msg[8:10]) / 100.),      "C"     ])
-        ret.append(["IC_" + str(ic) + "_THERM 2",        (b2ui16(msg[10:12]) / 100.),     "C"     ])
+        ret.append(["IC_" + str(ic) + "_THERM_0",        (b2ui16(msg[6:8]) / 100.),       "C"     ])
+        ret.append(["IC_" + str(ic) + "_THERM_1",        (b2ui16(msg[8:10]) / 100.),      "C"     ])
+        ret.append(["IC_" + str(ic) + "_THERM_2",        (b2ui16(msg[10:12]) / 100.),     "C"     ])
     elif (id == 0xDB):
         ret.append(["BMS_STATE",                        msg[5]                                  ])
-        ret.append(["BMS_ERROR_FLAGS",                  "0x" + binascii.hexlify(msg[7]).upper() + binascii.hexlify(msg[6]).upper()])
+        ret.append(["BMS_ERROR_FLAGS",                  "0x" + hex(msg[7]).upper()[2:] + hex(msg[6]).upper()[2:] ])
         ret.append(["BMS_CURRENT",                      (b2i16(msg[8:10]) / 100.),      "A"     ])
     elif (id == 0xDE):
         data = b2ui64(msg[5:13])
@@ -270,8 +286,14 @@ def decode(msg):
                 state = ("OFF" if (((data >> (0x4 + 0x9 * ic)) & 0x1FF) >> cell) & 0x1 == 1 else "ON")
                 ret.append([bal, state])
     elif (id == 0xE2):
-        ret.append("BMS_TOTAL_CHARGE: " + str(b2ui32(msg[5:9]) / 10000. + " C"))
-        ret.append("BMS_TOTAL_DISCHARGE: " + str(b2ui32(msg[9:13]) / 10000. + " C"))
+        ret.append(["BMS_TOTAL_CHARGE",                 b2ui32(msg[5:9]) / 10000.,      "C"    ])
+        ret.append(["BMS_TOTAL_DISCHARGE",              b2ui32(msg[9:13]) / 10000.,     "C"    ])
+    elif (id == 0xEA):
+        ret.append(["TCU_WHEEL_RPM_REAR_LEFT",          b2i16(msg[5:7]),                "RPM"  ])
+        ret.append(["TCU_WHEEL_RPM_REAR_RIGHT",         b2i16(msg[7:9]),                "RPM"  ])
+    elif (id == 0xEB):
+        ret.append(["TCU_WHEEL_RPM_FRONT_LEFT",         b2i16(msg[5:7]),                "RPM"  ])
+        ret.append(["TCU_WHEEL_RPM_FRONT_RIGHT",        b2i16(msg[7:9]),                "RPM"  ])
     return ret
 
 def b2i8(data):
