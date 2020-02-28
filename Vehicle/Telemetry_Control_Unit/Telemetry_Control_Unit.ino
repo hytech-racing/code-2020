@@ -369,44 +369,28 @@ void parse_can_message() {
             flag_fcu_accelerometer_values = time_now;
         }
         if (msg_rx.id == ID_TCU_WHEEL_RPM_REAR) {
-            // TCU_wheel_rpm rpms = TCU_wheel_rpm(msg_rx.buf);
-            // int current_time = millis();
-            // double time_passed = current_time + 0.5 - last_time;
-            // last_time = current_time;
-            // double current_rpm = (rpms.get_wheel_rpm_left() + rpms.get_wheel_rpm_right()) / 2.0;
-            // total_revs += (current_rpm * time_passed) / (60 * 1000);
-            // //Serial.println(total_revs);
-            // logger.print(Teensy3Clock.get());
-            // logger.print(",");
-            // logger.print("FF");
-            // logger.print(",");
-            // logger.print(8);
-            // logger.print(",");
-            // uint8_t sd_revs = total_revs * 1000;
-            // logger.print(sd_revs, HEX);
-            // logger.println();
-
             tcu_wheel_rpm_rear.load(msg_rx.buf);
             flag_tcu_wheel_rpm_rear = time_now;
         }
         if (msg_rx.id == ID_TCU_WHEEL_RPM_FRONT) {
-            // TCU_wheel_rpm rpms = TCU_wheel_rpm(msg_rx.buf);
-            // int current_time = millis();
-            // double time_passed = current_time + 0.5 - last_time;
-            // last_time = current_time;
-            // double current_rpm = (rpms.get_wheel_rpm_left() + rpms.get_wheel_rpm_right()) / 2.0;
-            // total_revs += (current_rpm * time_passed) / (60 * 1000);
-            // //Serial.println(total_revs);
-            // logger.print(Teensy3Clock.get());
-            // logger.print(",");
-            // logger.print("FF");
-            // logger.print(",");
-            // logger.print(8);
-            // logger.print(",");
-            // uint8_t sd_revs = total_revs * 1000;
-            // logger.print(sd_revs, HEX);
-            // logger.println();
 
+            //Write total distance traveled to SD card
+            TCU_wheel_rpm rpms = TCU_wheel_rpm(msg_rx.buf);
+            int current_time = millis();
+            double time_passed = current_time + 0.5 - last_time;
+            last_time = current_time;
+            double current_rpm = (rpms.get_wheel_rpm_left() + rpms.get_wheel_rpm_right()) / 2.0;
+            total_revs += (current_rpm * time_passed) / (60 * 1000);
+            logger.print(Teensy3Clock.get());
+            logger.print(",");
+            logger.print("FF");
+            logger.print(",");
+            logger.print(8);
+            logger.print(",");
+            uint8_t sd_revs = total_revs * 1000;
+            logger.print(sd_revs, HEX);
+            logger.println();
+            
             tcu_wheel_rpm_front.load(msg_rx.buf);
             flag_tcu_wheel_rpm_front = time_now;
         }

@@ -126,6 +126,16 @@ float filtered_accel2_reading = 0;
 float filtered_brake_reading = 0;
 float filtered_glv_reading = 0;
 
+float rear_rpm = 0;
+float front_rpm = 0;
+float slip_limiting_factor = 1;
+float max_desireable_slip_ratio = 3.5;
+float last_excess_slip = 0;
+float total_excess_slip = 0;
+float KP = 1;
+float KI = 1;
+float KD = 1;
+
 bool btn_start_reading = true;
 bool btn_mode_reading = true;
 bool btn_restart_inverter_reading = true;
@@ -214,6 +224,7 @@ void loop() {
     read_pedal_values();
     read_dashboard_buttons();
     set_dashboard_leds();
+    if(true) update_PID();
 
     /*
      * Send state over CAN
@@ -425,6 +436,14 @@ void parse_can_message() {
                 mc_current_informtarion.load(rx_msg.buf);
                 update_couloumb_count();
             }
+        }
+        if (rx_msg.id == ID_TCU_WHEEL_RPM_REAR) {
+            TCU_wheel_rpm rpms = TCU_wheel_rpm(rx_msg.buf);
+            rear_rpm = (rpms.get_wheel_rpm_left() + rpms.get_wheel_rpm_right()) / 2.0;
+        }
+        if (rx_msg.id == ID_TCU_WHEEL_RPM_FRONT) {
+            TCU_wheel_rpm rpms = TCU_wheel_rpm(rx_msg.buf);
+            front_rpm = (rpms.get_wheel_rpm_left() + rpms.get_wheel_rpm_right()) / 2.0;
         }
     }
 
@@ -679,6 +698,9 @@ int calculate_torque() {
             if (calculated_torque < 0) {
                 calculated_torque = 0;
             }
+            if (true) {
+              calculated_torque *= slip_limiting_factor;
+            }
         }
     //}
 
@@ -906,4 +928,27 @@ void update_couloumb_count() {
     } else {
         total_charge_amount -= new_current;
     }
+}
+
+float get_excess_slip() {
+  float slip_ratio = 1;
+  if(front_rpm > 0 && rear_rpm > 0) {
+    slip_ratio = rear_rpm / front_rpm;
+  }
+  
+  return slip_ratio - max_desireable_slip_ratio;
+}
+
+void update_PID() {
+  float excess_slip = get_excess_slip();
+  total_excess_slip += excess_slip;
+  float change_in_excess_slip = excess_slip - last_excess_slip;
+  last_excess_slip = excess_slip;
+  
+  float P = KP * excess_slip;
+  float I = KI * total_excess_slip;
+  float D = KD * change_in_excess_slip;
+  
+  slip_limiting_factor = 1 / (P + I + D);
+  if (slip_limiting_factor > 1) slip_limiting_factor = 1;  
 }
