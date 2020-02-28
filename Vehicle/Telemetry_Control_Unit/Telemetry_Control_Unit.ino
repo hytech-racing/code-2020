@@ -42,6 +42,7 @@ Metro timer_debug_bms_temperatures = Metro(3000);
 Metro timer_debug_bms_detailed_temperatures = Metro(3000);
 Metro timer_debug_bms_voltages = Metro(1000);
 Metro timer_debug_bms_detailed_voltages = Metro(3000);
+Metro timer_debug_bms_coulomb_counts = Metro(1000);
 Metro timer_debug_rms_command_message = Metro(200);
 Metro timer_debug_rms_current_information = Metro(100);
 Metro timer_debug_rms_fault_codes = Metro(2000);
@@ -390,7 +391,7 @@ void parse_can_message() {
             uint8_t sd_revs = total_revs * 1000;
             logger.print(sd_revs, HEX);
             logger.println();
-            
+
             tcu_wheel_rpm_front.load(msg_rx.buf);
             flag_tcu_wheel_rpm_front = time_now;
         }
@@ -742,6 +743,13 @@ void send_xbee() {
         XB.println(bms_status.get_error_flags(), HEX);
         XB.print("BMS CURRENT: ");
         XB.println(bms_status.get_current() / (double) 100, 2);*/
+    }
+
+    if (timer_debug_bms_coulomb_counts()) {
+        bms_coulomb_counts.write(xb_msg.buf);
+        xb_msg.len = sizeof(CAN_message_bms_coulomb_counts_t);
+        xb_msg.id = ID_BMS_COULOMB_COUNTS;
+        write_xbee_data();
     }
 
     if (timer_debug_rms_command_message.check()) {
