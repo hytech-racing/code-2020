@@ -379,7 +379,7 @@ void parse_can_message() {
             int current_time = millis();
             double time_passed = current_time + 0.5 - last_time;
             last_time = current_time;
-            double current_rpm = (rpms.get_wheel_rpm_left() + rpms.get_wheel_rpm_right()) / 2.0;
+            double current_rpm = (rpms.get_wheel_rpm_left() + rpms.get_wheel_rpm_right()) / 1.0; //Should be devided by 2, but currently only one sensor is installed
             total_revs += (current_rpm * time_passed) / (60 * 1000);
             logger.print(Teensy3Clock.get());
             logger.print(",");

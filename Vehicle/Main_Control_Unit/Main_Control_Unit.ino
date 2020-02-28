@@ -136,6 +136,7 @@ float KP = 1;
 float KI = 1;
 float KD = 1;
 
+bool launch_control_active = true;
 bool btn_start_reading = true;
 bool btn_mode_reading = true;
 bool btn_restart_inverter_reading = true;
@@ -224,7 +225,7 @@ void loop() {
     read_pedal_values();
     read_dashboard_buttons();
     set_dashboard_leds();
-    if(true) update_PID();
+    if (launch_control_active) update_slip_limiting_factor(); //use the pid to update the slip limiting factor based on current slip ratio
 
     /*
      * Send state over CAN
@@ -443,7 +444,7 @@ void parse_can_message() {
         }
         if (rx_msg.id == ID_TCU_WHEEL_RPM_FRONT) {
             TCU_wheel_rpm rpms = TCU_wheel_rpm(rx_msg.buf);
-            front_rpm = (rpms.get_wheel_rpm_left() + rpms.get_wheel_rpm_right()) / 2.0;
+            front_rpm = (rpms.get_wheel_rpm_left() + rpms.get_wheel_rpm_right()) / 1.0; //Should be devided by 2, currently only one sensor is installed
         }
     }
 
@@ -698,8 +699,8 @@ int calculate_torque() {
             if (calculated_torque < 0) {
                 calculated_torque = 0;
             }
-            if (true) {
-              calculated_torque *= slip_limiting_factor;
+            if (launch_control_active) {
+              calculated_torque *= slip_limiting_factor; //Reduce torque if slip to high, cannot increase torque ie slip_limiting_factor cannot be >1
             }
         }
     //}
@@ -931,15 +932,14 @@ void update_couloumb_count() {
 }
 
 float get_excess_slip() {
-  float slip_ratio = 1;
+  float slip_ratio = 1; //slip ratio is 1 by default
   if(front_rpm > 0 && rear_rpm > 0) {
-    slip_ratio = rear_rpm / front_rpm;
+    slip_ratio = rear_rpm / front_rpm; //if both front and rear are spinning, calculate the ratio
   }
-  
   return slip_ratio - max_desireable_slip_ratio;
 }
 
-void update_PID() {
+void update_slip_limiting_factor() {
   float excess_slip = get_excess_slip();
   total_excess_slip += excess_slip;
   float change_in_excess_slip = excess_slip - last_excess_slip;
@@ -950,5 +950,6 @@ void update_PID() {
   float D = KD * change_in_excess_slip;
   
   slip_limiting_factor = 1 / (P + I + D);
-  if (slip_limiting_factor > 1) slip_limiting_factor = 1;  
+  if (slip_limiting_factor > 1) slip_limiting_factor = 1; //IMPORTANT, slip_limiting_factor must be 1 or less, otherwise it could increase torque
+  if (slip_limiting_facotr < 0) slip_limiting_factor = 1; //IMPORTANT, slip_limiting_factor must not be negative, otherwise a negative torque will be requested
 }
