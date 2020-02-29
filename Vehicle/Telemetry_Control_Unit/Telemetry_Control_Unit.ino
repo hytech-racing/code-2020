@@ -745,7 +745,7 @@ void send_xbee() {
         XB.println(bms_status.get_current() / (double) 100, 2);*/
     }
 
-    if (timer_debug_bms_coulomb_counts()) {
+    if (timer_debug_bms_coulomb_counts.check()) {
         bms_coulomb_counts.write(xb_msg.buf);
         xb_msg.len = sizeof(CAN_message_bms_coulomb_counts_t);
         xb_msg.id = ID_BMS_COULOMB_COUNTS;
