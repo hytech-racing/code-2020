@@ -275,12 +275,6 @@ void setup() {
         digitalWrite(LED_STATUS, HIGH);
     }
 
-    // Set up current-measuring timer
-    // current_timer.priority(255); // Priority range 0-255, 128 as default
-    // total_charge = 0;
-    // total_discharge = 0;
-    // current_timer.begin(integrate_current, COULOUMB_COUNT_INTERVAL);
-
     /* Initialize the ic/group IDs for detailed voltage, temperature, and balancing CAN messages */
     for (int i = 0; i < TOTAL_IC; i++) {
         for (int j = 0; j < 3; j++) {
@@ -695,7 +689,7 @@ void process_voltages() {
 
     if (bms_voltages.get_low() < voltage_cutoff_low) {
         if (consecutive_faults_undervoltage >= IGNORE_FAULT_THRESHOLD) {
-            //bms_status.set_undervoltage(true);
+            bms_status.set_undervoltage(true);
         } else {
             consecutive_faults_undervoltage += 1;
         }
@@ -1074,9 +1068,9 @@ void print_cells() {
 }
 
 void print_current() {
-    Serial.print("\nRaw Current Sensor: ");
-    Serial.print((double) (read_adc(CH_CUR_SENSE)), 2);
-    Serial.println("A");
+    //Serial.print("\nRaw Current Sensor: ");
+    //Serial.print((double) (read_adc(CH_CUR_SENSE)), 2);
+    //Serial.println(" A");
  
     Serial.print("\nCurrent Sensor: ");
     Serial.print(bms_status.get_current() / (double) 100, 2);
@@ -1206,15 +1200,6 @@ int16_t get_current() {
     voltage_reading = voltage_reading * 100 * voltage_conversion_factor;
     double current_reading = voltage_reading * current_conversion_factor * -1;
     return (int16_t) (current_reading);
-}
-
-void integrate_current() {
-    int delta = get_current();
-    if (delta > 0) {
-        total_discharge = total_discharge + delta;
-    } else {
-        total_charge = total_charge - delta; // Units will be 0.01A / (1 / (COULOUMB_COUNT_INTERVAL x 10^-6) s)
-    }
 }
 
 void process_coulombs() {
