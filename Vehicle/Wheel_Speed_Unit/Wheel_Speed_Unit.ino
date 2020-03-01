@@ -128,8 +128,8 @@ void loop()
         tcu_wheel_rpm.set_wheel_rpm_right(rpmRight);
         
         tcu_wheel_rpm.write(tx_msg.buf);
-        //tx_msg.id = ID_TCU_WHEEL_RPM_REAR;
-        tx_msg.id = ID_TCU_WHEEL_RPM_FRONT;
+        tx_msg.id = ID_TCU_WHEEL_RPM_REAR;
+        //tx_msg.id = ID_TCU_WHEEL_RPM_FRONT;
         tx_msg.len = sizeof(CAN_message_tcu_wheel_rpm_t);
         CAN.write(tx_msg);
         //Serial.println("Can sent");

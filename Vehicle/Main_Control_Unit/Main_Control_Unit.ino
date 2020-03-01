@@ -129,12 +129,12 @@ float filtered_glv_reading = 0;
 float rear_rpm = 0;
 float front_rpm = 0;
 float slip_limiting_factor = 1;
-float max_desireable_slip_ratio = 3.5;
+float max_desireable_slip_ratio = 0.2;
 float last_excess_slip = 0;
 float total_excess_slip = 0;
-float KP = 1;
-float KI = 1;
-float KD = 1;
+float KP = 0.15;
+float KI = 0.005;
+float KD = 0;
 
 bool launch_control_active = true;
 bool btn_start_reading = true;
@@ -250,13 +250,6 @@ void loop() {
         mcu_pedal_readings.write(tx_msg.buf);
         tx_msg.id = ID_MCU_PEDAL_READINGS;
         tx_msg.len = sizeof(CAN_message_mcu_pedal_readings_t);
-        CAN.write(tx_msg);
-
-        // Send couloumb counting information
-        bms_coulomb_counts.set_total_charge(total_charge_amount);
-        bms_coulomb_counts.set_total_discharge(total_discharge_amount);
-        tx_msg.id = ID_BMS_COULOMB_COUNTS;
-        tx_msg.len = sizeof(CAN_message_bms_coulomb_counts_t);
         CAN.write(tx_msg);
     }
 
@@ -669,7 +662,7 @@ void set_state(uint8_t new_state) {
 int calculate_torque() {
     int calculated_torque = 0;
 
-    //if (!mcu_pedal_readings.get_accelerator_implausibility()) {
+    if (!mcu_pedal_readings.get_accelerator_implausibility()) {
         int torque1 = map(round(filtered_accel1_reading), START_ACCELERATOR_PEDAL_1, END_ACCELERATOR_PEDAL_1, 0, MAX_TORQUE);
         int torque2 = map(round(filtered_accel2_reading), START_ACCELERATOR_PEDAL_2, END_ACCELERATOR_PEDAL_2, 0, MAX_TORQUE);
 
@@ -681,7 +674,7 @@ int calculate_torque() {
             torque2 = MAX_TORQUE;
         }
         // compare torques to check for accelerator implausibility
-        if (0)/*abs(torque1 - torque2) * 100 / MAX_TORQUE > 10) */{
+        if (abs(torque1 - torque2) * 100 / MAX_TORQUE > 10) {
             mcu_pedal_readings.set_accelerator_implausibility(true);
             Serial.println("ACCEL IMPLAUSIBILITY: COMPARISON FAILED");
         } else {
@@ -703,7 +696,7 @@ int calculate_torque() {
               calculated_torque *= slip_limiting_factor; //Reduce torque if slip to high, cannot increase torque ie slip_limiting_factor cannot be >1
             }
         }
-    //}
+    }
 
     return calculated_torque;
 }
@@ -743,12 +736,12 @@ void read_dashboard_buttons() {
             if (torque_mode == 0) {
                 set_mode_led(0);
                 // 40
-                MAX_TORQUE = 400;
+                MAX_TORQUE = 1000;
                 MAX_ACCEL_REGEN = 0;
                 MAX_BRAKE_REGEN = 0;
             } else if (torque_mode == 1) {
                 // blink 80
-                MAX_TORQUE = 800;
+                MAX_TORQUE = 1300;
                 set_mode_led(1);
                 MAX_ACCEL_REGEN = 0;
                 MAX_BRAKE_REGEN = -400;
@@ -932,24 +925,30 @@ void update_couloumb_count() {
 }
 
 float get_excess_slip() {
-  float slip_ratio = 1; //slip ratio is 1 by default
-  if(front_rpm > 0 && rear_rpm > 0) {
-    slip_ratio = rear_rpm / front_rpm; //if both front and rear are spinning, calculate the ratio
+  float slip_ratio = 0; //slip ratio is 1 by default
+  if(front_rpm > 10 && rear_rpm > 30) {
+    slip_ratio = (rear_rpm / front_rpm) - 1; //if both front and rear are spinning, calculate the ratio
   }
-  return slip_ratio - max_desireable_slip_ratio;
+  float excess_slip = slip_ratio - max_desireable_slip_ratio;
+  Serial.print("ESR: ");
+  Serial.print(excess_slip);
+  return excess_slip;
 }
 
 void update_slip_limiting_factor() {
   float excess_slip = get_excess_slip();
   total_excess_slip += excess_slip;
+  if (total_excess_slip < 0) total_excess_slip = 0;
   float change_in_excess_slip = excess_slip - last_excess_slip;
   last_excess_slip = excess_slip;
   
   float P = KP * excess_slip;
   float I = KI * total_excess_slip;
   float D = KD * change_in_excess_slip;
-  
-  slip_limiting_factor = 1 / (P + I + D);
+
+  slip_limiting_factor = 1 / (1 + (P + I + D));
   if (slip_limiting_factor > 1) slip_limiting_factor = 1; //IMPORTANT, slip_limiting_factor must be 1 or less, otherwise it could increase torque
   if (slip_limiting_factor < 0) slip_limiting_factor = 1; //IMPORTANT, slip_limiting_factor must not be negative, otherwise a negative torque will be requested
+  Serial.print("    SLF: ");
+  Serial.println(slip_limiting_factor);
 }
