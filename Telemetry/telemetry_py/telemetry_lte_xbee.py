@@ -775,8 +775,8 @@ def decode(msg):
                     bal += "OFF"
         ret.append(bal)
     if (id == 0xE2):
-        ret.append("BMS TOTAL CHARGE: " + str(b2ui32(msg[5:9]) / 10000. + " C"))
-        ret.append("BMS TOTAL DISCHARGE: " + str(b2ui32(msg[9:13]) / 10000. + " C"))
+        ret.append("BMS TOTAL CHARGE: " + str(b2ui32(msg[5:9]) / 100. + " C"))
+        ret.append("BMS TOTAL DISCHARGE: " + str(b2ui32(msg[9:13]) / 100. + " C"))
     return ret
 
 def b2i8(data):
