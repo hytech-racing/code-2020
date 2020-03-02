@@ -129,8 +129,8 @@ void loop()
   if (timer_can_update_fast.check()) {
         tx_msg.timeout = 10; // Use blocking mode, wait up to ?ms to send each message instead of immediately failing (keep in mind this is slower)
 
-        tcu_wheel_rpm.set_wheel_rpm_left(rpm_left);
-        tcu_wheel_rpm.set_wheel_rpm_right(rpm_right);
+        tcu_wheel_rpm.set_wheel_rpm_left(rpm_left * 100);
+        tcu_wheel_rpm.set_wheel_rpm_right(rpm_right * 100);
         tcu_wheel_rpm.write(tx_msg.buf);
 
         if (is_front) { tx_msg.id = ID_TCU_WHEEL_RPM_FRONT; }
@@ -142,7 +142,7 @@ void loop()
 
         if (is_front) {
           tx_msg.timeout = 10;
-          tcu_distance_traveled.set_distance_traveled(total_revs * wheel_circumference);
+          tcu_distance_traveled.set_distance_traveled(total_revs * wheel_circumference * 100);
           tcu_distance_traveled.write(tx_msg.buf);
           tx_msg.id = ID_TCU_DISTANCE_TRAVELED;
           tx_msg.len = sizeof(CAN_message_tcu_distance_traveled_t);
