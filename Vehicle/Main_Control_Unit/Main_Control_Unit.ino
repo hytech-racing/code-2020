@@ -57,7 +57,7 @@ BMS_temperatures bms_temperatures;
 BMS_voltages bms_voltages;
 MC_motor_position_information mc_motor_position_information;
 MC_current_information mc_current_informtarion;
-BMS_coulomb_counts bms_coulomb_counts;
+MCU_launch_control mcu_launch_control;
 
 /*
  * Constant definitions
@@ -130,6 +130,7 @@ float rear_rpm = 0;
 float front_rpm = 0;
 float slip_limiting_factor = 1;
 float max_desireable_slip_ratio = 0.2;
+float slip_adjuster = 10;
 float last_excess_slip = 0;
 float total_excess_slip = 0;
 float KP = 0.15;
@@ -250,6 +251,11 @@ void loop() {
         mcu_pedal_readings.write(tx_msg.buf);
         tx_msg.id = ID_MCU_PEDAL_READINGS;
         tx_msg.len = sizeof(CAN_message_mcu_pedal_readings_t);
+        CAN.write(tx_msg);
+
+        mcu_launch_control.write(tx_msg.buf);
+        tx_msg.id = ID_MCU_LAUNCH_CONTROL;
+        tx_msg.len = sizeof(CAN_message_mcu_launch_control_t);
         CAN.write(tx_msg);
     }
 
@@ -927,8 +933,9 @@ void update_couloumb_count() {
 float get_excess_slip() {
   float slip_ratio = 0; //slip ratio is 1 by default
   if(front_rpm > 10 && rear_rpm > 30) {
-    slip_ratio = (rear_rpm / front_rpm) - 1; //if both front and rear are spinning, calculate the ratio
+    slip_ratio = ((rear_rpm + slip_adjuster) / (front_rpm + slip_adjuster)) - 1; //if both front and rear are spinning, calculate the ratio
   }
+  mcu_launch_control.set_slip_ratio(slip_ratio);
   float excess_slip = slip_ratio - max_desireable_slip_ratio;
   Serial.print("ESR: ");
   Serial.print(excess_slip);
@@ -949,6 +956,7 @@ void update_slip_limiting_factor() {
   slip_limiting_factor = 1 / (1 + (P + I + D));
   if (slip_limiting_factor > 1) slip_limiting_factor = 1; //IMPORTANT, slip_limiting_factor must be 1 or less, otherwise it could increase torque
   if (slip_limiting_factor < 0) slip_limiting_factor = 1; //IMPORTANT, slip_limiting_factor must not be negative, otherwise a negative torque will be requested
+  mcu_launch_control.set_slip_limiting_factor(slip_limiting_factor);
   Serial.print("    SLF: ");
   Serial.println(slip_limiting_factor);
 }
