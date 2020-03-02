@@ -439,11 +439,11 @@ void parse_can_message() {
         }
         if (rx_msg.id == ID_TCU_WHEEL_RPM_REAR) {
             TCU_wheel_rpm rpms = TCU_wheel_rpm(rx_msg.buf);
-            rear_rpm = (rpms.get_wheel_rpm_left() + rpms.get_wheel_rpm_right()) / 2.0;
+            rear_rpm = (rpms.get_wheel_rpm_left() + rpms.get_wheel_rpm_right()) / (2.0 * 100);
         }
         if (rx_msg.id == ID_TCU_WHEEL_RPM_FRONT) {
             TCU_wheel_rpm rpms = TCU_wheel_rpm(rx_msg.buf);
-            front_rpm = (rpms.get_wheel_rpm_left() + rpms.get_wheel_rpm_right()) / 1.0; //Should be devided by 2, currently only one sensor is installed
+            front_rpm = (rpms.get_wheel_rpm_left() + rpms.get_wheel_rpm_right()) / (1.0 * 100); //Should be devided by 2, currently only one sensor is installed
         }
     }
 
@@ -931,7 +931,7 @@ void update_couloumb_count() {
 }
 
 float get_excess_slip() {
-  float slip_ratio = 0; //slip ratio is 1 by default
+  float slip_ratio = 0; //slip ratio is 0 by default
   if(front_rpm > 10 && rear_rpm > 30) {
     slip_ratio = ((rear_rpm + slip_adjuster) / (front_rpm + slip_adjuster)) - 1; //if both front and rear are spinning, calculate the ratio
   }
