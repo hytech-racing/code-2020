@@ -96,6 +96,8 @@ MCU_GPS_readings_beta mcu_gps_readings_beta;
 MCU_GPS_readings_gamma mcu_gps_readings_gamma;
 TCU_wheel_rpm tcu_wheel_rpm_front;
 TCU_wheel_rpm tcu_wheel_rpm_rear;
+TCU_distance_traveled tcu_distance_traveled;
+MCU_launch_control mcu_launch_control;
 
 // flags double in function as timestamps
 static int flag_mcu_status;
@@ -131,6 +133,8 @@ static int flag_fcu_accelerometer_values;
 static int flag_gps;
 static int flag_tcu_wheel_rpm_rear;
 static int flag_tcu_wheel_rpm_front;
+static int flag_tcu_distance_traveled;
+static int flag_mcu_launch_control;
 static int last_time;
 
 static double total_revs;
@@ -291,7 +295,6 @@ void parse_can_message() {
             flag_bms_balancing_status = time_now;
         }
         if (msg_rx.id == ID_BMS_COULOMB_COUNTS) {
-            Serial.println("Coulomb");
             bms_coulomb_counts.load(msg_rx.buf);
             flag_bms_coulomb_counts = time_now;
         }
@@ -374,26 +377,16 @@ void parse_can_message() {
             flag_tcu_wheel_rpm_rear = time_now;
         }
         if (msg_rx.id == ID_TCU_WHEEL_RPM_FRONT) {
-
-            //Write total distance traveled to SD card
-            TCU_wheel_rpm rpms = TCU_wheel_rpm(msg_rx.buf);
-            int current_time = millis();
-            double time_passed = current_time + 0.5 - last_time;
-            last_time = current_time;
-            double current_rpm = (rpms.get_wheel_rpm_left() + rpms.get_wheel_rpm_right()) / 1.0; //Should be devided by 2, but currently only one sensor is installed
-            total_revs += (current_rpm * time_passed) / (60 * 1000);
-            logger.print(Teensy3Clock.get());
-            logger.print(",");
-            logger.print("FF");
-            logger.print(",");
-            logger.print(8);
-            logger.print(",");
-            uint8_t sd_revs = total_revs * 1000;
-            logger.print(sd_revs, HEX);
-            logger.println();
-
             tcu_wheel_rpm_front.load(msg_rx.buf);
             flag_tcu_wheel_rpm_front = time_now;
+        }
+        if (msg_rx.id == ID_TCU_DISTANCE_TRAVELED) {
+            tcu_distance_traveled.load(msg_rx.buf);
+            flag_tcu_distance_traveled = time_now;
+        }
+        if (msg_rx.id == ID_MCU_LAUNCH_CONTROL) {
+            mcu_launch_control.load(msg_rx.buf);
+            flag_mcu_launch_control = time_now;
         }
     }
 }
