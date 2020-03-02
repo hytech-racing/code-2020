@@ -26,7 +26,7 @@ class TelemetryClient:
         client.publish("hytech_car/telemetry", "Python client connected")
 
     def mqtt_message(self, client, userdata, msg):
-        self.screen.addstr(0,59,' - RECEIVED')
+        # self.screen.addstr(0,59,' - RECEIVED')
 
         # TODO check format of incoming message for errors
         timestamp = msg.payload[0:msg.payload.find(b',')]
@@ -40,6 +40,8 @@ class TelemetryClient:
             #     raw = binascii.hexlify(data[0]).upper() + "," + binascii.hexlify(data[5:5 + size]).upper()
             #     f.write(str(datetime.datetime.now()) + ',' + raw + "\n")
             self.countGoodFrames += 1
+            if data[0] == 0xEA:
+                self.screen.addstr(0,59, ' - GOT WHEEL SPEED')
             lines = decode(data)
             with open(self.filename, "a") as f:
                 # TODO update to use timestamp sent over LTE instead of local timestamp
@@ -792,14 +794,14 @@ def decode(msg):
                     bal += "OFF"
         ret.append(bal)
     if (id == 0xE2):
-        ret.append("BMS TOTAL CHARGE: " + str(b2ui32(msg[5:9]) / 10000. + " C"))
-        ret.append("BMS TOTAL DISCHARGE: " + str(b2ui32(msg[9:13]) / 10000. + " C"))
+        ret.append("BMS TOTAL CHARGE: " + str(b2ui32(msg[5:9]) / 10000.) + " C")
+        ret.append("BMS TOTAL DISCHARGE: " + str(b2ui32(msg[9:13]) / 10000.) + " C")
     if (id == 0xEA):
-        ret.append("TCU WHEEL RPM REAR LEFT: " + str(b2i16(msg[5:7]) + " RPM"))
-        ret.append("TCU WHEEL RPM REAR RIGHT: " + str(b2i16(msg[7:9]) + " RPM"))
+        ret.append("TCU WHEEL RPM REAR LEFT: " + str(b2i16(msg[5:7])) + " RPM")
+        ret.append("TCU WHEEL RPM REAR RIGHT: " + str(b2i16(msg[7:9])) + " RPM")
     if (id == 0xEB):
-        ret.append("TCU WHEEL RPM FRONT LEFT: " + str(b2i16(msg[5:7]) + " RPM"))
-        ret.append("TCU WHEEL RPM FRONT RIGHT: " + str(b2i16(msg[7:9]) + " RPM"))
+        ret.append("TCU WHEEL RPM FRONT LEFT: " + str(b2i16(msg[5:7])) + " RPM")
+        ret.append("TCU WHEEL RPM FRONT RIGHT: " + str(b2i16(msg[7:9])) + " RPM")
     return ret
 
 def b2i8(data):

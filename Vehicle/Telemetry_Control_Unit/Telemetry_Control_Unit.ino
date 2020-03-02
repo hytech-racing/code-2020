@@ -165,6 +165,15 @@ void setup() {
     GPS.sendCommand(PMTK_SET_NMEA_UPDATE_10HZ); // set update rate (10Hz)
     GPS.sendCommand(PGCMD_ANTENNA); // report data about antenna
 
+    /* Initialize IC IDs */
+    for (int ic = 0; ic < 8; ++ic) {
+        bms_detailed_temperatures[ic].set_ic_id(ic);
+        for (int group = 0; group < 3; ++group) {
+            bms_detailed_voltages[ic][group].set_ic_id(ic);
+            bms_detailed_voltages[ic][group].set_group_id(group);
+        }
+    }
+
     /* Set up SD card */
     Serial.println("Initializing SD card...");
     SdFile::dateTimeCallback(sd_date_time); // Set date/time callback function
@@ -376,21 +385,21 @@ void parse_can_message() {
         if (msg_rx.id == ID_TCU_WHEEL_RPM_FRONT) {
 
             //Write total distance traveled to SD card
-            TCU_wheel_rpm rpms = TCU_wheel_rpm(msg_rx.buf);
-            int current_time = millis();
-            double time_passed = current_time + 0.5 - last_time;
-            last_time = current_time;
-            double current_rpm = (rpms.get_wheel_rpm_left() + rpms.get_wheel_rpm_right()) / 1.0; //Should be devided by 2, but currently only one sensor is installed
-            total_revs += (current_rpm * time_passed) / (60 * 1000);
-            logger.print(Teensy3Clock.get());
-            logger.print(",");
-            logger.print("FF");
-            logger.print(",");
-            logger.print(8);
-            logger.print(",");
-            uint8_t sd_revs = total_revs * 1000;
-            logger.print(sd_revs, HEX);
-            logger.println();
+            // TCU_wheel_rpm rpms = TCU_wheel_rpm(msg_rx.buf);
+            // int current_time = millis();
+            // double time_passed = current_time + 0.5 - last_time;
+            // last_time = current_time;
+            // double current_rpm = (rpms.get_wheel_rpm_left() + rpms.get_wheel_rpm_right()) / 1.0; //Should be devided by 2, but currently only one sensor is installed
+            // total_revs += (current_rpm * time_passed) / (60 * 1000);
+            // logger.print(Teensy3Clock.get());
+            // logger.print(",");
+            // logger.print("FF");
+            // logger.print(",");
+            // logger.print(8);
+            // logger.print(",");
+            // uint8_t sd_revs = total_revs * 1000;
+            // logger.print(sd_revs, HEX);
+            // logger.println();
 
             tcu_wheel_rpm_front.load(msg_rx.buf);
             flag_tcu_wheel_rpm_front = time_now;
