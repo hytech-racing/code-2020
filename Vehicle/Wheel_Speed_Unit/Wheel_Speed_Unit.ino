@@ -2,7 +2,7 @@
 #include <HyTech_CAN.h>
 #include <Metro.h>
 
-bool is_front = true; //Set based on which board you are uploading to
+bool is_front = false; //Set based on which board you are uploading to
 
 Metro timer_can_update_fast = Metro(10);
 
@@ -24,7 +24,8 @@ int cur_time_left = 0;
 int cur_time_right = 0;
 int prev_time_left = 0;
 int prev_time_right = 0;
-int last_time = 0;
+int total_ticks_left = 0;
+int total_ticks_right = 0;
 float rpm_left = 0;
 float rpm_right = 0;
 float total_revs = 0;
@@ -38,7 +39,6 @@ void setup()
   pinMode(10, INPUT);
   pinMode(13, OUTPUT);
   digitalWrite(13, HIGH);
-  last_time = millis();
   Serial.begin(9600);
   Serial.println("Starting up");
   CAN.begin();
@@ -56,6 +56,7 @@ void set_rpm_left() {
   if (micros_elapsed > 500) {
     rpm_left = (60.0 * 1000.0 * 1000.0) / (micros_elapsed * 24.0);
     prev_time_left = cur_time_left;
+    total_ticks_left += 1;
     print_rpms();
   }
 }
@@ -67,6 +68,7 @@ void set_rpm_right() {
   if (micros_elapsed > 500) {
     rpm_right = (60.0 * 1000.0 * 1000.0) / (micros_elapsed * 24.0);
     prev_time_right = cur_time_right;
+    total_ticks_right += 1;
     print_rpms();
   }
 }
@@ -103,11 +105,7 @@ void update_wheel_speeds() {
 }
 
 void update_distance_traveled() {
-  int current_time = millis();
-  double time_passed = current_time + 0.5 - last_time;
-  last_time = current_time;
-  double current_rpm = (rpm_left + rpm_right) / 1.0; //Should be devided by 2, but currently only one sensor is installed
-  total_revs += (current_rpm * time_passed) / (60 * 1000);
+  total_revs = ((total_ticks_left + total_ticks_right) / (1.0 * num_teeth)); //Should be devided by 2 * num_teeth, but currently only one wheel is sensed
 }
 
 void print_rpms() {
@@ -129,8 +127,8 @@ void loop()
   if (timer_can_update_fast.check()) {
         tx_msg.timeout = 10; // Use blocking mode, wait up to ?ms to send each message instead of immediately failing (keep in mind this is slower)
 
-        tcu_wheel_rpm.set_wheel_rpm_left(rpm_left);
-        tcu_wheel_rpm.set_wheel_rpm_right(rpm_right);
+        tcu_wheel_rpm.set_wheel_rpm_left(rpm_left * 100);
+        tcu_wheel_rpm.set_wheel_rpm_right(rpm_right * 100);
         tcu_wheel_rpm.write(tx_msg.buf);
 
         if (is_front) { tx_msg.id = ID_TCU_WHEEL_RPM_FRONT; }
@@ -142,7 +140,7 @@ void loop()
 
         if (is_front) {
           tx_msg.timeout = 10;
-          tcu_distance_traveled.set_distance_traveled(total_revs * wheel_circumference);
+          tcu_distance_traveled.set_distance_traveled(total_revs * wheel_circumference * 100);
           tcu_distance_traveled.write(tx_msg.buf);
           tx_msg.id = ID_TCU_DISTANCE_TRAVELED;
           tx_msg.len = sizeof(CAN_message_tcu_distance_traveled_t);
