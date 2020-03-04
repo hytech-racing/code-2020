@@ -42,6 +42,7 @@ Metro timer_debug_bms_temperatures = Metro(3000);
 Metro timer_debug_bms_detailed_temperatures = Metro(3000);
 Metro timer_debug_bms_voltages = Metro(1000);
 Metro timer_debug_bms_detailed_voltages = Metro(3000);
+Metro timer_debug_bms_coulomb_counts = Metro(1000);
 Metro timer_debug_rms_command_message = Metro(200);
 Metro timer_debug_rms_current_information = Metro(100);
 Metro timer_debug_rms_fault_codes = Metro(2000);
@@ -51,6 +52,10 @@ Metro timer_debug_rms_temperatures_1 = Metro(3000);
 Metro timer_debug_rms_temperatures_3 = Metro(3000);
 Metro timer_debug_rms_torque_timer_information = Metro(200);
 Metro timer_debug_rms_voltage_information = Metro(100);
+Metro timer_debug_tcu_wheel_rpm_rear = Metro(200);
+Metro timer_debug_tcu_wheel_rpm_front = Metro(200);
+Metro timer_debug_tcu_distance_traveled = Metro(200);
+Metro timer_debug_mcu_launch_control = Metro(200);
 Metro timer_detailed_voltages = Metro(1000);
 Metro timer_status_send = Metro(100);
 Metro timer_status_send_xbee = Metro(2000);
@@ -91,6 +96,10 @@ FCU_accelerometer_values fcu_accelerometer_values;
 MCU_GPS_readings_alpha mcu_gps_readings_alpha;
 MCU_GPS_readings_beta mcu_gps_readings_beta;
 MCU_GPS_readings_gamma mcu_gps_readings_gamma;
+TCU_wheel_rpm tcu_wheel_rpm_front;
+TCU_wheel_rpm tcu_wheel_rpm_rear;
+TCU_distance_traveled tcu_distance_traveled;
+MCU_launch_control mcu_launch_control;
 
 // flags double in function as timestamps
 static int flag_mcu_status;
@@ -124,7 +133,13 @@ static int flag_mc_read_write_parameter_command;
 static int flag_mc_read_write_parameter_response;
 static int flag_fcu_accelerometer_values;
 static int flag_gps;
+static int flag_tcu_wheel_rpm_rear;
+static int flag_tcu_wheel_rpm_front;
+static int flag_tcu_distance_traveled;
+static int flag_mcu_launch_control;
+static int last_time;
 
+static double total_revs;
 static bool pending_gps_data;
 
 void setup() {
@@ -192,6 +207,9 @@ void setup() {
     }
     logger.println("time,msg.id,msg.len,data"); // Print CSV heading to the logfile
     logger.flush();
+
+    total_revs = 0;
+    last_time = Teensy3Clock.get();
 }
 
 void loop() {
@@ -365,6 +383,22 @@ void parse_can_message() {
             fcu_accelerometer_values.load(msg_rx.buf);
             flag_fcu_accelerometer_values = time_now;
         }
+        if (msg_rx.id == ID_TCU_WHEEL_RPM_REAR) {
+            tcu_wheel_rpm_rear.load(msg_rx.buf);
+            flag_tcu_wheel_rpm_rear = time_now;
+        }
+        if (msg_rx.id == ID_TCU_WHEEL_RPM_FRONT) {
+            tcu_wheel_rpm_front.load(msg_rx.buf);
+            flag_tcu_wheel_rpm_front = time_now;
+        }
+        if (msg_rx.id == ID_TCU_DISTANCE_TRAVELED) {
+            tcu_distance_traveled.load(msg_rx.buf);
+            flag_tcu_distance_traveled = time_now;
+        }
+        if (msg_rx.id == ID_MCU_LAUNCH_CONTROL) {
+            mcu_launch_control.load(msg_rx.buf);
+            flag_mcu_launch_control = time_now;
+        }
     }
 }
 
@@ -428,6 +462,7 @@ void process_accelerometer() {
 
 void process_current() {
     //self derived
+
     double current_ecu = ((double)(analogRead(A13)-96))*0.029412;
     double current_cooling = ((double)(analogRead(A12)-96))*0.029412;
     //Serial.println(current_cooling);
@@ -713,6 +748,13 @@ void send_xbee() {
         XB.println(bms_status.get_current() / (double) 100, 2);*/
     }
 
+    if (timer_debug_bms_coulomb_counts.check()) {
+        bms_coulomb_counts.write(xb_msg.buf);
+        xb_msg.len = sizeof(CAN_message_bms_coulomb_counts_t);
+        xb_msg.id = ID_BMS_COULOMB_COUNTS;
+        write_xbee_data();
+    }
+
     if (timer_debug_rms_command_message.check()) {
         mc_command_message.write(xb_msg.buf);
         xb_msg.len = sizeof(CAN_message_mc_command_message_t);
@@ -752,6 +794,34 @@ void send_xbee() {
             xb_msg.id = ID_BMS_BALANCING_STATUS;
             write_xbee_data();
         }
+    }
+
+    if (timer_debug_tcu_wheel_rpm_rear.check()) {
+        tcu_wheel_rpm_rear.write(xb_msg.buf);
+        xb_msg.len = sizeof(CAN_message_tcu_wheel_rpm_t);
+        xb_msg.id = ID_TCU_WHEEL_RPM_REAR;
+        write_xbee_data();
+    }
+
+    if (timer_debug_tcu_wheel_rpm_front.check()) {
+        tcu_wheel_rpm_front.write(xb_msg.buf);
+        xb_msg.len = sizeof(CAN_message_tcu_wheel_rpm_t);
+        xb_msg.id = ID_TCU_WHEEL_RPM_FRONT;
+        write_xbee_data();
+    }
+
+    if (timer_debug_mcu_launch_control.check()) {
+        mcu_launch_control.write(xb_msg.buf);
+        xb_msg.len = sizeof(CAN_message_mcu_launch_control_t);
+        xb_msg.id = ID_MCU_LAUNCH_CONTROL;
+        write_xbee_data();
+    }
+
+    if (timer_debug_tcu_distance_traveled.check()) {
+        tcu_distance_traveled.write(xb_msg.buf);
+        xb_msg.len = sizeof(CAN_message_tcu_distanced_traveled_t);
+        xb_msg.id = ID_TCU_DISTANCE_TRAVELED;
+        write_xbee_data();
     }
 }
 

@@ -1,3 +1,4 @@
+
 #include <ADC_SPI.h>
 #include <HyTech_FlexCAN.h>
 #include <HyTech_CAN.h>
@@ -5,7 +6,6 @@
 #include <Metro.h>
 #include <Wire.h>
 #include <MCP23S17.h>
-
 /*
  * Teensy Pin definitions
  */
@@ -57,7 +57,7 @@ BMS_temperatures bms_temperatures;
 BMS_voltages bms_voltages;
 MC_motor_position_information mc_motor_position_information;
 MC_current_information mc_current_informtarion;
-MCU_launch_control mcu_launch_control;
+BMS_coulomb_counts bms_coulomb_counts;
 
 /*
  * Constant definitions
@@ -126,18 +126,6 @@ float filtered_accel2_reading = 0;
 float filtered_brake_reading = 0;
 float filtered_glv_reading = 0;
 
-float rear_rpm = 0;
-float front_rpm = 0;
-float slip_limiting_factor = 1;
-float max_desireable_slip_ratio = 0.2;
-float slip_adjuster = 10;
-float last_excess_slip = 0;
-float total_excess_slip = 0;
-float KP = 0.15;
-float KI = 0.005;
-float KD = 0;
-
-bool launch_control_active = true;
 bool btn_start_reading = true;
 bool btn_mode_reading = true;
 bool btn_restart_inverter_reading = true;
@@ -150,7 +138,6 @@ bool btn_mode_debouncing = false;
 bool btn_mode_pressed = true;
 bool btn_restart_inverter_debouncing = false;
 bool btn_restart_inverter_pressed = false;
-bool debug = false;
 bool led_mode_active = false;
 bool led_start_active = false;
 uint8_t torque_mode = 0;
@@ -165,12 +152,32 @@ uint16_t dash_values = 0;
 uint32_t total_charge_amount = 0;
 uint32_t total_discharge_amount = 0;
 
+/*
+ * Flags for testing utilities
+ */
+bool pedal_input_testing=false;
+bool dashboard_btn_testing=false;
+bool torque_debugging=false;
+
 static CAN_message_t rx_msg;
 static CAN_message_t tx_msg;
 ADC_SPI ADC(ADC_CS, ADC_SPI_SPEED);
 MCP23S17 EXPANDER(0, EXPANDER_CS, EXPANDER_SPI_SPEED);
 FlexCAN CAN(500000);
 
+void parse_can_message();
+void set_state(uint8_t new_state);
+void read_pedal_values();
+void read_dashboard_buttons();
+void set_dashboard_leds();
+void read_status_values();
+int calculate_torque();
+void print_menu();
+
+/* To setup the board, before looping.
+ * sets up the pins and CAN
+ * prints menu
+ */
 void setup() {
     EXPANDER.begin();
 
@@ -197,6 +204,7 @@ void setup() {
     pinMode(SENSE_SHUTDOWN_E, INPUT);
 
     Serial.begin(115200);
+    print_menu();
     CAN.begin();
 
     /* Configure CAN rx interrupt */
@@ -221,13 +229,60 @@ void setup() {
     mcu_status.set_inverter_powered(true);
 }
 
+/* Loops over continuously as long as program is running.
+ * checks for menu inputs 
+ * lets the user choose debug modes: dashboard testing and pedal testing 
+ * pedal testing is done at zero torque 
+ * dashboard testing prints messages to the serial monitor
+ */
 void loop() {
 
+    if (Serial.available()) {     // Check for user input
+        int cmd=Serial.read();
+        switch (cmd)
+        {
+          case '1':
+          {
+            pedal_input_testing=true;
+            Serial.println("Enter pedal testing mode");
+            Serial.println("Enter m to quit");
+            break;
+          }
+          case '2':
+          {
+            dashboard_btn_testing=true;
+            Serial.println("Enter dashboard button testing mode");
+            Serial.println("Enter m to quit");
+            break;
+          }
+          case '3':
+          {
+              torque_debugging=true;
+              Serial.println("Enter torque debugging mode");
+              Serial.println("Enter m to quit");
+          }
+          case 'm':
+          {
+            pedal_input_testing=false;
+            dashboard_btn_testing=false;
+            torque_debugging=false;
+            Serial.println("Exit testing");
+            Serial.println();
+            print_menu();
+            break;
+          }
+          default:
+          {
+            Serial.println("Invalid input");
+            break;
+          }
+        }
+    }
+
+    
     read_pedal_values();
     read_dashboard_buttons();
     set_dashboard_leds();
-    if (launch_control_active) update_slip_limiting_factor(); //use the pid to update the slip limiting factor based on current slip ratio
-
     /*
      * Send state over CAN
      */
@@ -253,9 +308,11 @@ void loop() {
         tx_msg.len = sizeof(CAN_message_mcu_pedal_readings_t);
         CAN.write(tx_msg);
 
-        mcu_launch_control.write(tx_msg.buf);
-        tx_msg.id = ID_MCU_LAUNCH_CONTROL;
-        tx_msg.len = sizeof(CAN_message_mcu_launch_control_t);
+        // Send couloumb counting information
+        bms_coulomb_counts.set_total_charge(total_charge_amount);
+        bms_coulomb_counts.set_total_discharge(total_discharge_amount);
+        tx_msg.id = ID_BMS_COULOMB_COUNTS;
+        tx_msg.len = sizeof(CAN_message_bms_coulomb_counts_t);
         CAN.write(tx_msg);
     }
 
@@ -348,7 +405,7 @@ void loop() {
                 calculated_torque = 0;
             }
 
-            if (debug && timer_debug_torque.check()) {
+            if (torque_debugging && timer_debug_torque.check()) {
                 Serial.print("MCU REQUESTED TORQUE: ");
                 Serial.println(calculated_torque);
                 Serial.print("MCU IMPLAUS ACCEL: ");
@@ -362,11 +419,14 @@ void loop() {
             Serial.println(calculated_torque);
 
             mc_command_message.set_torque_command(calculated_torque);
-
-            mc_command_message.write(tx_msg.buf);
-            tx_msg.id = ID_MC_COMMAND_MESSAGE;
-            tx_msg.len = 8;
-            CAN.write(tx_msg);
+            
+            if (!pedal_input_testing)
+            {
+              mc_command_message.write(tx_msg.buf);
+              tx_msg.id = ID_MC_COMMAND_MESSAGE;
+              tx_msg.len = 8;
+              CAN.write(tx_msg);
+            }
         }
         break;
 
@@ -387,6 +447,16 @@ void loop() {
         tx_msg.len = 8;
         CAN.write(tx_msg);
     }
+}
+
+/* Function to print the menu when required
+ */
+void print_menu() {
+    Serial.println("Please enter a Command");
+    Serial.println("1. Pedal Input Testing Mode with 0 Torque");
+    Serial.println("2. Dashboard Testing");
+    Serial.println("Please enter a number (1 - 2): ");
+    Serial.println();
 }
 
 /*
@@ -437,14 +507,6 @@ void parse_can_message() {
                 update_couloumb_count();
             }
         }
-        if (rx_msg.id == ID_TCU_WHEEL_RPM_REAR) {
-            TCU_wheel_rpm rpms = TCU_wheel_rpm(rx_msg.buf);
-            rear_rpm = (rpms.get_wheel_rpm_left() + rpms.get_wheel_rpm_right()) / (2.0 * 100);
-        }
-        if (rx_msg.id == ID_TCU_WHEEL_RPM_FRONT) {
-            TCU_wheel_rpm rpms = TCU_wheel_rpm(rx_msg.buf);
-            front_rpm = (rpms.get_wheel_rpm_left() + rpms.get_wheel_rpm_right()) / (1.0 * 100); //Should be devided by 2, currently only one sensor is installed
-        }
     }
 
 }
@@ -468,10 +530,6 @@ void read_pedal_values() {
     filtered_accel1_reading = ALPHA * filtered_accel1_reading + (1 - ALPHA) * ADC.read_adc(ADC_ACCEL_1_CHANNEL);
     filtered_accel2_reading = ALPHA * filtered_accel2_reading + (1 - ALPHA) * ADC.read_adc(ADC_ACCEL_2_CHANNEL);
     filtered_brake_reading  = ALPHA * filtered_brake_reading  + (1 - ALPHA) * ADC.read_adc(ADC_BRAKE_CHANNEL);
-    // Serial.print("ACCEL 1: "); Serial.println(filtered_accel1_reading);
-    // Serial.print("ACCEL 2: "); Serial.println(filtered_accel2_reading);
-    // Serial.print("BRAKE: "); Serial.println(filtered_brake_reading);
-
 
     //Serial.println(ADC.read_adc(ADC_ACCEL_1_CHANNEL));
 
@@ -482,17 +540,17 @@ void read_pedal_values() {
     /*
      * Print values for debugging
      */
-    if (debug && timer_debug.check()) {
-        Serial.print("MCU PEDAL ACCEL 1: ");
-        Serial.println(mcu_pedal_readings.get_accelerator_pedal_raw_1());
-        Serial.print("MCU PEDAL ACCEL 2: ");
-        Serial.println(mcu_pedal_readings.get_accelerator_pedal_raw_2());
-        Serial.print("MCU PEDAL BRAKE: ");
-        Serial.println(mcu_pedal_readings.get_brake_pedal_raw());
-        Serial.print("MCU BRAKE ACT: ");
-        Serial.println(mcu_pedal_readings.get_brake_pedal_active());
-        Serial.print("MCU STATE: ");
+    if (pedal_input_testing && timer_debug.check()) {
+        Serial.println("ACCEL_1   ACCEL_2   BRAKE   MCU_PEDAL_ACCEL_1   MCU_PEDAL_ACCEL_2   MCU_PEDAL_BRAKE   MCU_BRAKE_ACT   MCU_STATE");
+        Serial.print(filtered_accel1_reading, 2); Serial.print("   ");
+        Serial.print(filtered_accel2_reading, 2); Serial.print("   ");
+        Serial.print(filtered_brake_reading, 0); Serial.print("     \t");
+        Serial.print(mcu_pedal_readings.get_accelerator_pedal_raw_1(), 18); Serial.print(" \t        \t");
+        Serial.print(mcu_pedal_readings.get_accelerator_pedal_raw_2(), 18); Serial.print("         \t    ");
+        Serial.print(mcu_pedal_readings.get_brake_pedal_raw(), 16); Serial.print("  \t      \t    ");
+        Serial.print(mcu_pedal_readings.get_brake_pedal_active(), 14); Serial.print(" \t     ");
         Serial.println(mcu_status.get_state());
+        Serial.println("-----------------------------------------------------------------------------------------------------------------");
     }
 }
 
@@ -513,7 +571,7 @@ void read_status_values() {
         mcu_status.set_bms_ok_high(true);
     } else {
         mcu_status.set_bms_ok_high(false);
-        if (timer_bms_print_fault.check()) {
+        if (!pedal_input_testing && timer_bms_print_fault.check()) {
             Serial.println("BMS fault detected");
         }
     }
@@ -525,7 +583,7 @@ void read_status_values() {
         mcu_status.set_imd_okhs_high(true);
     } else {
         mcu_status.set_imd_okhs_high(false);
-        if (timer_imd_print_fault.check()) {
+        if (!pedal_input_testing && timer_imd_print_fault.check()) {
             Serial.println("IMD fault detected");
         }
     }
@@ -553,24 +611,24 @@ void set_mode_led(uint8_t type) {
         led_mode_type = type;
 
         if (type == 0) {
-            if (debug) {
+            if (dashboard_btn_testing) {
                 Serial.println("MCU Setting Mode LED off");
             }
             return;
         }
         if (type == 1) {
             timer_led_mode_blink_fast.reset();
-            if (debug) {
+            if (dashboard_btn_testing) {
                 Serial.println("MCU Setting Mode LED solid on");
             }
         } else if (type == 2) {
             // timer_led_mode_blink_fast.reset();
-            if (debug) {
+            if (dashboard_btn_testing) {
                 Serial.println("MCU Setting Mode LED fast blink");
             }
         } else if (type == 3) {
             timer_led_mode_blink_slow.reset();
-            if (debug) {
+            if (dashboard_btn_testing) {
                 Serial.println("MCU Setting Mode LED slow blink");
             }
         }
@@ -585,23 +643,23 @@ void set_start_led(uint8_t type) {
         led_start_type = type;
 
         if (type == 0) {
-            if (debug) {
+            if (dashboard_btn_testing) {
                 Serial.println("MCU Setting Start LED off");
             }
             return;
         }
         if (type == 1) {
-            if (debug) {
+            if (dashboard_btn_testing) {
                 Serial.println("MCU Setting Start LED solid on");
             }
         } else if (type == 2) {
             timer_led_start_blink_fast.reset();
-            if (debug) {
+            if (dashboard_btn_testing) {
                 Serial.println("MCU Setting Start LED fast blink");
             }
         } else if (type == 3) {
             timer_led_start_blink_slow.reset();
-            if (debug) {
+            if (dashboard_btn_testing) {
                 Serial.println("MCU Setting Start LED slow blink");
             }
         }
@@ -654,21 +712,24 @@ void set_state(uint8_t new_state) {
     if (new_state == MCU_STATE_WAITING_READY_TO_DRIVE_SOUND) {
         timer_ready_sound.reset();
         //Serial.println("Inverter enabled");
-        Serial.println("RTDS enabled");
+        if (dashboard_btn_testing) {
+            Serial.println("RTDS enabled");
+        }
     }
     if (new_state == MCU_STATE_READY_TO_DRIVE) {
         //EXPANDER.digitalWrite(EXPANDER_READY_SOUND, LOW);
-
-        Serial.println("Inverter enabled");
-        //Serial.println("RTDS deactivated");
-        Serial.println("Ready to drive");
+        if (dashboard_btn_testing) {
+            Serial.println("Inverter enabled");
+            //Serial.println("RTDS deactivated");
+            Serial.println("Ready to drive");
+        }
     }
 }
 
 int calculate_torque() {
     int calculated_torque = 0;
 
-    if (!mcu_pedal_readings.get_accelerator_implausibility()) {
+    //if (!mcu_pedal_readings.get_accelerator_implausibility()) {
         int torque1 = map(round(filtered_accel1_reading), START_ACCELERATOR_PEDAL_1, END_ACCELERATOR_PEDAL_1, 0, MAX_TORQUE);
         int torque2 = map(round(filtered_accel2_reading), START_ACCELERATOR_PEDAL_2, END_ACCELERATOR_PEDAL_2, 0, MAX_TORQUE);
 
@@ -680,13 +741,13 @@ int calculate_torque() {
             torque2 = MAX_TORQUE;
         }
         // compare torques to check for accelerator implausibility
-        if (abs(torque1 - torque2) * 100 / MAX_TORQUE > 10) {
+        if (0)/*abs(torque1 - torque2) * 100 / MAX_TORQUE > 10) */{
             mcu_pedal_readings.set_accelerator_implausibility(true);
             Serial.println("ACCEL IMPLAUSIBILITY: COMPARISON FAILED");
         } else {
             calculated_torque = (torque1 + torque2) / 2; //min(torque1, torque2);
 
-            if (debug && timer_debug_raw_torque.check()) {
+            if (torque_debugging && timer_debug_raw_torque.check()) {
                 Serial.print("TORQUE REQUEST DELTA PERCENT: "); // Print the % difference between the 2 accelerator sensor requests
                 Serial.println(abs(torque1 - torque2) / (double) MAX_TORQUE * 100);
                 Serial.print("MCU RAW TORQUE: ");
@@ -698,11 +759,8 @@ int calculate_torque() {
             if (calculated_torque < 0) {
                 calculated_torque = 0;
             }
-            if (launch_control_active) {
-              calculated_torque *= slip_limiting_factor; //Reduce torque if slip to high, cannot increase torque ie slip_limiting_factor cannot be >1
-            }
         }
-    }
+    //}
 
     return calculated_torque;
 }
@@ -725,6 +783,10 @@ void read_dashboard_buttons() {
     }
     if (btn_start_debouncing && timer_btn_start.check()) { // Debounce period finishes without value returning
         btn_start_pressed = !btn_start_pressed;
+        if (btn_start_pressed && dashboard_btn_testing)
+        {
+          Serial.println("Start button pressed");
+        }
     }
 
     // debounce torque mode button
@@ -738,16 +800,20 @@ void read_dashboard_buttons() {
     if (btn_mode_debouncing && timer_btn_mode.check()) {                        // debounce period finishes
         btn_mode_pressed = !btn_mode_pressed;
         if (btn_mode_pressed) {
+            if (dashboard_btn_testing)
+            {
+              Serial.println("Mode button pressed");
+            }
             torque_mode = (torque_mode + 1) % 3;
             if (torque_mode == 0) {
                 set_mode_led(0);
                 // 40
-                MAX_TORQUE = 1000;
+                MAX_TORQUE = 400;
                 MAX_ACCEL_REGEN = 0;
                 MAX_BRAKE_REGEN = 0;
             } else if (torque_mode == 1) {
                 // blink 80
-                MAX_TORQUE = 1300;
+                MAX_TORQUE = 800;
                 set_mode_led(1);
                 MAX_ACCEL_REGEN = 0;
                 MAX_BRAKE_REGEN = -400;
@@ -776,7 +842,14 @@ void read_dashboard_buttons() {
     if (btn_restart_inverter_debouncing && timer_btn_restart_inverter.check()) {
         btn_restart_inverter_pressed = !btn_restart_inverter_pressed;
         if (btn_restart_inverter_pressed) {
-            reset_inverter();
+            if (dashboard_btn_testing)
+            {
+              Serial.println("Restart inverter button pressed");
+            }
+            else 
+            {
+              reset_inverter();
+            }
         }
     }
 }
@@ -904,7 +977,7 @@ int calculate_torque_with_regen() {
     } else {
         calculated_torque = (torque1 + torque2) / 2 + torque3;
 
-        if (debug && timer_debug_raw_torque.check()) {
+        if (torque_debugging && timer_debug_raw_torque.check()) {
             Serial.print("TORQUE REQUEST DELTA PERCENT: "); // Print the % difference between the 2 accelerator sensor requests
             Serial.println(abs(torque1 - torque2) / (double) MAX_TORQUE * 100);
             Serial.print("MCU RAW TORQUE: ");
@@ -928,35 +1001,4 @@ void update_couloumb_count() {
     } else {
         total_charge_amount -= new_current;
     }
-}
-
-float get_excess_slip() {
-  float slip_ratio = 0; //slip ratio is 0 by default
-  if(front_rpm > 10 && rear_rpm > 30) {
-    slip_ratio = ((rear_rpm + slip_adjuster) / (front_rpm + slip_adjuster)) - 1; //if both front and rear are spinning, calculate the ratio
-  }
-  mcu_launch_control.set_slip_ratio(slip_ratio * 100);
-  float excess_slip = slip_ratio - max_desireable_slip_ratio;
-  Serial.print("ESR: ");
-  Serial.print(excess_slip);
-  return excess_slip;
-}
-
-void update_slip_limiting_factor() {
-  float excess_slip = get_excess_slip();
-  total_excess_slip += excess_slip;
-  if (total_excess_slip < 0) total_excess_slip = 0;
-  float change_in_excess_slip = excess_slip - last_excess_slip;
-  last_excess_slip = excess_slip;
-  
-  float P = KP * excess_slip;
-  float I = KI * total_excess_slip;
-  float D = KD * change_in_excess_slip;
-
-  slip_limiting_factor = 1 / (1 + (P + I + D));
-  if (slip_limiting_factor > 1) slip_limiting_factor = 1; //IMPORTANT, slip_limiting_factor must be 1 or less, otherwise it could increase torque
-  if (slip_limiting_factor < 0) slip_limiting_factor = 1; //IMPORTANT, slip_limiting_factor must not be negative, otherwise a negative torque will be requested
-  mcu_launch_control.set_slip_limiting_factor(slip_limiting_factor * 100);
-  Serial.print("    SLF: ");
-  Serial.println(slip_limiting_factor);
 }
