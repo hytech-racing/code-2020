@@ -40,8 +40,8 @@ class TelemetryClient:
             #     raw = binascii.hexlify(data[0]).upper() + "," + binascii.hexlify(data[5:5 + size]).upper()
             #     f.write(str(datetime.datetime.now()) + ',' + raw + "\n")
             self.countGoodFrames += 1
-            if data[0] == 0xEA:
-                self.screen.addstr(0,59, ' - GOT WHEEL SPEED')
+            # if data[0] == 0xEC:
+            #     self.screen.addstr(0,59, str(b2i16(data[5:7]) / 100.))
             lines = decode(data)
             with open(self.filename, "a") as f:
                 # TODO update to use timestamp sent over LTE instead of local timestamp
@@ -163,6 +163,11 @@ class TelemetryClient:
         self.screen.addstr(39,55,'TCU WHEEL RPM REAR RIGHT: ')
         self.screen.addstr(40,55,'TCU WHEEL RPM FRONT LEFT: ')
         self.screen.addstr(41,55,'TCU WHEEL RPM FRONT RIGHT: ')
+
+        self.screen.addstr(43,55,'MCU SLIP RATIO: ')
+        self.screen.addstr(44,55,'MCU SLIP LIMITING FACTOR: ')
+
+        self.screen.addstr(46,55,'TCU DISTANCE TRAVELED: ')
 
         self.screen.addstr(3,105,'BATTERY MANAGEMENT SYSTEM DETAILED VOLTAGES')
         self.screen.addstr(4,105,'IC 0 CELL 0: ')
@@ -551,6 +556,15 @@ class TelemetryClient:
         if ('TCU WHEEL RPM FRONT RIGHT' in incomingLine):
             self.clearLine(41,55)
             self.screen.addstr(41,55,incomingLine)
+        if ('MCU SLIP RATIO' in incomingLine):
+            self.clearLine(43,55)
+            self.screen.addstr(43,55,incomingLine)
+        if ('MCU SLIP LIMITING FACTOR' in incomingLine):
+            self.clearLine(44,55)
+            self.screen.addstr(44,55,incomingLine)
+        if ('TCU DISTANCE TRAVELED' in incomingLine):
+            self.clearLine(46,55)
+            self.screen.addstr(46,55,incomingLine)
         if ('IC 0 C' in incomingLine):
             row = 4 + int(incomingLine[10])
             self.clearLineShort(row,105)
@@ -797,11 +811,16 @@ def decode(msg):
         ret.append("BMS TOTAL CHARGE: " + str(b2ui32(msg[5:9]) / 10000.) + " C")
         ret.append("BMS TOTAL DISCHARGE: " + str(b2ui32(msg[9:13]) / 10000.) + " C")
     if (id == 0xEA):
-        ret.append("TCU WHEEL RPM REAR LEFT: " + str(b2i16(msg[5:7])) + " RPM")
-        ret.append("TCU WHEEL RPM REAR RIGHT: " + str(b2i16(msg[7:9])) + " RPM")
+        ret.append("TCU WHEEL RPM REAR LEFT: " + str(b2i16(msg[5:7]) / 100.) + " RPM")
+        ret.append("TCU WHEEL RPM REAR RIGHT: " + str(b2i16(msg[7:9]) / 100.) + " RPM")
     if (id == 0xEB):
-        ret.append("TCU WHEEL RPM FRONT LEFT: " + str(b2i16(msg[5:7])) + " RPM")
-        ret.append("TCU WHEEL RPM FRONT RIGHT: " + str(b2i16(msg[7:9])) + " RPM")
+        ret.append("TCU WHEEL RPM FRONT LEFT: " + str(b2i16(msg[5:7]) / 100.) + " RPM")
+        ret.append("TCU WHEEL RPM FRONT RIGHT: " + str(b2i16(msg[7:9]) / 100.) + " RPM")
+    if (id == 0xEC):
+        ret.append("MCU SLIP RATIO: " + str(b2i16(msg[5:7]) / 100.))
+        ret.append("MCU SLIP LIMITING FACTOR: " + str(b2i16(msg[7:9]) / 100.))
+    if (id == 0xED):
+        ret.append("TCU DISTANCE TRAVELED: " + str(b2i16(msg[5:7]) / 100.) + " m")
     return ret
 
 def b2i8(data):
