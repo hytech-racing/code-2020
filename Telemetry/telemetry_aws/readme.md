@@ -1,18 +1,18 @@
 ## Consolidated Python Telemetry Utilities
 
 ### Main Scripts
-`csv_server.js`         - Node.js Express server -- Exposes endpoint for raw telemetry CSV uploads.
-`mqtt_server.py`        - Python Server -- Receives MQTT messages and writes directly to Influx.
-`telemetry_lte_xbee.py` - Python Server -- Live telemetry console. Intended for local use, not AWS server.
+- `csv_server.js`         - Node.js Express server -- Exposes endpoint for raw telemetry CSV uploads.
+- `mqtt_server.py`        - Python Server -- Receives MQTT messages and writes directly to Influx.
+- `telemetry_lte_xbee.py` - Python Server -- Live telemetry console. Intended for local use, not AWS server.
 
 ### Configuration Files
-`console_config.py`     - Defines screen setup for telemetry_lte_xbee.py
-`csv_to_influx.py`      - Sub-process of csv_server.js. Parses CSV files and writes to Influx.
-`db.py`                 - Contains main decoder, MQTT decryption methods, and Influx database utilities
+- `console_config.py`     - Defines screen setup for telemetry_lte_xbee.py
+- `csv_to_influx.py`      - Sub-process of csv_server.js. Parses CSV files and writes to Influx.
+- `db.py`                 - Contains main decoder, MQTT decryption methods, and Influx database utilities
 
 ### Miscellaneous
-`index.html`            - Front-end portal for csv_server.js
-`package.json`          - Specifies Node.js dependencies for csv_server.js
+- `index.html`            - Front-end portal for csv_server.js
+- `package.json`          - Specifies Node.js dependencies for csv_server.js
 
 ### Creating a new CAN Message
 To process a new CAN message, update `db.py`.
@@ -23,17 +23,17 @@ elif (id == <CAN_ID>):
     ret.append([<NAME_OF_DATA_POINT>, <DECRYPTION_METHOD>, <?UNITS>])
     ret.append(...)
     ...
+# Note that the CAN message will start at `msg[4]`.
+# Note that words in `<NAME_OF_DATA_POINT>` should be capitalized and delimited with underscores `_`.
 ```
-Note that the CAN message will start at `msg[4]`.
-Note that words in `<NAME_OF_DATA_POINT>` should be capitalized and delimited with underscores `_`.
 
 ### Common decryption methods
 Each element of `msg` will be an encoded byte. To decrypt a set of bytes, use one of the following:
-`b2i8`    - Accepts byte-encoded substring `msg[A:B]` with length `B - A = 1`. Produces `unsigned 8-bit integer`.
-`b2i16`   - Accepts byte-encoded substring `msg[A:B]` with length `B - A = 2`. Produces `unsigned 16-bit integer `.
-`b2ui16`  - Accepts byte-encoded substring `msg[A:B]` with length `B - A = 2`. Produces `unsigned 16-bit integer`.
-`b2ui32`  - Accepts byte-encoded substring `msg[A:B]` with length `B - A = 4`. Produces `unsigned 32-bit integer`.
-`b2ui64`  - Accepts byte-encoded substring `msg[A:B]` with length `B - A = 8`. Produces `unsigned 64-bit integer`.
+- `b2i8`    - Accepts byte-encoded substring `msg[A:B]` with length `B - A = 1`. Produces `unsigned 8-bit integer`.
+- `b2i16`   - Accepts byte-encoded substring `msg[A:B]` with length `B - A = 2`. Produces `unsigned 16-bit integer`.
+- `b2ui16`  - Accepts byte-encoded substring `msg[A:B]` with length `B - A = 2`. Produces `unsigned 16-bit integer`.
+- `b2ui32`  - Accepts byte-encoded substring `msg[A:B]` with length `B - A = 4`. Produces `unsigned 32-bit integer`.
+- `b2ui64`  - Accepts byte-encoded substring `msg[A:B]` with length `B - A = 8`. Produces `unsigned 64-bit integer`.
 
 ### Adding a message to the live console
 To display a new CAN message on the live console, update `console_config.py`.
