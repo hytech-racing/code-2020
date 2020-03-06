@@ -29,25 +29,18 @@ struct definition {
       booleanMappings = m;
     }
 
-    long long parse(unsigned long long _u, int messageLen, vector<bool> &boolmap) {
-        unsigned long long u = 0;
-        for (int i = 0; i < messageLen; i++) {
-          u = (u << 8) + (_u & 0xFF);
-          _u >>= 8;
-        }
-
-        unsigned long long mask = (1ULL << (8 * len)) - 1;
-        long long rawData = (u >> (8*(messageLen-offset-len))) & mask;
+    long long parse(unsigned long long u, int messageLen, vector<bool> &boolmap) {
+        unsigned long long mask = (1ULL << (len << 3)) - 1;
+        long long rawData = (u >> ((messageLen-offset-len) << 3)) & mask;
+        mask = ++mask >> 1;
 
         if (!booleanMappings.empty()) {
             boolmap = vector<bool>(8*len);
-            mask = 1ULL << (8*len - 1);
             for(int i = 0; i < booleanMappings.size(); i++) {
                 boolmap[i] = (bool)(mask & rawData);
                 mask >>= 1;
             }
         } else if(isSigned) {
-            mask = 1ULL << (8*len - 1);
             if((rawData & mask) != 0) {
                 mask = (mask << 1) - 1;
                 return rawData | ~mask;
@@ -263,12 +256,19 @@ static void loadLookupTable() {
     definition(0, 2, true, "TIMESTAMP MILLISECONDS")
   });
   CAN_MSG_DEFINITION[0xEA] = pair<string, vector<definition>> ("ID_TCU_WHEEL_RPM_REAR", {
-    definition(2, 2, true, "TCU WHEEL RPM REAR LEFT", "RPM"),
-    definition(0, 2, false, "TCU WHEEL RPM REAR RIGHT", "RPM")
+    definition(2, 2, true, "TCU WHEEL RPM REAR LEFT", "RPM", 0.01),
+    definition(0, 2, true, "TCU WHEEL RPM REAR RIGHT", "RPM", 0.01)
   });
   CAN_MSG_DEFINITION[0xEB] = pair<string, vector<definition>> ("ID_TCU_WHEEL_RPM_FRONT", {
-    definition(2, 2, true, "TCU WHEEL RPM FRONT LEFT", "RPM"),
-    definition(0, 2, false, "TCU WHEEL RPM FRONT RIGHT", "RPM")
+    definition(2, 2, true, "TCU WHEEL RPM FRONT LEFT", "RPM", 0.01),
+    definition(0, 2, true, "TCU WHEEL RPM FRONT RIGHT", "RPM", 0.01)
+  });
+  CAN_MSG_DEFINITION[0xEC] = pair<string, vector<definition>> ("ID_MCU_LAUNCH_CONTROL", {
+    definition(2, 2, true, "MCU SLIP RATIO", "", 0.01),
+    definition(0, 2, true, "MCU SLIP LIMITING FACTOR", "", 0.01)
+  });
+  CAN_MSG_DEFINITION[0xED] = pair<string, vector<definition>> ("ID_TCU_DISTANCE_TRAVELED", {
+    definition(0, 2, true, "TCU DISTANCE TRAVELED", "", 0.01)
   });
 }
 

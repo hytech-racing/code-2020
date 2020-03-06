@@ -2,7 +2,7 @@
   "name": "upload_server",
   "version": "1.0.0",
   "description": "uploader for grafana csv files",
-  "main": "server.js",
+  "main": "csv_server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },

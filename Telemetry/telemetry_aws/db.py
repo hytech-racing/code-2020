@@ -1,13 +1,8 @@
-import sys
-import datetime
-import time
-import binascii
-# import msvcrt
-
-import struct
 from influxdb import InfluxDBClient
 import requests
-import csv
+import struct
+import binascii
+from cobs import cobs
 
 MQTT_SERVER = 'localhost'
 # MQTT_SERVER = 'ec2-3-134-2-166.us-east-2.compute.amazonaws.com'
@@ -19,70 +14,64 @@ MQTT_TOPIC = 'hytech_car/telemetry'
 INFLUX_HOST = 'localhost'
 INFLUX_PORT = 8086
 
-def influx_connect(INFLUX_DB_NAME):
-    while True:
-        print('Attempting to connect to database at {}:{}'.format(INFLUX_HOST, INFLUX_PORT))
-        try:
-            client = InfluxDBClient(host=INFLUX_HOST, port=INFLUX_PORT)
-            db_exists = False
-            for db in client.get_list_database():
-                if db['name'] == INFLUX_DB_NAME:
-                    db_exists = True
+class DB:
+    def __init__(self, INFLUX_DB_NAME, time_precision):
+        while True:
+            print('Attempting to connect to database at {}:{}'.format(INFLUX_HOST, INFLUX_PORT))
+            try:
+                client = InfluxDBClient(host=INFLUX_HOST, port=INFLUX_PORT)
+                db_exists = False
+                for db in client.get_list_database():
+                    if db['name'] == INFLUX_DB_NAME:
+                        db_exists = True
+                        client.switch_database(INFLUX_DB_NAME)
+                        break
+                if not db_exists:
+                    requests.get('http://{}:{}/query?q=CREATE+DATABASE+"{}"'.format(INFLUX_HOST, INFLUX_PORT, INFLUX_DB_NAME))
                     client.switch_database(INFLUX_DB_NAME)
-                    break
-            if not db_exists:
-                requests.get('http://{}:{}/query?q=CREATE+DATABASE+"{}"'.format(INFLUX_HOST, INFLUX_PORT, INFLUX_DB_NAME))
-                client.switch_database(INFLUX_DB_NAME)
-            break
+                break
+            except Exception as e:
+                print("Influx connection refused. Trying again in ten seconds.")
+                time.sleep(10)
+        print("Connected using database {}".format(INFLUX_DB_NAME))
+        self.influx_client = client
+        self.time_precision = time_precision
+
+    def write(self, timestamp, data):
+        json_body = []
+        for readout in decode(data):
+            if len(str(readout[1])) == 0:
+                continue
+            if len(readout) == 2:
+                json_body.append({
+                    "measurement": readout[0],
+                    "time": timestamp,
+                    "fields": {
+                        "value": readout[1]
+                    }
+                })
+            else:
+                json_body.append({
+                    "measurement": readout[0],
+                    "time": timestamp,
+                    "fields": {
+                        "value": readout[1],
+                        "units": readout[2]
+                    }
+                })
+        # print("Writing document: ")
+        # print(json_body)
+        try:
+            self.influx_client.write_points(points=json_body, time_precision=self.time_precision)
         except Exception as e:
-            print("Influx connection refused. Trying again in ten seconds.")
-            time.sleep(10)
-    print("Connected using database {}".format(INFLUX_DB_NAME))
-    return client
-
-
-def mqtt_connect(client, userdata, flags, rc):
-    client.subscribe(MQTT_TOPIC)
-    print("Subscribed to", MQTT_TOPIC)
-    client.publish(MQTT_TOPIC, "Python client connected")
-
-# id_map = [False] * 256;
-
-def write_msg(timestamp, data):
-    json_body = []
-    for readout in decode(data):
-        if len(str(readout[1])) == 0:
-            continue
-        if len(readout) == 2:
-            json_body.append({
-                "measurement": readout[0],
-                "time": timestamp,
-                "fields": {
-                    "value": readout[1]
-                }
-            })
-        else:
-            json_body.append({
-                "measurement": readout[0],
-                "time": timestamp,
-                "fields": {
-                    "value": readout[1],
-                    "units": readout[2]
-                }
-            })
-    # print("Writing document: ")
-    # print(json_body)
-    try:
-        influx_client.write_points(points=json_body, time_precision='s')
-    except Exception as e:
-        print("Operation failed. Printing error:")
-        print(e)
+            print("Operation failed. Printing error:")
+            print(e)
 
 def decode(msg):
     ret = []
     id = msg[0]
     # id = ord(msg[0])
-    print("CAN ID:        0x" + hex(msg[0]).upper()[2:])
+    # print("CAN ID:        0x" + hex(msg[0]).upper()[2:])
     size = msg[4]
     # size = ord(msg[4])
     #print("MSG LEN:       " + str(size))
@@ -121,10 +110,10 @@ def decode(msg):
         ret.append(["INVERTER_LOCKOUT",                 ((msg[11] & 0x80) >> 7)                 ])
         ret.append(["DIRECTION_COMMAND",                msg[12]                                 ])
     elif (id == 0xAB):
-        ret.append(["POST_FAULT_LO",                    "0x" + hex(msg[6]).upper()[2:] + hex(msg[5]).upper()[2:]])
-        ret.append(["POST_FAULT_HI",                    "0x" + hex(msg[8]).upper()[2:] + hex(msg[7]).upper()[2:]])
-        ret.append(["RUN_FAULT_LO",                     "0x" + hex(msg[10]).upper()[2:] + hex(msg[9]).upper()[2:]])
-        ret.append(["RUN_FAULT_HI",                     "0x" + hex(msg[12]).upper()[2:] + hex(msg[11]).upper()[2:]])
+        ret.append("POST FAULT LO", "0x" + hex(msg[6]).upper()[2:] + hex(msg[5]).upper()[2:])
+        ret.append("POST FAULT HI", "0x" + hex(msg[8]).upper()[2:] + hex(msg[7]).upper()[2:])
+        ret.append("RUN FAULT LO", "0x" + hex(msg[10]).upper()[2:] + hex(msg[9]).upper()[2:])
+        ret.append("RUN FAULT HI", "0x" + hex(msg[12]).upper()[2:] + hex(msg[11]).upper()[2:])
     elif (id == 0xAC):
         ret.append(["COMMANDED_TORQUE",                 (b2i16(msg[5:7]) / 10.),         "Nm"    ])
         ret.append(["TORQUE_FEEDBACK",                  (b2i16(msg[7:9]) / 10.),         "Nm"    ])
@@ -159,7 +148,7 @@ def decode(msg):
         ret.append(["RCU_IMD_FAULT",                    (not (msg[6] & 0x2) >> 1)               ])
     elif (id == 0xD2):
         ret.append(["FCU_STATE",                        msg[5]                                  ])
-        ret.append(["FCU_FLAGS",                        "0x" + hex(msg[6]).upper()[2:]          ])
+        ret.append(["FCU_FLAGS",                        "0x{}".format(hex(msg[6]).upper()[2:])  ])
         ret.append(["FCU_START_BUTTON_ID",              msg[7]                                  ])
         ret.append(["FCU_BRAKE_ACT",                    ((msg[6] & 0x8) >> 3)                    ])
         ret.append(["FCU_IMPLAUS_ACCEL",                (msg[6] & 0x1)                           ])
@@ -174,7 +163,7 @@ def decode(msg):
         ret.append(["BMS_VOLTAGE_HIGH",                  (b2ui16(msg[9:11]) / 10e3),     "V"     ])
         ret.append(["BMS_VOLTAGE_TOTAL",                 (b2ui16(msg[11:13]) / 100.),    "V"     ])
     elif (id == 0xD8):
-        ic = "IC_" + str(msg[5] & 0xF) + "_CELL"
+        ic = "IC_" + str(msg[5] & 0xF) + "_CELL_"
         group = ((msg[5] & 0xF0) >> 4) * 3
         ret.append([ic + str(group),                    (b2ui16(msg[6:8]) / 10e3),       "V"     ])
         ret.append([ic + str(group + 1),                (b2ui16(msg[8:10]) / 10e3),      "V"     ])
@@ -198,17 +187,23 @@ def decode(msg):
         for ic in range(8):
             for cell in range(9):
                 bal = "BAL_IC" + str(ic + 4 if group == 1 else ic) + "_CELL" + str(cell)
-                state = ("OFF" if (((data >> (0x4 + 0x9 * ic)) & 0x1FF) >> cell) & 0x1 == 1 else "ON")
+                state = ("ON" if (((data >> (0x4 + 0x9 * ic)) & 0x1FF) >> cell) & 0x1 == 1 else "OFF")
                 ret.append([bal, state])
     elif (id == 0xE2):
-        ret.append(["BMS_TOTAL_CHARGE",                 b2ui32(msg[5:9]) / 10000., "C"])
-        ret.append(["BMS_TOTAL_DISCHARGE",              b2ui32(msg[9:13]) / 10000., "C"])
+        ret.append(["BMS_TOTAL_CHARGE",                 b2ui32(msg[5:9]) / 10000.,      "C"    ])
+        ret.append(["BMS_TOTAL_DISCHARGE",              b2ui32(msg[9:13]) / 10000.,     "C"    ])
     elif (id == 0xEA):
-        ret.append(["TCU_WHEEL_RPM_REAR_LEFT",          b2i16(msg[5:7]),                "RPM"  ])
-        ret.append(["TCU_WHEEL_RPM_REAR_RIGHT",         b2i16(msg[7:9]),                "RPM"  ])
+        ret.append(["TCU_WHEEL_RPM_REAR_LEFT",          b2i16(msg[5:7]) / 100,          "RPM"  ])
+        ret.append(["TCU_WHEEL_RPM_REAR_RIGHT",         b2i16(msg[7:9]) / 100,          "RPM"  ])
     elif (id == 0xEB):
-        ret.append(["TCU_WHEEL_RPM_FRONT_LEFT",         b2i16(msg[5:7]),                "RPM"  ])
-        ret.append(["TCU_WHEEL_RPM_FRONT_RIGHT",        b2i16(msg[7:9]),                "RPM"  ])
+        ret.append(["TCU_WHEEL_RPM_FRONT_LEFT",         b2i16(msg[5:7]) / 100,          "RPM"  ])
+        ret.append(["TCU_WHEEL_RPM_FRONT_RIGHT",        b2i16(msg[7:9]) / 100,          "RPM"  ])
+    elif (id == 0xEC):
+        ret.append(["MCU SLIP RATIO",                   b2i16(msg[5:7]) / 100.                 ])
+        ret.append(["MCU SLIP LIMITING FACTOR",         b2i16(msg[7:9]) / 100.                 ])
+    elif (id == 0xED):
+        ret.append(["TCU DISTANCE TRAVELED",            b2i16(msg[5:7]) / 100.,         "m"    ])
+
     return ret
 
 def b2i8(data):
@@ -242,13 +237,60 @@ def shutdown_from_flags(flags):
 
     return shutdown
 
-if (len(sys.argv) < 3):
-    print("Usage: db.py [DB_NAME] [FILEPATH]")
-    exit()
+def unpack(frame):
+    # print("----------------")
+    frame = ''.join(char for char in frame if char.isalnum())
+    if (len(frame) != 32):
+        # TODO throw an error up on screen
+        # print("Malformed frame len " + str(len(frame)) + " encountered - skipping")
+        return -1
+    '''frameprint = ''
+    odd = False
+    for char in frame:
+        frameprint += char
+        if odd:
+            frameprint += " "
+        odd = not odd
+    print("Encoded frame: " + frameprint.upper())'''
+    try:
+        decoded = cobs.decode(binascii.unhexlify(frame))
+    except Exception as e:
+        print("Decode failed: " + str(e))
+        return -1
+    # Calculate checksum
+    checksum = fletcher16(decoded[0:13])
+    cs_calc = chr(checksum >> 8) + " " + chr(checksum & 0xFF)
+    cs_rcvd = chr(decoded[14]) + " " + chr(decoded[13])
+    if cs_calc != cs_rcvd:
+        # print("Decode failed: Checksum mismatch - calc: " + cs_calc + " - rcvd: " + cs_rcvd)
+        return -1
+    '''out = "Decoded frame: "
+    for char in decoded:
+        out += binascii.hexlify(char).upper() + " "
+    print(out)'''
+    return decoded
 
-influx_client = influx_connect(sys.argv[1])
-with open(sys.argv[2], 'r') as file:
-    reader = csv.reader(file)
-    next(reader)
-    for row in reader:
-        write_msg(int(row[0]), binascii.unhexlify((row[1] + "00000000" + row[3]).ljust(26, '0').encode()))
+def fletcher16(data):
+    d = data # map(ord,data)
+    index = 0
+    c0 = 0
+    c1 = 0
+    i = 0
+    length = len(d)
+    while length >= 5802:
+        for i in range(5802):
+            c0 += d[index]
+            c1 += c0
+            index += 1
+        c0 %= 255
+        c1 %= 255
+        length -= 5802
+
+    index = 0
+    for i in range(len(data)):
+        c0 += d[index]
+        c1 += c0
+        index += 1
+    c0 %= 255
+    c1 %= 255
+    return (c1 << 8 | c0)
