@@ -3,10 +3,8 @@
 ### Main Scripts
 - `csv_server.js`         - Node.js Express server -- Exposes endpoint for raw telemetry CSV uploads.
 - `mqtt_server.py`        - Python Server -- Receives MQTT messages and writes directly to Influx.
-- `telemetry_lte_xbee.py` - Python Server -- Live telemetry console. Intended for local use, not AWS server.
 
 ### Configuration Files
-- `console_config.py`     - Defines screen setup for telemetry_lte_xbee.py
 - `csv_to_influx.py`      - Sub-process of csv_server.js. Parses CSV files and writes to Influx.
 - `db.py`                 - Contains main decoder, MQTT decryption methods, and Influx database utilities
 
@@ -36,7 +34,7 @@ Each element of `msg` will be an encoded byte. To decrypt a set of bytes, use on
 - `b2ui64`  - Accepts byte-encoded substring `msg[A:B]` with length `B - A = 8`. Produces `unsigned 64-bit integer`.
 
 ### Adding a message to the live console
-To display a new CAN message on the live console, update `console_config.py`.
+To display a new CAN message on the live console, update `console_config.py` in the neighboring `telemetry_py` directory.
 Add your message in the form `<NAME OF DATA POINT>: [<ROW>, <COL>]`
 Note that `<NAME OF DATA POINT>` should be exactly the same as `NAME_OF_DATA_POINT` defined in `db.py`, but with all underscores `_` replaced with spaces ` `.
 `<ROW>` and `<COL>` must be positive integers.
