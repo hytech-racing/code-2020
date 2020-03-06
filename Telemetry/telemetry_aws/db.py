@@ -192,10 +192,10 @@ def decode(msg):
         ret.append(["TCU_WHEEL_RPM_FRONT_LEFT",         b2i16(msg[5:7]) / 100,          "RPM"  ])
         ret.append(["TCU_WHEEL_RPM_FRONT_RIGHT",        b2i16(msg[7:9]) / 100,          "RPM"  ])
     elif (id == 0xEC):
-        ret.append(["MCU SLIP RATIO",                   b2i16(msg[5:7]) / 100.                 ])
-        ret.append(["MCU SLIP LIMITING FACTOR",         b2i16(msg[7:9]) / 100.                 ])
+        ret.append(["MCU_SLIP_RATIO",                   b2i16(msg[5:7]) / 100.                 ])
+        ret.append(["MCU_SLIP_LIMITING_FACTOR",         b2i16(msg[7:9]) / 100.                 ])
     elif (id == 0xED):
-        ret.append(["TCU DISTANCE TRAVELED",            b2i16(msg[5:7]) / 100.,         "m"    ])
+        ret.append(["TCU_DISTANCE_TRAVELED",            b2i16(msg[5:7]) / 100.,         "m"    ])
 
     return ret
 
