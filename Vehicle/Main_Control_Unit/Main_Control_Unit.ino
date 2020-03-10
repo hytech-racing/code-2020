@@ -932,7 +932,7 @@ void update_couloumb_count() {
 
 float get_excess_slip() {
   float slip_ratio = 0; //slip ratio is 0 by default
-  if(front_rpm > 10 && rear_rpm > 30) {
+  if(front_rpm > 0 && rear_rpm > 0) {
     slip_ratio = ((rear_rpm + slip_adjuster) / (front_rpm + slip_adjuster)) - 1; //if both front and rear are spinning, calculate the ratio
   }
   mcu_launch_control.set_slip_ratio(slip_ratio * 100);
@@ -955,7 +955,7 @@ void update_slip_limiting_factor() {
 
   slip_limiting_factor = 1 / (1 + (P + I + D));
   if (slip_limiting_factor > 1) slip_limiting_factor = 1; //IMPORTANT, slip_limiting_factor must be 1 or less, otherwise it could increase torque
-  if (slip_limiting_factor < 0) slip_limiting_factor = 1; //IMPORTANT, slip_limiting_factor must not be negative, otherwise a negative torque will be requested
+  if (slip_limiting_factor < 0) slip_limiting_factor = 0; //IMPORTANT, slip_limiting_factor must not be negative, otherwise a negative torque will be requested
   mcu_launch_control.set_slip_limiting_factor(slip_limiting_factor * 100);
   Serial.print("    SLF: ");
   Serial.println(slip_limiting_factor);
