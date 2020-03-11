@@ -183,8 +183,8 @@ def decode(msg):
                 state = ("ON" if (((data >> (0x4 + 0x9 * ic)) & 0x1FF) >> cell) & 0x1 == 1 else "OFF")
                 ret.append([bal, state])
     elif (id == 0xE2):
-        ret.append(["BMS_TOTAL_CHARGE",                 b2ui32(msg[5:9]) / 10000.,      "C"    ])
-        ret.append(["BMS_TOTAL_DISCHARGE",              b2ui32(msg[9:13]) / 10000.,     "C"    ])
+        ret.append(["BMS_TOTAL_CHARGE",                 b2ui32(msg[5:9]) / 100.,      "C"    ])
+        ret.append(["BMS_TOTAL_DISCHARGE",              b2ui32(msg[9:13]) / 100.,     "C"    ])
     elif (id == 0xEA):
         ret.append(["TCU_WHEEL_RPM_REAR_LEFT",          b2i16(msg[5:7]) / 100,          "RPM"  ])
         ret.append(["TCU_WHEEL_RPM_REAR_RIGHT",         b2i16(msg[7:9]) / 100,          "RPM"  ])
