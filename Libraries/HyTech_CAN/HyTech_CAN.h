@@ -323,7 +323,7 @@ typedef struct CAN_message_mcu_pedal_readings_t {
 
 typedef struct CAN_message_mcu_status_t {
     uint8_t state;
-    uint8_t flags;
+    uint16_t flags;
     int16_t temperature;
     uint16_t glv_battery_voltage;
 } CAN_message_mcu_status_t;
@@ -1081,6 +1081,7 @@ class MCU_status {
         bool get_shutdown_d_above_threshold();
         bool get_shutdown_e_above_threshold();
         bool get_shutdown_f_above_threshold();
+        bool get_bspd_ok_high();
         int16_t get_temperature();
         uint16_t get_glv_battery_voltage();
         void set_state(uint8_t state);
@@ -1093,6 +1094,7 @@ class MCU_status {
         void set_shutdown_d_above_threshold(bool shutdown_d_above_threshold);
         void set_shutdown_e_above_threshold(bool shutdown_e_above_threshold);
         void set_shutdown_f_above_threshold(bool shutdown_f_above_threshold);
+        void set_bspd_ok_high(bool bspd_ok_high);
         void set_temperature(int16_t temperature);
         void set_glv_battery_voltage(uint16_t glv_battery_voltage);
     private:
