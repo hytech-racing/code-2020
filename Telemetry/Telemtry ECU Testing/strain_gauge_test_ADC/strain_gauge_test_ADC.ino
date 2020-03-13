@@ -1,4 +1,4 @@
-#include <ADC.h>
+ #include <ADC.h>
 
 //initialize Teensy 16-bit ADC object
 ADC *adc = new ADC();
@@ -69,9 +69,8 @@ void loop() {
   }
   //loop forward counter once per cycle
   counter++;
-  #if counter == limit
-  counter = 0;
-  #endif
+  if (counter == limit)
+    counter = 0;
 
   //convert the 16-bit value into the voltage and then adjust by the gain to get the real voltage
   double half_vV = Vs*(val[0]/limit)/adc->getMaxValue();
