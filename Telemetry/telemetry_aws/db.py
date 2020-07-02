@@ -3,6 +3,7 @@ import requests
 import struct
 import binascii
 from cobs import cobs
+import threading
 
 INFLUX_HOST = 'localhost'
 INFLUX_PORT = 8086
@@ -29,14 +30,15 @@ class DB:
         print("Connected using database {}".format(INFLUX_DB_NAME))
         self.influx_client = client
         self.time_precision = time_precision
+        self.json_body = []
+        self.writing = False
 
     def write(self, timestamp, data):
-        json_body = []
         for readout in decode(data):
             if len(str(readout[1])) == 0:
                 continue
             if len(readout) == 2:
-                json_body.append({
+                self.json_body.append({
                     "measurement": readout[0],
                     "time": timestamp,
                     "fields": {
@@ -44,7 +46,7 @@ class DB:
                     }
                 })
             else:
-                json_body.append({
+                self.json_body.append({
                     "measurement": readout[0],
                     "time": timestamp,
                     "fields": {
@@ -54,8 +56,20 @@ class DB:
                 })
         # print("Writing document: ")
         # print(json_body)
+        if not self.writing:
+            try:
+                threading.Thread(target=self.buffered_write).start()
+            except Exception as e:
+                print(e)
+        
+    def buffered_write(self):
+        json = self.json_body
+        self.json_body = []
+        self.writing = True
+        
         try:
-            self.influx_client.write_points(points=json_body, time_precision=self.time_precision)
+            self.influx_client.write_points(points=json, time_precision=self.time_precision)
+            self.writing = False
         except Exception as e:
             print("Operation failed. Printing error:")
             print(e)
@@ -183,8 +197,8 @@ def decode(msg):
                 state = ("ON" if (((data >> (0x4 + 0x9 * ic)) & 0x1FF) >> cell) & 0x1 == 1 else "OFF")
                 ret.append([bal, state])
     elif (id == 0xE2):
-        ret.append(["BMS_TOTAL_CHARGE",                 b2ui32(msg[5:9]) / 100.,      "C"    ])
-        ret.append(["BMS_TOTAL_DISCHARGE",              b2ui32(msg[9:13]) / 100.,     "C"    ])
+        ret.append(["BMS_TOTAL_CHARGE",                 b2ui32(msg[5:9]) / 10000.,      "C"    ])
+        ret.append(["BMS_TOTAL_DISCHARGE",              b2ui32(msg[9:13]) / 10000.,     "C"    ])
     elif (id == 0xEA):
         ret.append(["TCU_WHEEL_RPM_REAR_LEFT",          b2i16(msg[5:7]) / 100,          "RPM"  ])
         ret.append(["TCU_WHEEL_RPM_REAR_RIGHT",         b2i16(msg[7:9]) / 100,          "RPM"  ])
