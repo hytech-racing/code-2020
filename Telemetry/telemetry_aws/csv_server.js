@@ -26,7 +26,7 @@ app.post('/upload', (req, res) => {
 	const db_name = req.body.db_name.trim().replace(/ /g,"_");
 	if (!db_name) return res.redirect('/?err=true');
 
-  child_process.exec(`python3 csv_to_influx.py ${db_name} ./${req.files.csv.file}`, () => clean(req))
+	child_process.exec(`python3 csv_to_influx.py ${db_name} ./${req.files.csv.file}`, () => {}) //clean(req))
 	res.send(`Your CSV is being written to database ${db_name}. Go to <a href=http://ec2-3-134-2-166.us-east-2.compute.amazonaws.com:3000/>Grafana</a> to view`);
 });
 

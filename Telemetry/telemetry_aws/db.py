@@ -117,10 +117,10 @@ def decode(msg):
         ret.append(["INVERTER_LOCKOUT",                 ((msg[11] & 0x80) >> 7)                 ])
         ret.append(["DIRECTION_COMMAND",                msg[12]                                 ])
     elif (id == 0xAB):
-        ret.append("POST FAULT LO", "0x" + hex(msg[6]).upper()[2:] + hex(msg[5]).upper()[2:])
-        ret.append("POST FAULT HI", "0x" + hex(msg[8]).upper()[2:] + hex(msg[7]).upper()[2:])
-        ret.append("RUN FAULT LO", "0x" + hex(msg[10]).upper()[2:] + hex(msg[9]).upper()[2:])
-        ret.append("RUN FAULT HI", "0x" + hex(msg[12]).upper()[2:] + hex(msg[11]).upper()[2:])
+        ret.append(["POST FAULT LO", "0x" + hex(msg[6]).upper()[2:] + hex(msg[5]).upper()[2:]])
+        ret.append(["POST FAULT HI", "0x" + hex(msg[8]).upper()[2:] + hex(msg[7]).upper()[2:]])
+        ret.append(["RUN FAULT LO", "0x" + hex(msg[10]).upper()[2:] + hex(msg[9]).upper()[2:]])
+        ret.append(["RUN FAULT HI", "0x" + hex(msg[12]).upper()[2:] + hex(msg[11]).upper()[2:]])
     elif (id == 0xAC):
         ret.append(["COMMANDED_TORQUE",                 (b2i16(msg[5:7]) / 10.),         "Nm"    ])
         ret.append(["TORQUE_FEEDBACK",                  (b2i16(msg[7:9]) / 10.),         "Nm"    ])
@@ -208,7 +208,7 @@ def decode(msg):
     elif (id == 0xE9):
         ret.append(["GPS_FIX_QUALITY",                  b2ui8(msg[5:6])                        ])
         ret.append(["GPS_SATELLITE_COUNT",              b2ui8(msg[6:7])                        ])
-        ret.append(["TIMESTAMP_SECONDS",                b2i16(msg[7:11]))                      ])
+        ret.append(["TIMESTAMP_SECONDS",                b2i16(msg[7:11])                       ])
         ret.append(["TIMESTAMP_MILLISECONDS",           b2i16(msg[11:13])                      ])
     elif (id == 0xEA):
         ret.append(["TCU_WHEEL_RPM_REAR_LEFT",          b2i16(msg[5:7]) / 100,          "RPM"  ])
@@ -225,16 +225,19 @@ def decode(msg):
     return ret
 
 def b2i8(data):
-    return struct.unpack("<1b", data[0])[0]
+    return struct.unpack("<1b", data[0:1])[0]
 
 def b2ui8(data):
-    return struct.unpack("<1B", data[0])[0]
+    return struct.unpack("<1B", data[0:1])[0]
 
 def b2i16(data):
     return struct.unpack("<1h", data[0:2])[0]
 
 def b2ui16(data):
     return struct.unpack("<1H", data[0:2])[0]
+
+def b2i32(data):
+    return struct.unpack("<1i", data[0:4])[0]
 
 def b2ui32(data):
     return struct.unpack("<1I", data[0:4])[0]
