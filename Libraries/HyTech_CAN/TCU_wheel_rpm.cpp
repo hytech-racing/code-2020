@@ -5,24 +5,8 @@
 
 #include "HyTech_CAN.h"
 
-TCU_wheel_rpm::TCU_wheel_rpm() {
-    message = {};
-}
-
-TCU_wheel_rpm::TCU_wheel_rpm(uint8_t buf[8]) {
-    load(buf);
-}
-
-void TCU_wheel_rpm::load(uint8_t buf[8]) {
-    message = {};
-    memcpy(&(message.wheel_rpm_left), &buf[0], sizeof(int16_t));
-    memcpy(&(message.wheel_rpm_right), &buf[2], sizeof(int16_t));
-}
-
-void TCU_wheel_rpm::write(uint8_t buf[8]) {
-    memcpy(&buf[0], &(message.wheel_rpm_left), sizeof(int16_t));
-    memcpy(&buf[2], &(message.wheel_rpm_right), sizeof(int16_t));
-}
+TCU_wheel_rpm::TCU_wheel_rpm() : Abstract_CAN_Container() {};
+TCU_wheel_rpm::TCU_wheel_rpm(uint8_t buf []) : Abstract_CAN_Container(buf) {};
 
 int16_t TCU_wheel_rpm::get_wheel_rpm_left() {
     return message.wheel_rpm_left;
@@ -30,6 +14,10 @@ int16_t TCU_wheel_rpm::get_wheel_rpm_left() {
 
 int16_t TCU_wheel_rpm::get_wheel_rpm_right() {
     return message.wheel_rpm_right;
+}
+
+float TCU_wheel_rpm::get_wheel_rpm() {
+    return (message.wheel_rpm_left + message.wheel_rpm_right) / 200.;
 }
 
 void TCU_wheel_rpm::set_wheel_rpm_left(uint16_t value) {

@@ -5,28 +5,8 @@
 
 #include "HyTech_CAN.h"
 
-MCU_GPS_readings_gamma::MCU_GPS_readings_gamma() {
-    message = {};
-}
-
-MCU_GPS_readings_gamma::MCU_GPS_readings_gamma(uint8_t buf[]) {
-    load(buf);
-}
-
-void MCU_GPS_readings_gamma::load(uint8_t buf[]) {
-    message = {};
-    memcpy(&(message.fix_quality), &buf[0], sizeof(uint8_t));
-    memcpy(&(message.satellite_count), &buf[1], sizeof(uint8_t));
-    memcpy(&(message.timestamp_seconds), &buf[2], sizeof(uint32_t));
-    memcpy(&(message.timestamp_milliseconds), &buf[6], sizeof(uint16_t));    
-}
-
-void MCU_GPS_readings_gamma::write(uint8_t buf[]) {
-    memcpy(&buf[0], &(message.fix_quality), sizeof(uint8_t));
-    memcpy(&buf[1], &(message.satellite_count), sizeof(uint8_t));
-    memcpy(&buf[2], &(message.timestamp_seconds), sizeof(uint32_t));
-    memcpy(&buf[6], &(message.timestamp_milliseconds), sizeof(uint16_t));
-}
+MCU_GPS_readings_gamma::MCU_GPS_readings_gamma() : Abstract_CAN_Container() {};
+MCU_GPS_readings_gamma::MCU_GPS_readings_gamma(uint8_t buf []) : Abstract_CAN_Container(buf) {};
 
 uint8_t MCU_GPS_readings_gamma::get_fix_quality() {
     return message.fix_quality;

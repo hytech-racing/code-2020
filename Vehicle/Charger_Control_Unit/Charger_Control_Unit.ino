@@ -9,6 +9,8 @@
 #include <HyTech_CAN.h>
 #include <kinetis_flexcan.h>
 #include <Metro.h>
+#include "Telemetry.h"
+#include "HT_CAN_Util.h"
 
 #define TOTAL_IC 8                      // Number of ICs in the system
 #define CELLS_PER_IC 9                  // Number of cells per IC
@@ -30,14 +32,17 @@ BMS_onboard_detailed_temperatures bms_onboard_detailed_temperatures[TOTAL_IC];
 BMS_onboard_temperatures bms_onboard_temperatures;
 BMS_balancing_status bms_balancing_status[(TOTAL_IC + 3) / 4]; // Round up TOTAL_IC / 4 since data from 4 ICs can fit in a single message
 
-static CAN_message_t rx_msg;
-static CAN_message_t tx_msg;
-FlexCAN CAN(500000);
-
 Metro timer_update_CAN = Metro(100);
 Metro timer_update_serial = Metro(500);
 
+Telemetry telemetry;
+
+static CAN_message_t rx_msg;
+HT_CAN_Util CAN(500000);
+
 void setup() {
+    setupTelemetry();
+
     pinMode(POWER, OUTPUT);
     digitalWrite(POWER, HIGH);
 
@@ -59,12 +64,8 @@ void setup() {
 }
 
 void loop() {
-    if (timer_update_CAN.check()) {
-        ccu_status.write(tx_msg.buf);
-        tx_msg.id = ID_CCU_STATUS;
-        tx_msg.len = sizeof(CAN_message_ccu_status_t);
-        CAN.write(tx_msg);
-    }
+    if (timer_update_CAN.check())
+        CAN.write(ID_CCU_STATUS, &ccu_status);
     
     if (timer_update_serial.check()) {
         print_cells();
@@ -162,42 +163,22 @@ void print_temps() {
  */
 void parse_can_message() {
     while (CAN.read(rx_msg)) {
-        if (rx_msg.id == ID_BMS_DETAILED_TEMPERATURES) {
-            BMS_detailed_temperatures temp = BMS_detailed_temperatures(rx_msg.buf);
-            bms_detailed_temperatures[temp.get_ic_id()].load(rx_msg.buf);
-        }
+        telemetry. load(rx_msg.id, rx_msg.buf);
 
-        if (rx_msg.id == ID_BMS_DETAILED_VOLTAGES) {
-            BMS_detailed_voltages temp = BMS_detailed_voltages(rx_msg.buf);
-            bms_detailed_voltages[temp.get_ic_id()][temp.get_group_id()].load(rx_msg.buf);
-        }
-
-        if (rx_msg.id == ID_BMS_VOLTAGES) {
-            bms_voltages.load(rx_msg.buf);
-        }
-
-        if (rx_msg.id == ID_BMS_TEMPERATURES) {
-            bms_temperatures.load(rx_msg.buf);
-        }
-
-        if (rx_msg.id == ID_BMS_ONBOARD_TEMPERATURES) {
-            bms_onboard_temperatures.load(rx_msg.buf);
-        }
-
-        if (rx_msg.id == ID_BMS_ONBOARD_DETAILED_TEMPERATURES) {
-            BMS_onboard_detailed_temperatures temp = BMS_onboard_detailed_temperatures(rx_msg.buf);
-            bms_onboard_detailed_temperatures[temp.get_ic_id()].load(rx_msg.buf);
-        }
-        
         if (rx_msg.id == ID_BMS_STATUS) {
-            bms_status = BMS_status(rx_msg.buf);
             ccu_status.set_charger_enabled(bms_status.get_state() == BMS_STATE_CHARGING);
             digitalWrite(CHARGE_ENABLE, ccu_status.get_charger_enabled());
         }
-
-        if (rx_msg.id == ID_BMS_BALANCING_STATUS) {
-            BMS_balancing_status temp = BMS_balancing_status(rx_msg.buf);
-            bms_balancing_status[temp.get_group_id()].load(rx_msg.buf);
-        }
     }
+}
+
+void setupTelemetry() {
+    telemetry.insert(ID_BMS_STATUS, &bms_status, &timer_update_CAN);
+    telemetry.insert(ID_BMS_VOLTAGES, &bms_voltages, &timer_update_CAN);
+    telemetry.insert(ID_BMS_DETAILED_VOLTAGES, new Abstract_CAN_Set<BMS_detailed_voltages>(&bms_detailed_voltages[0][0], 24), &timer_update_CAN);
+    telemetry.insert(ID_BMS_TEMPERATURES, &bms_temperatures, &timer_update_CAN);
+    telemetry.insert(ID_BMS_DETAILED_TEMPERATURES,  new Abstract_CAN_Set<BMS_detailed_temperatures>(&bms_detailed_temperatures[0], 8), &timer_update_CAN);
+    telemetry.insert(ID_BMS_ONBOARD_DETAILED_TEMPERATURES, new Abstract_CAN_Set<BMS_onboard_detailed_temperatures>(&bms_onboard_detailed_temperatures[0], TOTAL_IC), &timer_update_CAN);
+    telemetry.insert(ID_BMS_ONBOARD_TEMPERATURES, &bms_onboard_temperatures, &timer_update_CAN);
+    telemetry.insert(ID_BMS_BALANCING_STATUS, new Abstract_CAN_Set<BMS_balancing_status>(&bms_balancing_status[0], (TOTAL_IC + 3) / 4), &timer_update_CAN);
 }

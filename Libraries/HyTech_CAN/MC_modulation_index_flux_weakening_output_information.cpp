@@ -5,28 +5,8 @@
 
 #include "HyTech_CAN.h"
 
-MC_modulation_index_flux_weakening_output_information::MC_modulation_index_flux_weakening_output_information() {
-    message = {};
-}
-
-MC_modulation_index_flux_weakening_output_information::MC_modulation_index_flux_weakening_output_information(uint8_t buf[8]) {
-    load(buf);
-}
-
-void MC_modulation_index_flux_weakening_output_information::load(uint8_t buf[8]) {
-    message = {};
-    memcpy(&(message.modulation_index), &buf[0], sizeof(uint16_t));
-    memcpy(&(message.flux_weakening_output), &buf[2], sizeof(int16_t));
-    memcpy(&(message.id_command), &buf[4], sizeof(int16_t));
-    memcpy(&(message.iq_command), &buf[6], sizeof(int16_t));
-}
-
-void MC_modulation_index_flux_weakening_output_information::write(uint8_t buf[8]) {
-    memcpy(&buf[0], &(message.modulation_index), sizeof(uint16_t));
-    memcpy(&buf[2], &(message.flux_weakening_output), sizeof(int16_t));
-    memcpy(&buf[4], &(message.id_command), sizeof(int16_t));
-    memcpy(&buf[6], &(message.iq_command), sizeof(int16_t));
-}
+MC_modulation_index_flux_weakening_output_information::MC_modulation_index_flux_weakening_output_information() : Abstract_CAN_Container() {};
+MC_modulation_index_flux_weakening_output_information::MC_modulation_index_flux_weakening_output_information(uint8_t buf []) : Abstract_CAN_Container(buf) {};
 
 uint16_t MC_modulation_index_flux_weakening_output_information::get_modulation_index() {
     return message.modulation_index;

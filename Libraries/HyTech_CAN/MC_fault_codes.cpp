@@ -5,28 +5,8 @@
 
 #include "HyTech_CAN.h"
 
-MC_fault_codes::MC_fault_codes() {
-    message = {};
-}
-
-MC_fault_codes::MC_fault_codes(uint8_t buf[8]) {
-    load(buf);
-}
-
-void MC_fault_codes::load(uint8_t buf[8]) {
-    message = {};
-    memcpy(&(message.post_fault_lo), &buf[0], sizeof(int16_t));
-    memcpy(&(message.post_fault_hi), &buf[2], sizeof(int16_t));
-    memcpy(&(message.run_fault_lo), &buf[4], sizeof(int16_t));
-    memcpy(&(message.run_fault_hi), &buf[6], sizeof(int16_t));
-}
-
-void MC_fault_codes::write(uint8_t buf[8]) {
-    memcpy(&buf[0], &(message.post_fault_lo), sizeof(int16_t));
-    memcpy(&buf[2], &(message.post_fault_hi), sizeof(int16_t));
-    memcpy(&buf[4], &(message.run_fault_lo), sizeof(int16_t));
-    memcpy(&buf[6], &(message.run_fault_hi), sizeof(int16_t));
-}
+MC_fault_codes::MC_fault_codes() : Abstract_CAN_Container() {};
+MC_fault_codes::MC_fault_codes(uint8_t buf []) : Abstract_CAN_Container(buf) {};
 
 uint16_t MC_fault_codes::get_post_fault_lo() {
     return message.post_fault_lo;
@@ -299,3 +279,16 @@ bool MC_fault_codes::get_run_hi_resolver_not_connected() {
 bool MC_fault_codes::get_run_hi_inverter_discharge_active() {
     return (message.run_fault_hi & 0x8000) >> 15;
 }
+
+#ifdef HYTECH_LOGGING_EN
+    void MC_fault_codes::print(Stream& serial) {
+        serial.print("POST FAULT LO: 0x");
+        serial.println(get_post_fault_lo(), HEX);
+        serial.print("POST FAULT HI: 0x");
+        serial.println(get_post_fault_hi(), HEX);
+        serial.print("RUN FAULT LO: 0x");
+        serial.println(get_run_fault_lo(), HEX);
+        serial.print("RUN FAULT HI: 0x");
+        serial.println(get_run_fault_hi(), HEX);
+    }
+#endif

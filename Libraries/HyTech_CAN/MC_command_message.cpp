@@ -5,16 +5,10 @@
 
 #include "HyTech_CAN.h"
 
-MC_command_message::MC_command_message() {
-    message = {};
-}
+MC_command_message::MC_command_message() : Abstract_CAN_Container() {};
+MC_command_message::MC_command_message(uint8_t buf []) : Abstract_CAN_Container(buf) {};
 
-MC_command_message::MC_command_message(uint8_t buf[8]) {
-    load(buf);
-}
-
-MC_command_message::MC_command_message(int16_t torque_command, int16_t angular_velocity, bool direction, bool inverter_enable, bool discharge_enable, int16_t commanded_torque_limit) {
-    message = {};
+MC_command_message::MC_command_message(int16_t torque_command, int16_t angular_velocity, bool direction, bool inverter_enable, bool discharge_enable, int16_t commanded_torque_limit) : Abstract_CAN_Container() {
     set_torque_command(torque_command);
     set_angular_velocity(angular_velocity);
     set_direction(direction);
@@ -23,23 +17,6 @@ MC_command_message::MC_command_message(int16_t torque_command, int16_t angular_v
     set_commanded_torque_limit(commanded_torque_limit);
 }
 
-
-void MC_command_message::load(uint8_t buf[]) {
-    message = {};
-    memcpy(&(message.torque_command), &buf[0], sizeof(uint16_t));
-    memcpy(&(message.angular_velocity), &buf[2], sizeof(uint16_t));
-    memcpy(&(message.direction), &buf[4], sizeof(bool));
-    memcpy(&(message.inverter_enable_discharge_enable), &buf[5], sizeof(uint8_t));
-    memcpy(&(message.commanded_torque_limit), &buf[6], sizeof(uint16_t));
-}
-
-void MC_command_message::write(uint8_t buf[8]) {
-    memcpy(&buf[0], &(message.torque_command), sizeof(uint16_t));
-    memcpy(&buf[2], &(message.angular_velocity), sizeof(uint16_t));
-    memcpy(&buf[4], &(message.direction), sizeof(bool));
-    memcpy(&buf[5], &(message.inverter_enable_discharge_enable), sizeof(uint8_t));
-    memcpy(&buf[6], &(message.commanded_torque_limit), sizeof(uint16_t));
-}
 
 int16_t MC_command_message::get_torque_command() {
     return message.torque_command;
@@ -88,3 +65,20 @@ void MC_command_message::set_discharge_enable(bool discharge_enable) {
 void MC_command_message::set_commanded_torque_limit(int16_t commanded_torque_limit) {
     message.commanded_torque_limit = commanded_torque_limit;
 }
+
+#ifdef HYTECH_LOGGING_EN
+    void MC_command_message::print(Stream& serial) {
+        serial.print("CMD_MSG TORQUE COMMAND: ");
+        serial.println(get_torque_command() / (double) 10, 1);
+        serial.print("CMD_MSG ANGULAR VELOCITY: ");
+        serial.println(get_angular_velocity());
+        serial.print("CMD_MSG DIRECTION: ");
+        serial.println(get_direction());
+        serial.print("CMD_MSG INVERTER ENABLE: ");
+        serial.println(get_inverter_enable());
+        serial.print("CMD_MSG DISCHARGE ENABLE: ");
+        serial.println(get_discharge_enable());
+        serial.print("CMD_MSG COMMANDED TORQUE LIMIT: ");
+        serial.println(get_commanded_torque_limit() / (double) 10, 1);
+    }
+#endif

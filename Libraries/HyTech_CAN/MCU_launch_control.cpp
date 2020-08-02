@@ -5,24 +5,8 @@
 
 #include "HyTech_CAN.h"
 
-MCU_launch_control::MCU_launch_control() {
-    message = {};
-}
-
-MCU_launch_control::MCU_launch_control(uint8_t buf[8]) {
-    load(buf);
-}
-
-void MCU_launch_control::load(uint8_t buf[8]) {
-    message = {};
-    memcpy(&(message.slip_ratio), &buf[0], sizeof(int16_t));
-    memcpy(&(message.slip_limiting_factor), &buf[2], sizeof(int16_t));
-}
-
-void MCU_launch_control::write(uint8_t buf[8]) {
-    memcpy(&buf[0], &(message.slip_ratio), sizeof(int16_t));
-    memcpy(&buf[2], &(message.slip_limiting_factor), sizeof(int16_t));
-}
+MCU_launch_control::MCU_launch_control() : Abstract_CAN_Container() {};
+MCU_launch_control::MCU_launch_control(uint8_t buf []) : Abstract_CAN_Container(buf) {};
 
 int16_t MCU_launch_control::get_slip_ratio() {
     return message.slip_ratio;

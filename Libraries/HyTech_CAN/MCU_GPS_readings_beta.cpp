@@ -5,24 +5,8 @@
 
 #include "HyTech_CAN.h"
 
-MCU_GPS_readings_beta::MCU_GPS_readings_beta() {
-    message = {};
-}
-
-MCU_GPS_readings_beta::MCU_GPS_readings_beta(uint8_t buf[]) {
-    load(buf);
-}
-
-void MCU_GPS_readings_beta::load(uint8_t buf[]) {
-    message = {};
-    memcpy(&(message.altitude), &buf[0], sizeof(int32_t));
-    memcpy(&(message.speed), &buf[4], sizeof(int32_t));
-}
-
-void MCU_GPS_readings_beta::write(uint8_t buf[]) {
-    memcpy(&buf[0], &(message.altitude), sizeof(int32_t));
-    memcpy(&buf[4], &(message.speed), sizeof(int32_t));
-}
+MCU_GPS_readings_beta::MCU_GPS_readings_beta() : Abstract_CAN_Container() {};
+MCU_GPS_readings_beta::MCU_GPS_readings_beta(uint8_t buf []) : Abstract_CAN_Container(buf) {};
 
 int32_t MCU_GPS_readings_beta::get_altitude() {
     return message.altitude;
@@ -39,3 +23,12 @@ void MCU_GPS_readings_beta::set_altitude(int32_t altitude) {
 void MCU_GPS_readings_beta::set_speed(int32_t speed) {
     message.speed = speed;
 }
+
+#ifdef HYTECH_LOGGING_EN
+    void MCU_GPS_readings_beta::print(Stream& serial) {
+        serial.print("Altitude (x10000): ");
+        serial.println(get_altitude());
+        serial.print("Speed (x10000): ");
+        serial.println(get_speed());
+    }
+#endif

@@ -5,34 +5,13 @@
 
 #include "HyTech_CAN.h"
 
-MC_read_write_parameter_command::MC_read_write_parameter_command() {
-    message = {};
-}
+MC_read_write_parameter_command::MC_read_write_parameter_command() : Abstract_CAN_Container() {};
+MC_read_write_parameter_command::MC_read_write_parameter_command(uint8_t buf []) : Abstract_CAN_Container(buf) {};
 
-MC_read_write_parameter_command::MC_read_write_parameter_command(uint8_t buf[8]) {
-    load(buf);
-}
-
-MC_read_write_parameter_command::MC_read_write_parameter_command(uint16_t parameter_address, bool rw_command, uint32_t data) {
-    message = {};
+MC_read_write_parameter_command::MC_read_write_parameter_command(uint16_t parameter_address, bool rw_command, uint32_t data) : Abstract_CAN_Container() {
     set_parameter_address(parameter_address);
     set_rw_command(rw_command);
     set_data(data);
-}
-
-void MC_read_write_parameter_command::load(uint8_t buf[8]) {
-    message = {};
-    memcpy(&(message.parameter_address), &buf[0], sizeof(uint16_t));
-    memcpy(&(message.rw_command), &buf[2], sizeof(bool));
-    memcpy(&(message.reserved1), &buf[3], sizeof(uint8_t));
-    memcpy(&(message.data), &buf[4], sizeof(int32_t));
-}
-
-void MC_read_write_parameter_command::write(uint8_t buf[8]) {
-    memcpy(&buf[0], &(message.parameter_address), sizeof(uint16_t));
-    memcpy(&buf[2], &(message.rw_command), sizeof(bool));
-    memcpy(&buf[3], &(message.reserved1), sizeof(uint8_t));
-    memcpy(&buf[4], &(message.data), sizeof(int32_t));
 }
 
 uint16_t MC_read_write_parameter_command::get_parameter_address() {

@@ -5,27 +5,6 @@
 
 #include "HyTech_CAN.h"
 
-/*  Blank Constructor for MCU_pedal_readings
- *
- * Used to initialize instance of MCU_pedal_readings with no data
- */
-
-MCU_pedal_readings::MCU_pedal_readings() {
-    message = {};
-}
-
-/* Constructor for MCU_pedal_readings using a buffer
- *
- * Used to initialize instance of MCU_pedal_readings with data
- * that's in an 8xbyte array (typically msg.buf)
- *
- * Param - Pass in buffer you are trying to initialize data from
- */
-
-MCU_pedal_readings::MCU_pedal_readings(uint8_t buf[8]) {
-    load(buf);
-}
-
 /* Constructor for MCU_pedal_readings
  *
  * Used to copy data from msg variable in
@@ -43,50 +22,15 @@ MCU_pedal_readings::MCU_pedal_readings(uint8_t buf[8]) {
  *     - Torque map mode selection
  */
 
-MCU_pedal_readings::MCU_pedal_readings(uint16_t accelerator_pedal_raw_1, uint16_t accelerator_pedal_raw_2, uint16_t brake_pedal_raw, uint8_t pedal_flags, uint8_t torque_map_mode) {
+MCU_pedal_readings::MCU_pedal_readings() : Abstract_CAN_Container() {};
+MCU_pedal_readings::MCU_pedal_readings(uint8_t buf []) : Abstract_CAN_Container(buf) {};
+
+MCU_pedal_readings::MCU_pedal_readings(uint16_t accelerator_pedal_raw_1, uint16_t accelerator_pedal_raw_2, uint16_t brake_pedal_raw, uint8_t pedal_flags, uint8_t torque_map_mode) : Abstract_CAN_Container() {
     set_accelerator_pedal_raw_1(accelerator_pedal_raw_1);
     set_accelerator_pedal_raw_2(accelerator_pedal_raw_2);
     set_brake_pedal_raw(brake_pedal_raw);
     set_pedal_flags(pedal_flags);
     set_torque_map_mode(torque_map_mode);
-}
-
-/* Load from buffer & write to variable instance
- *
- * Used to copy data from msg variable in
- * microcontroller code to instance variable
- *
- * Param - Pass in buffer you are trying to read from
- * Example: curMCU_pedal_readings.load(msg.buf);
- */
-
-void MCU_pedal_readings::load(uint8_t buf[8]) {
-    message = {};
-
-    memcpy(&(message.accelerator_pedal_raw_1), &buf[0], sizeof(uint16_t));
-    memcpy(&(message.accelerator_pedal_raw_2), &buf[2], sizeof(uint16_t));
-    memcpy(&(message.brake_pedal_raw), &buf[4], sizeof(uint16_t));
-    memcpy(&(message.pedal_flags), &buf[6], sizeof(uint8_t));
-    memcpy(&(message.torque_map_mode), &buf[7], sizeof(uint8_t));
-
-}
-
-/* Write to buffer
- *
- * Used to copy data from instance of this class
- * to msg variable in microcontroller code
- *
- * Param - Pass in buffer you are trying to modify
- * Example: curMCU_pedal_readings.write(msg.buf);
- */
-
-void MCU_pedal_readings::write(uint8_t buf[8]) {
-    memcpy(&buf[0], &(message.accelerator_pedal_raw_1), sizeof(uint16_t));
-    memcpy(&buf[2], &(message.accelerator_pedal_raw_2), sizeof(uint16_t));
-    memcpy(&buf[4], &(message.brake_pedal_raw), sizeof(uint16_t));
-    memcpy(&buf[6], &(message.pedal_flags), sizeof(uint8_t));
-    memcpy(&buf[7], &(message.torque_map_mode), sizeof(uint8_t));
-
 }
 
 /* Get functions
@@ -164,3 +108,18 @@ void MCU_pedal_readings::set_brake_pedal_active(bool brake_pedal_active) {
 void MCU_pedal_readings::set_torque_map_mode(uint8_t torque_map_mode) {
     message.torque_map_mode = torque_map_mode;
 }
+
+#ifdef HYTECH_LOGGING_EN
+    void MCU_pedal_readings::print(Stream& serial) {
+        serial.print("MCU PEDAL ACCEL 1: ");
+        serial.println(get_accelerator_pedal_raw_1());
+        serial.print("MCU PEDAL ACCEL 2: ");
+        serial.println(get_accelerator_pedal_raw_2());
+        serial.print("MCU PEDAL BRAKE: ");
+        serial.println(get_brake_pedal_raw());
+        serial.print("MCU BRAKE ACT: ");
+        serial.println(get_brake_pedal_active());
+        serial.print("MCU STATE: ");
+        serial.println(get_state());
+    }
+#endif

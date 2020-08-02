@@ -402,13 +402,13 @@ typedef struct Telem_message {
 
 #ifdef __cplusplus
 
-class BMS_balancing_status {
+#include "Abstractions/HyTech_CAN_Abstractions.h"
+
+class BMS_balancing_status : public Abstract_CAN_Container<uint64_t>, public Interface_Indexable_CAN {
     public:
         BMS_balancing_status();
-        BMS_balancing_status(uint8_t buf[]);
+        BMS_balancing_status(uint8_t buf[8]);
         BMS_balancing_status(uint8_t group_id, int64_t balancing_status);
-        void load(uint8_t buf[]);
-        void write(uint8_t buf[]);
         uint8_t get_group_id();
         uint64_t get_balancing();
         uint16_t get_ic_balancing(uint8_t ic_id);
@@ -418,32 +418,27 @@ class BMS_balancing_status {
         void set_balancing(uint64_t balancing_status);
         void set_ic_balancing(uint8_t ic_id, uint16_t balancing_status);
         void set_cell_balancing(uint8_t ic_id, uint8_t cell_id, bool balancing_status);
-    private:
-        uint64_t message; // Using a 64-bit datatype here instead of CAN_message_bms_balancing_status_t because it is much easier than dealing with an array
+
+        uint8_t getIndex(); 
+        void setIndex(uint8_t);
 };
 
-class BMS_coulomb_counts {
+class BMS_coulomb_counts : public Abstract_CAN_Container<CAN_message_bms_coulomb_counts_t> {
     public:
         BMS_coulomb_counts();
-        BMS_coulomb_counts(uint8_t buf[]);
+        BMS_coulomb_counts(uint8_t buf[8]);
         BMS_coulomb_counts(uint32_t total_charge, uint32_t total_discharge);
-        void load(uint8_t buf[]);
-        void write(uint8_t buf[]);
         uint32_t get_total_charge();
         uint32_t get_total_discharge();
         void set_total_charge(uint32_t total_charge);
         void set_total_discharge(uint32_t total_discharge);
-    private:
-        CAN_message_bms_coulomb_counts_t message;
 };
 
-class BMS_detailed_temperatures {
+class BMS_detailed_temperatures : public Abstract_CAN_Container<CAN_message_bms_detailed_temperatures_t>, public Interface_Indexable_CAN {
     public:
         BMS_detailed_temperatures();
-        BMS_detailed_temperatures(uint8_t buf[]);
+        BMS_detailed_temperatures(uint8_t buf[8]);
         BMS_detailed_temperatures(uint8_t ic_id, int16_t temperature_0, int16_t temperature_1, int16_t temperature_2);
-        void load(uint8_t buf[]);
-        void write(uint8_t buf[]);
         uint8_t get_ic_id();
         int16_t get_temperature_0();
         int16_t get_temperature_1();
@@ -454,17 +449,15 @@ class BMS_detailed_temperatures {
         void set_temperature_1(int16_t temperature_1);
         void set_temperature_2(int16_t temperature_2);
         void set_temperature(uint8_t temperature_id, int16_t temperature);
-    private:
-        CAN_message_bms_detailed_temperatures_t message;
+        uint8_t getIndex(); 
+        void setIndex(uint8_t);
 };
 
-class BMS_detailed_voltages {
+class BMS_detailed_voltages : public Abstract_CAN_Container<CAN_message_bms_detailed_voltages_t>, public Interface_Indexable_CAN {
     public:
         BMS_detailed_voltages();
-        BMS_detailed_voltages(uint8_t buf[]);
+        BMS_detailed_voltages(uint8_t buf[8]);
         BMS_detailed_voltages(uint8_t ic_id, uint8_t group_id, uint16_t voltage_0, uint16_t voltage_1, uint16_t voltage_2);
-        void load(uint8_t buf[]);
-        void write(uint8_t buf[]);
         uint8_t get_ic_id();
         uint8_t get_group_id();
         uint16_t get_voltage_0();
@@ -477,17 +470,15 @@ class BMS_detailed_voltages {
         void set_voltage_1(uint16_t voltage_1);
         void set_voltage_2(uint16_t voltage_2);
         void set_voltage(uint8_t voltage_id, uint16_t voltage);
-    private:
-        CAN_message_bms_detailed_voltages_t message;
+        uint8_t getIndex();
+        void setIndex(uint8_t);
 };
 
-class BMS_onboard_detailed_temperatures {
+class BMS_onboard_detailed_temperatures : public Abstract_CAN_Container<CAN_message_bms_onboard_detailed_temperatures_t>, public Interface_Indexable_CAN {
     public:
         BMS_onboard_detailed_temperatures();
-        BMS_onboard_detailed_temperatures(uint8_t buf[]);
+        BMS_onboard_detailed_temperatures(uint8_t buf[8]);
         BMS_onboard_detailed_temperatures(uint8_t ic_id, int16_t temperature_0, int16_t temperature_1);
-        void load(uint8_t buf[]);
-        void write(uint8_t buf[]);
         uint8_t get_ic_id();
         int16_t get_temperature_0();
         int16_t get_temperature_1();
@@ -496,33 +487,27 @@ class BMS_onboard_detailed_temperatures {
         void set_temperature_0(int16_t temperature_0);
         void set_temperature_1(int16_t temperature_1);
         void set_temperature(uint8_t temperature_id, int16_t temperature);
-    private:
-        CAN_message_bms_onboard_detailed_temperatures_t message;
+        uint8_t getIndex();
+        void setIndex(uint8_t);
 };
 
-class BMS_onboard_temperatures {
+class BMS_onboard_temperatures : public Abstract_CAN_Container<CAN_message_bms_onboard_temperatures_t> {
     public:
         BMS_onboard_temperatures();
-        BMS_onboard_temperatures(uint8_t buf[]);
+        BMS_onboard_temperatures(uint8_t buf[8]);
         BMS_onboard_temperatures(int16_t average_temperature, int16_t low_temperature, int16_t high_temperature);
-        void load(uint8_t buf[]);
-        void write(uint8_t buf[]);
         int16_t get_average_temperature();
         int16_t get_low_temperature();
         int16_t get_high_temperature();
         void set_average_temperature(int16_t average_temperature);
         void set_low_temperature(int16_t low_temperature);
         void set_high_temperature(int16_t high_temperature);
-    private:
-        CAN_message_bms_onboard_temperatures_t message;
 };
 
-class BMS_status {
+class BMS_status : public Abstract_CAN_Container<CAN_message_bms_status_t> {
     public:
         BMS_status();
-        BMS_status(uint8_t buf[]);
-        void load(uint8_t buf[]);
-        void write(uint8_t buf[]);
+        BMS_status(uint8_t buf[8]);
         uint8_t get_state();
         uint16_t get_error_flags();
         bool get_overvoltage();
@@ -554,34 +539,32 @@ class BMS_status {
         void set_flags(uint8_t flags);
         void set_shutdown_g_above_threshold(bool shutdown_g_above_threshold);
         void set_shutdown_h_above_threshold(bool shutdown_h_above_threshold);
-    private:
-        CAN_message_bms_status_t message;
+#ifdef HYTECH_LOGGING_EN
+        void print(Stream& serial);
+#endif
 };
 
-class BMS_temperatures {
+class BMS_temperatures : public Abstract_CAN_Container<CAN_message_bms_temperatures_t> {
     public:
         BMS_temperatures();
-        BMS_temperatures(uint8_t buf[]);
+        BMS_temperatures(uint8_t buf[8]);
         BMS_temperatures(int16_t average_temperature, int16_t low_temperature, int16_t high_temperature);
-        void load(uint8_t buf[]);
-        void write(uint8_t buf[]);
         int16_t get_average_temperature();
         int16_t get_low_temperature();
         int16_t get_high_temperature();
         void set_average_temperature(int16_t average_temperature);
         void set_low_temperature(int16_t low_temperature);
         void set_high_temperature(int16_t high_temperature);
-    private:
-        CAN_message_bms_temperatures_t message;
+#ifdef HYTECH_LOGGING_EN
+        void print(Stream& serial);
+#endif
 };
 
-class BMS_voltages {
+class BMS_voltages : public Abstract_CAN_Container<CAN_message_bms_voltages_t> {
     public:
         BMS_voltages();
-        BMS_voltages(uint8_t buf[]);
+        BMS_voltages(uint8_t buf[8]);
         BMS_voltages(uint16_t average_voltage, uint16_t low_voltage, uint16_t high_voltage, uint16_t total_voltage);
-        void load(uint8_t buf[]);
-        void write(uint8_t buf[]);
         uint16_t get_average();
         uint16_t get_low();
         uint16_t get_high();
@@ -590,43 +573,37 @@ class BMS_voltages {
         void set_low(uint16_t low_voltage);
         void set_high(uint16_t high_voltage);
         void set_total(uint16_t total_voltage);
-    private:
-        CAN_message_bms_voltages_t message;
+#ifdef HYTECH_LOGGING_EN
+        void print(Stream& serial);
+#endif
 };
 
-class CCU_status {
+class CCU_status : public Abstract_CAN_Container<CAN_message_ccu_status_t> {
     public:
         CCU_status();
-        CCU_status(uint8_t buf[]);
-        void load(uint8_t buf[]);
-        void write(uint8_t buf[]);
+        CCU_status(uint8_t buf[8]);
         bool get_charger_enabled();
         void set_charger_enabled(bool charger_enabled);
-    private:
-        CAN_message_ccu_status_t message;
 };
 
-class FCU_accelerometer_values {
+class FCU_accelerometer_values : public Abstract_CAN_Container<CAN_message_fcu_accelerometer_values_t> {
     public:
         FCU_accelerometer_values();
         FCU_accelerometer_values(uint8_t buf[8]);
-        void load(uint8_t buf[8]);
-        void write(uint8_t buf[8]);
         uint8_t get_x();
         uint8_t get_y();
         uint8_t get_z();
         void set_values(uint8_t x, uint8_t y, uint8_t z);
-    private:
-        CAN_message_fcu_accelerometer_values_t message;
+#ifdef HYTECH_LOGGING_EN
+        void print(Stream& serial);
+#endif
 };
 
-class FCU_readings {
+class FCU_readings : public Abstract_CAN_Container<CAN_message_fcu_readings_t> {
     public:
         FCU_readings();
         FCU_readings(uint8_t buf[8]);
         FCU_readings(uint16_t accelerator_pedal_raw_1, uint16_t accelerator_pedal_raw_2, uint16_t brake_pedal_raw, int16_t temperature);
-        void load(uint8_t buf[8]);
-        void write(uint8_t buf[8]);
         uint16_t get_accelerator_pedal_raw_1();
         uint16_t get_accelerator_pedal_raw_2();
         uint16_t get_brake_pedal_raw();
@@ -635,17 +612,13 @@ class FCU_readings {
         void set_accelerator_pedal_raw_2(uint16_t accelerator_pedal_raw_2);
         void set_brake_pedal_raw(uint16_t brake_pedal_raw);
         void set_temperature(int16_t temperature);
-    private:
-        CAN_message_fcu_readings_t message;
 };
 
-class FCU_status {
+class FCU_status : public Abstract_CAN_Container<CAN_message_fcu_status_t> {
     public:
         FCU_status();
         FCU_status(uint8_t buf[8]);
         FCU_status(uint8_t state, uint8_t flags, uint8_t start_button_press_id);
-        void load(uint8_t buf[8]);
-        void write(uint8_t buf[8]);
         uint8_t get_state();
         uint8_t get_flags();
         bool get_accelerator_implausibility();
@@ -660,46 +633,34 @@ class FCU_status {
         void set_brake_implausibility(bool brake_implausibility);
         void set_brake_pedal_active(bool brake_pedal_active);
         void set_start_button_press_id(uint8_t start_button_press_id);
-    private:
-        CAN_message_fcu_status_t message;
 };
 
-class GLV_current_readings {
+class GLV_current_readings : public Abstract_CAN_Container<CAN_message_glv_current_readings_t> {
 	public:
 		GLV_current_readings();
-		GLV_current_readings(uint8_t buf[8]);
-		GLV_current_readings(uint16_t ecu_current_value, uint16_t cooling_current_value);
-		void load(uint8_t buf[8]);
-		void write(uint8_t buf[8]);
+        GLV_current_readings(uint8_t buf[8]);
+        GLV_current_readings(uint16_t ecu_current_value, uint16_t cooling_current_value);
 		uint16_t get_ecu_current_value();
 		uint16_t get_cooling_current_value();
 		void set_ecu_current_value(uint16_t ecu_current_value);
 		void set_cooling_current_value(uint16_t cooling_current_value);
-	private:
-		CAN_message_glv_current_readings_t message;
 };
 
-class MC_analog_input_voltages {
+class MC_analog_input_voltages : public Abstract_CAN_Container<CAN_message_mc_analog_input_voltages_t> {
     public:
         MC_analog_input_voltages();
         MC_analog_input_voltages(uint8_t buf[8]);
-        void load(uint8_t buf[8]);
-        void write(uint8_t buf[8]);
         int16_t get_analog_input_1();
         int16_t get_analog_input_2();
         int16_t get_analog_input_3();
         int16_t get_analog_input_4();
-    private:
-        CAN_message_mc_analog_input_voltages_t message;
 };
 
-class MC_command_message {
+class MC_command_message : public Abstract_CAN_Container<CAN_message_mc_command_message_t> {
     public:
         MC_command_message();
         MC_command_message(uint8_t buf[8]);
         MC_command_message(int16_t torque_command, int16_t angular_velocity, bool direction, bool inverter_enable, bool discharge_enable, int16_t commanded_torque_limit);
-        void load(uint8_t buf[8]);
-        void write(uint8_t buf[8]);
         int16_t get_torque_command();
         int16_t get_angular_velocity();
         bool get_direction();
@@ -712,30 +673,28 @@ class MC_command_message {
         void set_inverter_enable(bool inverter_enable);
         void set_discharge_enable(bool discharge_enable);
         void set_commanded_torque_limit(int16_t commanded_torque_limit);
-    private:
-        CAN_message_mc_command_message_t message;
+#ifdef HYTECH_LOGGING_EN
+        void print(Stream& serial);
+#endif
 };
 
-class MC_current_information {
+class MC_current_information : public Abstract_CAN_Container<CAN_message_mc_current_information_t> {
     public:
         MC_current_information();
         MC_current_information(uint8_t buf[8]);
-        void load(uint8_t buf[8]);
-        void write(uint8_t buf[8]);
         int16_t get_phase_a_current();
         int16_t get_phase_b_current();
         int16_t get_phase_c_current();
         int16_t get_dc_bus_current();
-    private:
-        CAN_message_mc_current_information_t message;
+#ifdef HYTECH_LOGGING_EN
+        void print(Stream& serial);
+#endif
 };
 
-class MC_digital_input_status {
+class MC_digital_input_status : public Abstract_CAN_Container<CAN_message_mc_digital_input_status_t> {
     public:
         MC_digital_input_status();
-        MC_digital_input_status(uint8_t buf[]);
-        void load(uint8_t buf[]);
-        void write(uint8_t buf[]);
+        MC_digital_input_status(uint8_t buf[8]);
         bool get_digital_input_1();
         bool get_digital_input_2();
         bool get_digital_input_3();
@@ -744,16 +703,12 @@ class MC_digital_input_status {
         bool get_digital_input_6();
         bool get_digital_input_7();
         bool get_digital_input_8();
-    private:
-        CAN_message_mc_digital_input_status_t message;
 };
 
-class MC_fault_codes {
+class MC_fault_codes : public Abstract_CAN_Container<CAN_message_mc_fault_codes_t> {
     public:
         MC_fault_codes();
         MC_fault_codes(uint8_t buf[8]);
-        void load(uint8_t buf[8]);
-        void write(uint8_t buf[8]);
         uint16_t get_post_fault_lo();
         uint16_t get_post_fault_hi();
         uint16_t get_run_fault_lo();
@@ -822,30 +777,25 @@ class MC_fault_codes {
         bool get_run_hi_reserved4();
         bool get_run_hi_resolver_not_connected();
         bool get_run_hi_inverter_discharge_active();
-    private:
-        CAN_message_mc_fault_codes_t message;
+#ifdef HYTECH_LOGGING_EN
+        void print(Stream& serial);
+#endif
 };
 
-class MC_firmware_information {
+class MC_firmware_information : public Abstract_CAN_Container<CAN_message_mc_firmware_information_t> {
     public:
         MC_firmware_information();
         MC_firmware_information(uint8_t buf[8]);
-        void load(uint8_t buf[8]);
-        void write(uint8_t buf[8]);
         uint16_t get_eeprom_version_project_code();
         uint16_t get_software_version();
         uint16_t get_date_code_mmdd();
         uint16_t get_date_code_yyyy();
-    private:
-        CAN_message_mc_firmware_information_t message;
 };
 
-class MC_internal_states {
+class MC_internal_states : public Abstract_CAN_Container<CAN_message_mc_internal_states_t> {
     public:
         MC_internal_states();
         MC_internal_states(uint8_t buf[8]);
-        void load(uint8_t buf[8]);
-        void write(uint8_t buf[8]);
         uint8_t get_vsm_state();
         uint8_t get_inverter_state();
         bool get_relay_active_1();
@@ -860,171 +810,147 @@ class MC_internal_states {
         bool get_inverter_enable_state();
         bool get_inverter_enable_lockout();
         bool get_direction_command();
-    private:
-        CAN_message_mc_internal_states_t message;
+#ifdef HYTECH_LOGGING_EN
+        void print(Stream& serial);
+#endif
 };
 
-class MC_modulation_index_flux_weakening_output_information {
+class MC_modulation_index_flux_weakening_output_information : public Abstract_CAN_Container<CAN_message_mc_modulation_index_flux_weakening_output_information_t> {
     public:
         MC_modulation_index_flux_weakening_output_information();
         MC_modulation_index_flux_weakening_output_information(uint8_t buf[8]);
-        void load(uint8_t buf[8]);
-        void write(uint8_t buf[8]);
         uint16_t get_modulation_index();
         int16_t get_flux_weakening_output();
         int16_t get_id_command();
         int16_t get_iq_command();
-    private:
-        CAN_message_mc_modulation_index_flux_weakening_output_information_t message;
 };
 
-class MC_motor_position_information {
+class MC_motor_position_information : public Abstract_CAN_Container<CAN_message_mc_motor_position_information_t> {
     public:
         MC_motor_position_information();
         MC_motor_position_information(uint8_t buf[8]);
-        void load(uint8_t buf[8]);
-        void write(uint8_t buf[8]);
         int16_t get_motor_angle();
         int16_t get_motor_speed();
         int16_t get_electrical_output_frequency();
         int16_t get_delta_resolver_filtered();
-    private:
-        CAN_message_mc_motor_position_information_t message;
+#ifdef HYTECH_LOGGING_EN
+        void print(Stream& serial);
+#endif
 };
 
-class MC_read_write_parameter_command {
+class MC_read_write_parameter_command : public Abstract_CAN_Container<CAN_message_mc_read_write_parameter_command_t> {
     public:
         MC_read_write_parameter_command();
         MC_read_write_parameter_command(uint8_t buf[8]);
         MC_read_write_parameter_command(uint16_t parameter_address, bool rw_command, uint32_t data);
-        void load(uint8_t buf[8]);
-        void write(uint8_t buf[8]);
         uint16_t get_parameter_address();
         bool get_rw_command();
         uint32_t get_data();
         void set_parameter_address(uint16_t parameter_address);
         void set_rw_command(bool rw_command);
         void set_data(uint32_t data);
-    private:
-        CAN_message_mc_read_write_parameter_command_t message;
 };
 
-class MC_read_write_parameter_response {
+class MC_read_write_parameter_response : public Abstract_CAN_Container<CAN_message_mc_read_write_parameter_response_t> {
     public:
         MC_read_write_parameter_response();
         MC_read_write_parameter_response(uint8_t buf[8]);
-        void load(uint8_t buf[8]);
-        void write(uint8_t buf[8]);
         uint16_t get_parameter_address();
         bool get_write_success();
         uint32_t get_data();
-    private:
-        CAN_message_mc_read_write_parameter_response_t message;
 };
 
-class MC_temperatures_1 {
+class MC_temperatures_1 : public Abstract_CAN_Container<CAN_message_mc_temperatures_1_t> {
     public:
         MC_temperatures_1();
         MC_temperatures_1(uint8_t buf[8]);
-        void load(uint8_t buf[8]);
-        void write(uint8_t buf[8]);
         int16_t get_module_a_temperature();
         int16_t get_module_b_temperature();
         int16_t get_module_c_temperature();
         int16_t get_gate_driver_board_temperature();
-    private:
-        CAN_message_mc_temperatures_1_t message;
+#ifdef HYTECH_LOGGING_EN
+        void print(Stream& serial);
+#endif
 };
 
-class MC_temperatures_2 {
+class MC_temperatures_2 : public Abstract_CAN_Container<CAN_message_mc_temperatures_2_t> {
     public:
         MC_temperatures_2();
         MC_temperatures_2(uint8_t buf[8]);
-        void load(uint8_t buf[8]);
-        void write(uint8_t buf[8]);
         int16_t get_control_board_temperature();
         int16_t get_rtd_1_temperature();
         int16_t get_rtd_2_temperature();
         int16_t get_rtd_3_temperature();
-    private:
-        CAN_message_mc_temperatures_2_t message;
 };
 
-class MC_temperatures_3 {
+class MC_temperatures_3 : public Abstract_CAN_Container<CAN_message_mc_temperatures_3_t> {
     public:
         MC_temperatures_3();
         MC_temperatures_3(uint8_t buf[8]);
-        void load(uint8_t buf[8]);
-        void write(uint8_t buf[8]);
         int16_t get_rtd_4_temperature();
         int16_t get_rtd_5_temperature();
         int16_t get_motor_temperature();
         int16_t get_torque_shudder();
-    private:
-        CAN_message_mc_temperatures_3_t message;
+#ifdef HYTECH_LOGGING_EN
+        void print(Stream& serial);
+#endif
 };
 
-class MC_torque_timer_information {
+class MC_torque_timer_information : public Abstract_CAN_Container<CAN_message_mc_torque_timer_information_t> {
     public:
         MC_torque_timer_information();
         MC_torque_timer_information(uint8_t buf[8]);
-        void load(uint8_t buf[8]);
-        void write(uint8_t buf[8]);
         int16_t get_commanded_torque();
         int16_t get_torque_feedback();
         uint32_t get_power_on_timer();
-    private:
-        CAN_message_mc_torque_timer_information_t message;
+#ifdef HYTECH_LOGGING_EN
+        void print(Stream& serial);
+#endif
 };
 
-class MC_voltage_information {
+class MC_voltage_information : public Abstract_CAN_Container<CAN_message_mc_voltage_information_t> {
     public:
         MC_voltage_information();
         MC_voltage_information(uint8_t buf[8]);
-        void load(uint8_t buf[8]);
-        void write(uint8_t buf[8]);
         int16_t get_dc_bus_voltage();
         int16_t get_output_voltage();
         int16_t get_phase_ab_voltage();
         int16_t get_phase_bc_voltage();
-    private:
-        CAN_message_mc_voltage_information_t message;
+#ifdef HYTECH_LOGGING_EN
+        void print(Stream& serial);
+#endif
 };
 
-class MCU_GPS_readings_alpha {
+class MCU_GPS_readings_alpha : public Abstract_CAN_Container<CAN_message_mcu_gps_readings_alpha_t> {
     public:
         MCU_GPS_readings_alpha();
         MCU_GPS_readings_alpha(uint8_t buf[8]);
-        void load(uint8_t buf[8]);
-        void write(uint8_t buf[8]);
         int32_t get_latitude();
         int32_t get_longitude();
         void set_latitude(int32_t latitude);
         void set_longitude(int32_t longitude);
-    private:
-        CAN_message_mcu_gps_readings_alpha_t message;
+#ifdef HYTECH_LOGGING_EN
+        void print(Stream& serial);
+#endif
 };
 
-class MCU_GPS_readings_beta {
+class MCU_GPS_readings_beta : public Abstract_CAN_Container<CAN_message_mcu_gps_readings_beta_t> {
     public:
         MCU_GPS_readings_beta();
         MCU_GPS_readings_beta(uint8_t buf[8]);
-        void load(uint8_t buf[8]);
-        void write(uint8_t buf[8]);
         int32_t get_altitude();
         int32_t get_speed();
         void set_altitude(int32_t altitude);
         void set_speed(int32_t speed);
-    private:
-        CAN_message_mcu_gps_readings_beta_t message;
+#ifdef HYTECH_LOGGING_EN
+        void print(Stream& serial);
+#endif
 };
 
-class MCU_GPS_readings_gamma {
+class MCU_GPS_readings_gamma : public Abstract_CAN_Container<CAN_message_mcu_gps_readings_gamma_t> {
     public:
         MCU_GPS_readings_gamma();
         MCU_GPS_readings_gamma(uint8_t buf[8]);
-        void load(uint8_t buf[8]);
-        void write(uint8_t buf[8]);
         uint8_t get_fix_quality();
         uint8_t get_satellite_count();
         uint32_t get_timestamp_seconds();
@@ -1033,17 +959,13 @@ class MCU_GPS_readings_gamma {
         void set_satellite_count(uint8_t satellite_count);
         void set_timestamp_seconds(uint32_t timestamp_seconds);
         void set_timestamp_milliseconds(uint16_t timestamp_milliseconds);
-    private:
-        CAN_message_mcu_gps_readings_gamma_t message;
 };
 
-class MCU_pedal_readings {
+class MCU_pedal_readings : public Abstract_CAN_Container<CAN_message_mcu_pedal_readings_t> {
     public:
         MCU_pedal_readings();
         MCU_pedal_readings(uint8_t buf[8]);
         MCU_pedal_readings(uint16_t accelerator_pedal_raw_1, uint16_t accelerator_pedal_raw_2, uint16_t brake_pedal_raw, uint8_t pedal_flags, uint8_t torque_map_mode);
-        void load(uint8_t buf[8]);
-        void write(uint8_t buf[8]);
         uint16_t get_accelerator_pedal_raw_1();
         uint16_t get_accelerator_pedal_raw_2();
         uint16_t get_brake_pedal_raw();
@@ -1060,17 +982,16 @@ class MCU_pedal_readings {
         void set_brake_implausibility(bool brake_implausibility);
         void set_brake_pedal_active(bool brake_pedal_active);
         void set_torque_map_mode(uint8_t torque_map_mode);
-    private:
-        CAN_message_mcu_pedal_readings_t message;
+#ifdef HYTECH_LOGGING_EN
+        void print(Stream& serial);
+#endif
 };
 
-class MCU_status {
+class MCU_status : public Abstract_CAN_Container<CAN_message_mcu_status_t> {
     public:
         MCU_status();
         MCU_status(uint8_t buf[8]);
         MCU_status(uint8_t state, uint8_t flags, int16_t temperature, uint16_t glv_battery_voltage);
-        void load(uint8_t buf[8]);
-        void write(uint8_t buf[8]);
         uint8_t get_state();
         uint8_t get_flags();
         bool get_bms_ok_high();
@@ -1095,17 +1016,13 @@ class MCU_status {
         void set_shutdown_f_above_threshold(bool shutdown_f_above_threshold);
         void set_temperature(int16_t temperature);
         void set_glv_battery_voltage(uint16_t glv_battery_voltage);
-    private:
-        CAN_message_mcu_status_t message;
 };
 
-class RCU_status {
+class RCU_status : public Abstract_CAN_Container<CAN_message_rcu_status_t> {
     public:
         RCU_status();
         RCU_status(uint8_t buf[8]);
         RCU_status(uint8_t state, uint8_t flags, uint16_t glv_battery_voltage, int16_t temperature);
-        void load(uint8_t buf[8]);
-        void write(uint8_t buf[8]);
         uint8_t get_state();
         uint8_t get_flags();
         bool get_bms_ok_high();
@@ -1122,48 +1039,35 @@ class RCU_status {
         void set_inverter_powered(bool inverter_powered);
         void set_glv_battery_voltage(uint16_t glv_battery_voltage);
         void set_temperature(int16_t temperature);
-    private:
-        CAN_message_rcu_status_t message;
 };
 
-class TCU_wheel_rpm {
+class TCU_wheel_rpm : public Abstract_CAN_Container<CAN_message_tcu_wheel_rpm_t> {
     public:
         TCU_wheel_rpm();
         TCU_wheel_rpm(uint8_t buf[8]);
-        void load(uint8_t buf[8]);
-        void write(uint8_t buf[8]);
         int16_t get_wheel_rpm_left();
         int16_t get_wheel_rpm_right();
+        float get_wheel_rpm();
         void set_wheel_rpm_left(uint16_t value);
         void set_wheel_rpm_right(uint16_t value);
-    private:
-        CAN_message_tcu_wheel_rpm_t message;
 };
 
-class MCU_launch_control {
+class MCU_launch_control : public Abstract_CAN_Container<CAN_message_mcu_launch_control_t> {
     public:
         MCU_launch_control();
         MCU_launch_control(uint8_t buf[8]);
-        void load(uint8_t buf[8]);
-        void write(uint8_t buf[8]);
         int16_t get_slip_ratio();
         int16_t get_slip_limiting_factor();
         void set_slip_ratio(uint16_t value);
         void set_slip_limiting_factor(uint16_t value);
-    private:
-        CAN_message_mcu_launch_control_t message;
 };
 
-class TCU_distance_traveled {
+class TCU_distance_traveled : public Abstract_CAN_Container<CAN_message_tcu_distance_traveled_t> {
     public:
         TCU_distance_traveled();
         TCU_distance_traveled(uint8_t buf[8]);
-        void load(uint8_t buf[8]);
-        void write(uint8_t buf[8]);
         int16_t get_distance_traveled();
         void set_distance_traveled(uint16_t value);
-    private:
-        CAN_message_tcu_distance_traveled_t message;
 };
 
 #endif

@@ -5,40 +5,14 @@
 
 #include "HyTech_CAN.h"
 
-BMS_voltages::BMS_voltages() {
-    message = {};
-}
+BMS_voltages::BMS_voltages() : Abstract_CAN_Container() {};
+BMS_voltages::BMS_voltages(uint8_t buf []) : Abstract_CAN_Container(buf) {};
 
-BMS_voltages::BMS_voltages(uint8_t buf[]) {
-    load(buf);
-}
-
-BMS_voltages::BMS_voltages(uint16_t average_voltage, uint16_t low_voltage, uint16_t high_voltage, uint16_t total_voltage) {
-    message = {};
+BMS_voltages::BMS_voltages(uint16_t average_voltage, uint16_t low_voltage, uint16_t high_voltage, uint16_t total_voltage) : Abstract_CAN_Container() {
     message.average_voltage = average_voltage;
     message.low_voltage = low_voltage;
     message.high_voltage = high_voltage;
     message.total_voltage = total_voltage;
-}
-
-/*
- * Populate this object using the data stored in the specified byte array.
- */
-void BMS_voltages::load(uint8_t buf[]) {
-    memcpy(&(message.average_voltage), &buf[0], sizeof(uint16_t));
-    memcpy(&(message.low_voltage), &buf[2], sizeof(uint16_t));
-    memcpy(&(message.high_voltage), &buf[4], sizeof(uint16_t));
-    memcpy(&(message.total_voltage), &buf[6], sizeof(uint16_t));
-}
-
-/*
- * Populates the specified byte array using the data stored in this object.
- */
-void BMS_voltages::write(uint8_t buf[]) {
-    memcpy(&buf[0], &(message.average_voltage), sizeof(uint16_t));
-    memcpy(&buf[2], &(message.low_voltage), sizeof(uint16_t));
-    memcpy(&buf[4], &(message.high_voltage), sizeof(uint16_t));
-    memcpy(&buf[6], &(message.total_voltage), sizeof(uint16_t));
 }
 
 uint16_t BMS_voltages::get_average() {
@@ -72,3 +46,16 @@ void BMS_voltages::set_high(uint16_t high_voltage) {
 void BMS_voltages::set_total(uint16_t total_voltage) {
     message.total_voltage = total_voltage;
 }
+
+#ifdef HYTECH_LOGGING_EN
+    void BMS_voltages::print(Stream& serial) {
+        serial.print("BMS VOLTAGE AVERAGE: ");
+        serial.println(bms_voltages.get_average() / (double) 10000, 4);
+        serial.print("BMS VOLTAGE LOW: ");
+        serial.println(bms_voltages.get_low() / (double) 10000, 4);
+        serial.print("BMS VOLTAGE HIGH: ");
+        serial.println(bms_voltages.get_high() / (double) 10000, 4);
+        serial.print("BMS VOLTAGE TOTAL: ");
+        serial.println(bms_voltages.get_total() / (double) 100, 2);*/
+    }
+#endif

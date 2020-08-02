@@ -2,33 +2,12 @@
 
 //Constructors
 
-GLV_current_readings::GLV_current_readings(){
-    message = {};
-}
+GLV_current_readings::GLV_current_readings() : Abstract_CAN_Container() {};
+GLV_current_readings::GLV_current_readings(uint8_t buf []) : Abstract_CAN_Container(buf) {};
 
-GLV_current_readings::GLV_current_readings(uint8_t buf[8]) {
-    load(buf);
-}
-
-GLV_current_readings::GLV_current_readings(uint16_t ecu_current_value, uint16_t cooling_current_value) {
+GLV_current_readings::GLV_current_readings(uint16_t ecu_current_value, uint16_t cooling_current_value) : Abstract_CAN_Container() {
     set_ecu_current_value(ecu_current_value);
     set_cooling_current_value(cooling_current_value);
-}
-
-//Load from buffer & write to variable instance
-
-void GLV_current_readings::load(uint8_t buf[8]) {
-    message = {};
-
-    memcpy(&(message.ecu_current_value), &buf[0], sizeof(uint16_t));
-    memcpy(&(message.cooling_current_value), &buf[2], sizeof(uint16_t));
-}
-
-//Write to buffer
-
-void GLV_current_readings::write(uint8_t buf[8]) {
-    memcpy(&buf[0], &(message.ecu_current_value), sizeof(uint16_t));
-    memcpy(&buf[2], &(message.cooling_current_value), sizeof(uint16_t));
 }
 
 //Get Functions

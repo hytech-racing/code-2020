@@ -15,27 +15,12 @@
 
 // Make sure to cast things to uint64_t before doing large bit-shifts (>32 bits)
 
+BMS_balancing_status::BMS_balancing_status() : Abstract_CAN_Container() {};
+BMS_balancing_status::BMS_balancing_status(uint8_t buf []) : Abstract_CAN_Container(buf) {};
 
-BMS_balancing_status::BMS_balancing_status() {
-    message = {};
-}
-
-BMS_balancing_status::BMS_balancing_status(uint8_t buf[]) {
-    load(buf);
-}
-
-BMS_balancing_status::BMS_balancing_status(uint8_t group_id, int64_t balancing) {
-    message = {};
+BMS_balancing_status::BMS_balancing_status(uint8_t group_id, int64_t balancing) : Abstract_CAN_Container() {
     set_group_id(group_id);
     set_balancing(balancing);
-}
-
-void BMS_balancing_status::load(uint8_t buf[]) {
-    memcpy(&(message), &buf[0], sizeof(CAN_message_bms_balancing_status_t));
-}
-
-void BMS_balancing_status::write(uint8_t buf[]) {
-    memcpy(&buf[0], &(message), sizeof(CAN_message_bms_balancing_status_t));
 }
 
 uint8_t BMS_balancing_status::get_group_id() {
@@ -68,4 +53,12 @@ void BMS_balancing_status::set_ic_balancing(uint8_t ic_id, uint16_t balancing) {
 
 void BMS_balancing_status::set_cell_balancing(uint8_t ic_id, uint8_t cell_id, bool balancing) {
     message = (message & ~(((uint64_t) 0x1) << (0x4 + 0x9 * ic_id + cell_id))) | (((uint64_t) (balancing & 0x1)) << (0x4 + 0x9 * ic_id + cell_id));
+}
+
+uint8_t BMS_balancing_status::getIndex() {
+    return get_group_id();
+}
+
+void BMS_balancing_status::setIndex(uint8_t index) {
+    set_group_id(index);
 }

@@ -5,27 +5,6 @@
 
 #include "HyTech_CAN.h"
 
-/*  Blank Constructor for MCU_status
- *
- * Used to initialize instance of MCU_status with no data
- */
-
-MCU_status::MCU_status() {
-    message = {};
-}
-
-/* Constructor for MCU_status using a buffer
- *
- * Used to initialize instance of MCU_status with data
- * that's in an 8xbyte array (typically msg.buf)
- *
- * Param - Pass in buffer you are trying to initialize data from
- */
-
-MCU_status::MCU_status(uint8_t buf[8]) {
-    load(buf);
-}
-
 /* Constructor for MCU_status
  *
  * Used to copy data from msg variable in
@@ -41,45 +20,14 @@ MCU_status::MCU_status(uint8_t buf[8]) {
  *     - Battery voltage reading (in Volts) times 1000
  */
 
-MCU_status::MCU_status(uint8_t state, uint8_t flags, int16_t temperature, uint16_t glv_battery_voltage) {
+MCU_status::MCU_status() : Abstract_CAN_Container() {};
+MCU_status::MCU_status(uint8_t buf []) : Abstract_CAN_Container(buf) {};
+
+MCU_status::MCU_status(uint8_t state, uint8_t flags, int16_t temperature, uint16_t glv_battery_voltage) : Abstract_CAN_Container() {
     set_state(state);
     set_flags(flags);
     set_temperature(temperature);
     set_glv_battery_voltage(glv_battery_voltage);
-}
-
-/* Load from buffer & write to variable instance
- *
- * Used to copy data from msg variable in
- * microcontroller code to instance variable
- *
- * Param - Pass in buffer you are trying to read from
- * Example: curMCU_status.load(msg.buf);
- */
-
-void MCU_status::load(uint8_t buf[8]) {
-    message = {};
-
-    memcpy(&(message.state), &buf[0], sizeof(uint8_t));
-    memcpy(&(message.flags), &buf[1], sizeof(uint8_t));
-    memcpy(&(message.temperature), &buf[2], sizeof(int16_t));
-    memcpy(&(message.glv_battery_voltage), &buf[4], sizeof(uint16_t));
-}
-
-/* Write to buffer
- *
- * Used to copy data from instance of this class
- * to msg variable in microcontroller code
- *
- * Param - Pass in buffer you are trying to modify
- * Example: curMCU_status.write(msg.buf);
- */
-
-void MCU_status::write(uint8_t buf[8]) {
-    memcpy(&buf[0], &(message.state), sizeof(uint8_t));
-    memcpy(&buf[1], &(message.flags), sizeof(uint8_t));
-    memcpy(&buf[2], &(message.temperature), sizeof(int16_t));
-    memcpy(&buf[4], &(message.glv_battery_voltage), sizeof(uint16_t));
 }
 
 /* Get functions

@@ -5,31 +5,13 @@
 
 #include "HyTech_CAN.h"
 
-FCU_status::FCU_status() {
-    message = {};
-}
+FCU_status::FCU_status() : Abstract_CAN_Container() {};
+FCU_status::FCU_status(uint8_t buf []) : Abstract_CAN_Container(buf) {};
 
-FCU_status::FCU_status(uint8_t buf[8]) {
-    load(buf);
-}
-
-FCU_status::FCU_status(uint8_t state, uint8_t flags, uint8_t start_button_press_id) {
+FCU_status::FCU_status(uint8_t state, uint8_t flags, uint8_t start_button_press_id) : Abstract_CAN_Container() {
     set_state(state);
     set_flags(flags);
     set_start_button_press_id(start_button_press_id);
-}
-
-void FCU_status::load(uint8_t buf[8]) {
-    message = {};
-    memcpy(&(message.state), &buf[0], sizeof(uint8_t));
-    memcpy(&(message.flags), &buf[1], sizeof(uint8_t));
-    memcpy(&(message.start_button_press_id), &buf[2], sizeof(uint8_t));
-}
-
-void FCU_status::write(uint8_t buf[8]) {
-    memcpy(&buf[0], &(message.state), sizeof(uint8_t));
-    memcpy(&buf[1], &(message.flags), sizeof(uint8_t));
-    memcpy(&buf[2], &(message.start_button_press_id), sizeof(uint8_t));
 }
 
 uint8_t FCU_status::get_state() {

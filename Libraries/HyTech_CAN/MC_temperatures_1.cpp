@@ -5,28 +5,8 @@
 
 #include "HyTech_CAN.h"
 
-MC_temperatures_1::MC_temperatures_1() {
-    message = {};
-}
-
-MC_temperatures_1::MC_temperatures_1(uint8_t buf[8]) {
-    load(buf);
-}
-
-void MC_temperatures_1::load(uint8_t buf[8]) {
-    message = {};
-    memcpy(&(message.module_a_temperature), &buf[0], sizeof(int16_t));
-    memcpy(&(message.module_b_temperature), &buf[2], sizeof(int16_t));
-    memcpy(&(message.module_c_temperature), &buf[4], sizeof(int16_t));
-    memcpy(&(message.gate_driver_board_temperature), &buf[6], sizeof(int16_t));
-}
-
-void MC_temperatures_1::write(uint8_t buf[8]) {
-    memcpy(&buf[0], &(message.module_a_temperature), sizeof(int16_t));
-    memcpy(&buf[2], &(message.module_b_temperature), sizeof(int16_t));
-    memcpy(&buf[4], &(message.module_c_temperature), sizeof(int16_t));
-    memcpy(&buf[6], &(message.gate_driver_board_temperature), sizeof(int16_t));
-}
+MC_temperatures_1::MC_temperatures_1() : Abstract_CAN_Container() {};
+MC_temperatures_1::MC_temperatures_1(uint8_t buf []) : Abstract_CAN_Container(buf) {};
 
 int16_t MC_temperatures_1::get_module_a_temperature() {
     return message.module_a_temperature;
@@ -43,3 +23,16 @@ int16_t MC_temperatures_1::get_module_c_temperature() {
 int16_t MC_temperatures_1::get_gate_driver_board_temperature() {
     return message.gate_driver_board_temperature;
 }
+
+#ifdef HYTECH_LOGGING_EN
+    void MC_temperatures_1::print(Stream& serial) {
+        serial.print("MODULE A TEMP: ");
+        serial.println(get_module_a_temperature() / (double) 10, 1);
+        serial.print("MODULE B TEMP: ");
+        serial.println(get_module_b_temperature() / (double) 10, 1);
+        serial.print("MODULE C TEMP: ");
+        serial.println(get_module_c_temperature() / (double) 10, 1);
+        serial.print("GATE DRIVER BOARD TEMP: ");
+        serial.println(get_gate_driver_board_temperature() / (double) 10, 1);
+    }
+#endif

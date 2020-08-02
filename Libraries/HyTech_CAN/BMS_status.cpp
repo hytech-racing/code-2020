@@ -5,27 +5,8 @@
 
 #include "HyTech_CAN.h"
 
-BMS_status::BMS_status() {
-    message = {};
-}
-
-BMS_status::BMS_status(uint8_t buf[]) {
-    load(buf);
-}
-
-void BMS_status::load(uint8_t buf[]) {
-    memcpy(&(message.state), &buf[0], sizeof(uint8_t));
-    memcpy(&(message.error_flags), &buf[1], sizeof(uint16_t));
-    memcpy(&(message.current), &buf[3], sizeof(int16_t));
-    memcpy(&(message.flags), &buf[5], sizeof(uint8_t));
-}
-
-void BMS_status::write(uint8_t buf[]) {
-    memcpy(&buf[0], &(message.state), sizeof(uint8_t));
-    memcpy(&buf[1], &(message.error_flags), sizeof(uint16_t));
-    memcpy(&buf[3], &(message.current), sizeof(int16_t));
-    memcpy(&buf[5], &(message.flags), sizeof(uint8_t));
-}
+BMS_status::BMS_status() : Abstract_CAN_Container() {};
+BMS_status::BMS_status(uint8_t buf []) : Abstract_CAN_Container(buf) {};
 
 uint8_t BMS_status::get_state() {
     return message.state;
@@ -146,3 +127,14 @@ void BMS_status::set_shutdown_g_above_threshold(bool shutdown_g_above_threshold)
 void BMS_status::set_shutdown_h_above_threshold(bool shutdown_h_above_threshold) {
     message.flags = (message.flags & 0xFFFD) | ((shutdown_h_above_threshold & 0x1) << 1);
 }
+
+#ifdef HYTECH_LOGGING_EN
+    void BMS_Status::print(Stream& serial) {
+        serial.print("BMS STATE: ");
+        serial.println(get_state());
+        serial.print("BMS ERROR FLAGS: 0x");
+        serial.println(get_error_flags(), HEX);
+        serial.print("BMS CURRENT: ");
+        serial.println(get_current() / (double) 100, 2);
+    }
+#endif

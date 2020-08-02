@@ -5,34 +5,14 @@
 
 #include "HyTech_CAN.h"
 
-RCU_status::RCU_status() {
-    message = {};
-}
+RCU_status::RCU_status() : Abstract_CAN_Container() {};
+RCU_status::RCU_status(uint8_t buf []) : Abstract_CAN_Container(buf) {};
 
-RCU_status::RCU_status(uint8_t buf[8]) {
-    load(buf);
-}
-
-RCU_status::RCU_status(uint8_t state, uint8_t flags, uint16_t glv_battery_voltage, int16_t temperature) {
+RCU_status::RCU_status(uint8_t state, uint8_t flags, uint16_t glv_battery_voltage, int16_t temperature) : Abstract_CAN_Container() {
     set_state(state);
     set_flags(flags);
     set_glv_battery_voltage(glv_battery_voltage);
     set_temperature(temperature);
-}
-
-void RCU_status::load(uint8_t buf[8]) {
-    message = {};
-    memcpy(&(message.state), &buf[0], sizeof(uint8_t));
-    memcpy(&(message.flags), &buf[1], sizeof(uint8_t));
-    memcpy(&(message.glv_battery_voltage), &buf[2], sizeof(uint16_t));
-    memcpy(&(message.temperature), &buf[4], sizeof(int16_t));
-}
-
-void RCU_status::write(uint8_t buf[8]) {
-    memcpy(&buf[0], &(message.state), sizeof(uint8_t));
-    memcpy(&buf[1], &(message.flags), sizeof(uint8_t));
-    memcpy(&buf[2], &(message.glv_battery_voltage), sizeof(uint16_t));
-    memcpy(&buf[4], &(message.temperature), sizeof(int16_t));
 }
 
 uint8_t RCU_status::get_state() {
