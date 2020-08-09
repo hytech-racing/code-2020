@@ -1,7 +1,10 @@
+#pragma once
+
 #include <SD.h>
 #include <TimeLib.h>
 #include <HyTech_FlexCAN.h>
 #include <Metro.h>
+#include <HyTech_STL/HT_Map.h>
 
 void sd_date_time(uint16_t* date, uint16_t* time) {
     // return date using FAT_DATE macro to format fields
@@ -15,9 +18,12 @@ class Hytech_SD {
     private:
         File logger;
         Metro timer_flush;
+        #ifdef HYTECH_COMPRESSION_EN
+            HT_Map<uint32_t, uint8_t*> history;
+        #endif
     public:
         Hytech_SD();
-        void write(CAN_message_t *msg);
+        void write(CAN_message_t *msg, bool force = false);
         void initialize();
         void flush();
 };
@@ -54,7 +60,17 @@ void Hytech_SD::initialize() {
     logger.flush();
 }
 
-void Hytech_SD::write(CAN_message_t *msg) { // Note: This function does not flush data to disk! It will happen when the buffer fills or when the above flush timer fires
+void Hytech_SD::write(CAN_message_t *msg, bool force) { // Note: This function does not flush data to disk! It will happen when the buffer fills or when the above flush timer fires
+    #ifdef HYTECH_COMPRESSION_EN
+        if (!force) {
+            auto it = history.find(msg->id);
+            if (it == history.end()) {
+                uint8_t* tmp = new uint8_t[8];
+                history.insert(msg->id, tmp);
+            } else if (!memcmp(it->second, &msg->buf[0], msg->len))
+                return;
+        }
+    #endif
     logger.print(Teensy3Clock.get());
     logger.print(",");
     logger.print(msg->id, HEX);

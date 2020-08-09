@@ -145,14 +145,19 @@ void setupTelemetry() {
 
 void parse_can_message() {
     while (CAN.read(msg_rx)) {
-        if (telemetry.load(msg_rx.id, msg_rx.buf));
+        if (telemetry.load(msg_rx.id, msg_rx.buf))
             hytech_SD.write(&msg_rx); // Write to SD card buffer (if the buffer fills up, triggering a flush to disk, this will take 8ms)
 
         // Identify received CAN messages and load contents into corresponding structs
-        if (msg_rx.id == ID_GLV_CURRENT_READINGS && current_readings.load(msg_rx.buf))
+        else if (msg_rx.id == ID_GLV_CURRENT_READINGS) {
+            current_readings.load(msg_rx.buf);
             hytech_SD.write(&msg_rx);
-        if (msg_rx.id == ID_FCU_ACCELEROMETER && fcu_accelerometer_values.load(msg_rx.buf))
+        }
+        
+        else if (msg_rx.id == ID_FCU_ACCELEROMETER) {
+            fcu_accelerometer_values.load(msg_rx.buf);
             hytech_SD.write(&msg_rx);
+        }
     }
 }
 

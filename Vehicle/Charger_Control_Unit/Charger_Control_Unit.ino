@@ -163,7 +163,7 @@ void print_temps() {
  */
 void parse_can_message() {
     while (CAN.read(rx_msg)) {
-        telemetry. load(rx_msg.id, rx_msg.buf);
+        telemetry.load(rx_msg.id, rx_msg.buf);
 
         if (rx_msg.id == ID_BMS_STATUS) {
             ccu_status.set_charger_enabled(bms_status.get_state() == BMS_STATE_CHARGING);
