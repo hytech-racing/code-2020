@@ -8,18 +8,17 @@
 class MockPin {
 public:
     ~MockPin();
-
     void init(int pin, std::string filepath);
     unsigned value();
     void write(unsigned value);
     void mode(bool mode);
 private:
     unsigned long long fNextRefresh;
-    unsigned fPin;
+    int fPin;
     unsigned fValue;
     int fMode = -1;
     std::fstream file;
     std::string fFilepath;
 };
 
-char* decodePinMode(int mode);
+std::string decodePinMode(int mode);

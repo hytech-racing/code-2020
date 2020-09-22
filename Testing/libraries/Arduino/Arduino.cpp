@@ -1,14 +1,14 @@
-#include <map>
 #include "Arduino.h"
-#include "MockPin.h"
+#include <MockPin.h>
+#include <Simulator.h>
 
 // time management constants
-unsigned long long sys_time = 0;
-unsigned long long millis() { return sys_time; }
+unsigned long long millis() { return Simulator::sys_time; }
+void delay (unsigned long long time) { Simulator::sys_time += time; }
 
 // pin i/o
 bool digitalRead(int pin) { return io[pin].value(); };
 void digitalWrite(int pin, bool value) { io[pin].write(value); }
 unsigned analogRead(int pin) { return io[pin].value(); }
 void analogWrite(int pin, unsigned value) { io[pin].write(value); }
-unsigned pinMode(int pin, bool mode) { io[pin].mode(mode); }
+void pinMode(int pin, unsigned mode) { io[pin].mode(mode); }

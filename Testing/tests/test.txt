@@ -1,0 +1,5 @@
+ROOT ./
+RUNTIME 2000
+PERIOD 100
+4 input.txt
+-1 output.txt

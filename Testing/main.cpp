@@ -1,12 +1,14 @@
-#include "Arduino.h"
-#include "Configure.h"
+#include <Arduino.h>
+#include <Simulator.h>
 
-extern unsigned long long sys_time;
-
-int main() {
-    const unsigned long long SIMULATION_LENGTH = loadConfiguration("some configuration path");
+int main(int argc, char* argv []) {
+    if (argc < 2) {
+        printf("USAGE: simulate <filepath>\n");
+        return 0;
+    }
+    Simulator simulator = Simulator::load(argv [1]);
     setup();
-    for (sys_time; sys_time <= SIMULATION_LENGTH; sys_time += LOOP_PERIOD)
+    while (simulator.nextIteration())
         loop();
     return 0;
 }

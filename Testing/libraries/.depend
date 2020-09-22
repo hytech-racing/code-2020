@@ -1,0 +1,4 @@
+LIBRARY = \
+-Ilibraries/Arduino \
+-Ilibraries/Serial \
+-Ilibraries/core \

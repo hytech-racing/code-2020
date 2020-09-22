@@ -1,7 +1,6 @@
-#include "Arduino.h"
+#include <Arduino.h>
 #include "MockPin.h"
 #include "Exception.h"
-
 
 MockPin::~MockPin() {
     if (file.is_open())
@@ -41,7 +40,7 @@ unsigned MockPin::value() {
     return fValue;
 }
 
-char* decodePinMode(int mode) {
+std::string decodePinMode(int mode) {
     if (mode == -1) return "__NOT INITIALIZED__";
     else if (mode == 0) return "INPUT";
     else if (mode == 1) return "OUTPUT";
