@@ -1,4 +1,7 @@
 LIBRARY = \
--Ilibraries/Arduino \
--Ilibraries/Serial \
--Ilibraries/core \
+-ILibraries/Arduino \
+-ILibraries/HyTech_CAN \
+-ILibraries/Metro \
+-ILibraries/Serial \
+-ILibraries/Stubs \
+-ILibraries/core \

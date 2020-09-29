@@ -1,15 +1,15 @@
 CC = g++ --std=c++11
 BOARD = -x c++ $(board)
 
-simulate: main.cpp ./libraries/**/*.cpp
+simulate: main.cpp ./Libraries/**/*.cpp
 ifeq ($(board),)
 	$(error Specify board file | usage: make board=<boardfile>)
 else
 	$(CC) $(LIBRARY) $^ $(BOARD) -o $@
 endif
 
-libraries/.depend: 
-	echo LIBRARY = \\ > libraries/.depend
-	ls -d libraries/* | xargs -I % echo -I% \\ >> libraries/.depend
+Libraries/.depend: 
+	echo LIBRARY = \\ > Libraries/.depend
+	ls -d Libraries/* | xargs -I % echo -I% \\ >> Libraries/.depend
 
-include libraries/.depend
+include Libraries/.depend
