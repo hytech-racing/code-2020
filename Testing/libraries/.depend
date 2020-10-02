@@ -1,7 +1,51 @@
-LIBRARY = \
+LIBS = \
 -ILibraries/Arduino \
 -ILibraries/HyTech_CAN \
 -ILibraries/Metro \
 -ILibraries/Serial \
 -ILibraries/Stubs \
 -ILibraries/core \
+
+DEPS = \
+linker/Arduino/Arduino.o \
+linker/HyTech_CAN/BMS_balancing_status.o \
+linker/HyTech_CAN/BMS_coulomb_counts.o \
+linker/HyTech_CAN/BMS_detailed_temperatures.o \
+linker/HyTech_CAN/BMS_detailed_voltages.o \
+linker/HyTech_CAN/BMS_onboard_detailed_temperatures.o \
+linker/HyTech_CAN/BMS_onboard_temperatures.o \
+linker/HyTech_CAN/BMS_status.o \
+linker/HyTech_CAN/BMS_temperatures.o \
+linker/HyTech_CAN/BMS_voltages.o \
+linker/HyTech_CAN/CCU_status.o \
+linker/HyTech_CAN/FCU_accelerometer_values.o \
+linker/HyTech_CAN/FCU_readings.o \
+linker/HyTech_CAN/FCU_status.o \
+linker/HyTech_CAN/GLV_current_readings.o \
+linker/HyTech_CAN/MCU_GPS_readings_alpha.o \
+linker/HyTech_CAN/MCU_GPS_readings_beta.o \
+linker/HyTech_CAN/MCU_GPS_readings_gamma.o \
+linker/HyTech_CAN/MCU_pedal_readings.o \
+linker/HyTech_CAN/MCU_status.o \
+linker/HyTech_CAN/MC_analog_input_voltages.o \
+linker/HyTech_CAN/MC_command_message.o \
+linker/HyTech_CAN/MC_current_information.o \
+linker/HyTech_CAN/MC_digital_input_status.o \
+linker/HyTech_CAN/MC_fault_codes.o \
+linker/HyTech_CAN/MC_firmware_information.o \
+linker/HyTech_CAN/MC_internal_states.o \
+linker/HyTech_CAN/MC_modulation_index_flux_weakening_output_information.o \
+linker/HyTech_CAN/MC_motor_position_information.o \
+linker/HyTech_CAN/MC_read_write_parameter_command.o \
+linker/HyTech_CAN/MC_read_write_parameter_response.o \
+linker/HyTech_CAN/MC_temperatures_1.o \
+linker/HyTech_CAN/MC_temperatures_2.o \
+linker/HyTech_CAN/MC_temperatures_3.o \
+linker/HyTech_CAN/MC_torque_timer_information.o \
+linker/HyTech_CAN/MC_voltage_information.o \
+linker/HyTech_CAN/RCU_status.o \
+linker/Metro/Metro.o \
+linker/Serial/Serial.o \
+linker/core/Exception.o \
+linker/core/MockPin.o \
+linker/core/Simulator.o \

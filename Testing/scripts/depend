@@ -1,0 +1,17 @@
+#!/bin/bash
+
+echo LIBS = \\ > Libraries/.depend
+# ls -d Libraries/* | xargs -I % echo -I% \\ >> Libraries/.depend
+for dir in $(ls -d Libraries/*)
+do
+    echo "    Adding library to path - $dir"
+    echo -I$dir \\ >> Libraries/.depend
+done
+
+echo "" >> Libraries/.depend
+echo DEPS = \\ >> Libraries/.depend
+for file in $(ls Libraries/**/*.cpp | cut -d / -f 2- | sed s/\.cpp$//)
+do
+    echo "    Adding source dependency - $file"
+    echo "linker/$file.o" \\ >> Libraries/.depend
+done
