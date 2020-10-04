@@ -1,9 +1,0 @@
-#!/bin/bash
-input="Libraries/.symlinks"
-
-cat $input | sed s/\\r// | while read lib
-do
-    echo "    Linking vehicle library - $lib"
-    rm -rf Libraries/$lib
-    ln -s ../../Libraries/$lib Libraries/$lib
-done

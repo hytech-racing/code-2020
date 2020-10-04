@@ -4,18 +4,19 @@ BOARD = -x c++ $(board)
 depend:
 	bash scripts/depend
 
-links:
-	bash scripts/symlink
-
-setup: depend links
-	git config core.excludesfiles Testing/Libraries/.symlinks
-
 include Libraries/.depend
 
-linker/main.o: main.cpp
+Linker/main.o: main.cpp
+	install -D /dev/null $@
+	rm $@
 	$(CC) -c $(LIBS) -o $@ $<
 
-linker/%.o: Libraries/%.cpp
+Linker/sim/%.o: Libraries/%.cpp
+	install -D /dev/null $@
+	rm $@
+	$(CC) -c $(LIBS) -o $@ $<
+
+Linker/ext/%.o: ../Libraries/%.cpp
 	install -D /dev/null $@
 	rm $@
 	$(CC) -c $(LIBS) -o $@ $<
