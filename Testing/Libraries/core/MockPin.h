@@ -4,6 +4,7 @@
 
 #define INPUT 0
 #define OUTPUT 1
+#define INPUT_PULLUP 2
 
 class MockPin {
 public:
@@ -15,7 +16,7 @@ public:
 private:
     unsigned long long fNextRefresh;
     int fPin;
-    unsigned fValue;
+    int fValue = -1;
     int fMode = -1;
     std::fstream file;
     std::string fFilepath;
