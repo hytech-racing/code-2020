@@ -1,8 +1,9 @@
 CC = g++ --std=c++11
 BOARD = -x c++ $(board)
 
+.PHONY: depend
 depend:
-	bash scripts/depend
+	bash depend
 
 include Libraries/.depend
 
@@ -21,7 +22,7 @@ Linker/ext/%.o: ../Libraries/%.cpp
 	rm $@
 	$(CC) -c $(LIBS) -o $@ $<
 
-simulate: linker/main.o $(DEPS)
+simulate: Linker/main.o $(DEPS)
 ifeq ($(board),)
 	$(error Specify board file | usage: make board=<boardfile>)
 else

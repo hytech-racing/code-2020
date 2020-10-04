@@ -25,5 +25,11 @@ void MockSerial::validate() {
         throw InvalidPinConfigurationException(-1, OUTPUT, -1);
 }
 
+inline void MockSerial::write(uint8_t* buf, int size) {
+    validate();
+    for (int i = 0; i < size; ++i)
+        file << std::hex << buf[i];
+}
+
 MockSerial Serial(-1);
 MockSerial Serial2(-2);
