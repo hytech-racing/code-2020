@@ -6,6 +6,8 @@
 #define LOW 0
 #define HIGH 1
 
+typedef char byte;
+
 // defined in microcontroller code
 extern void setup();
 extern void loop();
