@@ -22,6 +22,7 @@ Linker/ext/%.o: ../Libraries/%.cpp
 	rm $@
 	$(CC) -c $(LIBS) -o $@ $<
 
+.PHONY: simulate
 simulate: Linker/main.o $(DEPS)
 ifeq ($(board),)
 	$(error Specify board file | usage: make board=<boardfile>)

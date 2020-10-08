@@ -11,7 +11,8 @@ public:
     void begin(unsigned int baudRate);
     template <typename T> inline void print(T value) { validate(); file << value; }
     template <typename T> inline void print(T value, int base) { validate(); file << format(value, base).rdbuf(); }
-    template <typename T> inline void println(T value = "") { validate(); file << value << '\n'; }
+    inline void println() { validate(); file << '\n'; }
+    template <typename T> inline void println(T value) { validate(); file << value << '\n'; }
     template <typename T> inline void println(T value, int base) { validate(); file << format(value, base).rdbuf() << '\n'; }
     inline void write(uint8_t* buf, int size);
 private:
