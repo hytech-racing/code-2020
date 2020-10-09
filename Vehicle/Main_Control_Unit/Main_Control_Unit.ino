@@ -58,6 +58,7 @@ BMS_voltages bms_voltages;
 MC_motor_position_information mc_motor_position_information;
 MC_current_information mc_current_informtarion;
 BMS_coulomb_counts bms_coulomb_counts;
+MCU_launch_control mcu_launch_control;
 
 /*
  * Constant definitions
@@ -125,6 +126,19 @@ float filtered_accel1_reading = 0;
 float filtered_accel2_reading = 0;
 float filtered_brake_reading = 0;
 float filtered_glv_reading = 0;
+
+// launch control variables
+float rear_rpm = 0;
+float front_rpm = 0;
+float slip_limiting_factor = 1;
+float max_desireable_slip_ratio = 0.2;
+float slip_adjuster = 10;
+float last_excess_slip = 0;
+float total_excess_slip = 0;
+float KP = 0.15;
+float KI = 0.005;
+float KD = 0;
+bool launch_control_active = true;
 
 bool btn_start_reading = true;
 bool btn_mode_reading = true;
@@ -214,6 +228,7 @@ void loop() {
     read_pedal_values();
     read_dashboard_buttons();
     set_dashboard_leds();
+    update_slip_limiting_factor(); //use the pid to update the slip limiting factor based on current slip ratio
 
     /*
      * Send state over CAN
@@ -245,6 +260,12 @@ void loop() {
         bms_coulomb_counts.set_total_discharge(total_discharge_amount);
         tx_msg.id = ID_BMS_COULOMB_COUNTS;
         tx_msg.len = sizeof(CAN_message_bms_coulomb_counts_t);
+        CAN.write(tx_msg);
+
+        // Send launch control information
+        mcu_launch_control.write(tx_msg.buf);
+        tx_msg.id = ID_MCU_LAUNCH_CONTROL;
+        tx_msg.len = sizeof(CAN_message_mcu_launch_control_t);
         CAN.write(tx_msg);
     }
 
@@ -425,6 +446,16 @@ void parse_can_message() {
                 mc_current_informtarion.load(rx_msg.buf);
                 update_couloumb_count();
             }
+        }
+
+        if (rx_msg.id == ID_TCU_WHEEL_RPM_REAR) {
+            TCU_wheel_rpm rpms = TCU_wheel_rpm(rx_msg.buf);
+            rear_rpm = (rpms.get_wheel_rpm_left() + rpms.get_wheel_rpm_right()) / (2.0 * 100);
+        }
+
+        if (rx_msg.id == ID_TCU_WHEEL_RPM_FRONT) {
+            TCU_wheel_rpm rpms = TCU_wheel_rpm(rx_msg.buf);
+            front_rpm = (rpms.get_wheel_rpm_left() + rpms.get_wheel_rpm_right()) / (1.0 * 100); //Should be devided by 2, currently only one sensor is installed
         }
     }
 
@@ -649,7 +680,7 @@ void set_state(uint8_t new_state) {
 int calculate_torque() {
     int calculated_torque = 0;
 
-    //if (!mcu_pedal_readings.get_accelerator_implausibility()) {
+    if (!mcu_pedal_readings.get_accelerator_implausibility()) {
         int torque1 = map(round(filtered_accel1_reading), START_ACCELERATOR_PEDAL_1, END_ACCELERATOR_PEDAL_1, 0, MAX_TORQUE);
         int torque2 = map(round(filtered_accel2_reading), START_ACCELERATOR_PEDAL_2, END_ACCELERATOR_PEDAL_2, 0, MAX_TORQUE);
 
@@ -661,7 +692,7 @@ int calculate_torque() {
             torque2 = MAX_TORQUE;
         }
         // compare torques to check for accelerator implausibility
-        if (0)/*abs(torque1 - torque2) * 100 / MAX_TORQUE > 10) */{
+        if (abs(torque1 - torque2) * 100 / MAX_TORQUE > 10) {
             mcu_pedal_readings.set_accelerator_implausibility(true);
             Serial.println("ACCEL IMPLAUSIBILITY: COMPARISON FAILED");
         } else {
@@ -679,8 +710,9 @@ int calculate_torque() {
             if (calculated_torque < 0) {
                 calculated_torque = 0;
             }
+            calculated_torque *= slip_limiting_factor; //Reduce torque if slip to high, cannot increase torque ie slip_limiting_factor cannot be >1
         }
-    //}
+    }
 
     return calculated_torque;
 }
@@ -720,12 +752,12 @@ void read_dashboard_buttons() {
             if (torque_mode == 0) {
                 set_mode_led(0);
                 // 40
-                MAX_TORQUE = 400;
+                MAX_TORQUE = 1000;
                 MAX_ACCEL_REGEN = 0;
                 MAX_BRAKE_REGEN = 0;
             } else if (torque_mode == 1) {
                 // blink 80
-                MAX_TORQUE = 800;
+                MAX_TORQUE = 1300;
                 set_mode_led(1);
                 MAX_ACCEL_REGEN = 0;
                 MAX_BRAKE_REGEN = -400;
@@ -906,4 +938,34 @@ void update_couloumb_count() {
     } else {
         total_charge_amount -= new_current;
     }
+}
+
+float get_excess_slip() {
+    float slip_ratio = 0; //slip ratio is 0 by default
+    if(front_rpm > 10 && rear_rpm > 30) 
+        slip_ratio = ((rear_rpm + slip_adjuster) / (front_rpm + slip_adjuster)) - 1; //if both front and rear are spinning, calculate the ratio
+    mcu_launch_control.set_slip_ratio(slip_ratio * 100);
+    float excess_slip = slip_ratio - max_desireable_slip_ratio;
+    Serial.print("ESR: ");
+    Serial.print(excess_slip);
+    return excess_slip;
+}
+
+void update_slip_limiting_factor() {
+    float excess_slip = get_excess_slip();
+    total_excess_slip += excess_slip;
+    if (total_excess_slip < 0) total_excess_slip = 0;
+    float change_in_excess_slip = excess_slip - last_excess_slip;
+    last_excess_slip = excess_slip;
+
+    float P = KP * excess_slip;
+    float I = KI * total_excess_slip;
+    float D = KD * change_in_excess_slip;
+
+    slip_limiting_factor = 1 / (1 + (P + I + D));
+    if (slip_limiting_factor > 1) slip_limiting_factor = 1; //IMPORTANT, slip_limiting_factor must be 1 or less, otherwise it could increase torque
+    if (slip_limiting_factor < 0) slip_limiting_factor = 1; //IMPORTANT, slip_limiting_factor must not be negative, otherwise a negative torque will be requested
+    mcu_launch_control.set_slip_limiting_factor(slip_limiting_factor * 100);
+    Serial.print("    SLF: ");
+    Serial.println(slip_limiting_factor);
 }
