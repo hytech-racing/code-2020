@@ -46,6 +46,11 @@ unsigned MockPin::value() {
     return fValue;
 }
 
+void MockPin::close() {
+    if (file.is_open())
+        file.close();
+}
+
 std::string decodePinMode(int mode) {
     if (mode == -1) return "__NOT INITIALIZED__";
     else if (mode == INPUT) return "INPUT";

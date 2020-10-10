@@ -9,6 +9,7 @@ public:
     ~MockSerial();
     void init(std::string filepath);
     void begin(unsigned int baudRate);
+    void end();
     template <typename T> inline void print(T value) { validate(); file << value; }
     template <typename T> inline void print(T value, int base) { validate(); file << format(value, base).rdbuf(); }
     inline void println() { validate(); file << '\n'; }

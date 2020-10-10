@@ -13,6 +13,7 @@ public:
     unsigned value();
     void write(unsigned value);
     void mode(bool mode);
+    void close();
 private:
     unsigned long long fNextRefresh;
     int fPin;

@@ -10,5 +10,6 @@ int main(int argc, char* argv []) {
     setup();
     while (simulator.nextIteration())
         loop();
+    simulator.cleanup();
     return 0;
 }

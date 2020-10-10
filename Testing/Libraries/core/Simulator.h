@@ -18,10 +18,11 @@ public:
     static Simulator load(std::string filepath);
     Simulator(unsigned long long runtime, unsigned long long period);
     bool nextIteration();
+    void cleanup();
     friend unsigned long long millis();
     friend void delay(unsigned long long);
 private:
-    static unsigned long long sys_time;
+    unsigned long long sys_time;
     const unsigned long long LOOP_PERIOD;
     const unsigned long long SIMULATION_LENGTH;
 };

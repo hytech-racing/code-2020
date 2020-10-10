@@ -61,3 +61,10 @@ bool Simulator::nextIteration() {
     }
     return sys_time <= SIMULATION_LENGTH;
 }
+
+void Simulator::cleanup() {
+    for (int pin = 0; pin < NUM_PINS; ++i)
+        io[pin].close();
+    Serial1.end();
+    Serial2.end();
+}

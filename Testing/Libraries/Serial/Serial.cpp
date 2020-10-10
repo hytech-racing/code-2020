@@ -20,6 +20,11 @@ void MockSerial::begin(unsigned int baudRate) {
         throw FileNotOpenException(fId, fFilepath);
 }
 
+void MockSerial::end() {
+    if (file.is_open())
+        file.close();
+}
+
 void MockSerial::validate() {
     if (!file.is_open())
         throw InvalidPinConfigurationException(-1, OUTPUT, -1);
