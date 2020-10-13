@@ -3,6 +3,8 @@
 #include <string>
 
 struct CustomException : public std::exception {
+    CustomException();
+    CustomException(std::string& msg);
     const char* what() const throw();
     protected: char msg [128];
 };
@@ -12,6 +14,9 @@ struct DoublePinModeException : public CustomException {
 };
 struct FileNotOpenException : public CustomException {
     FileNotOpenException(int pin, std::string filepath);
+};
+struct InterruptNotEnabledException : public CustomException {
+    InterruptNotEnabledException(int interruptId);
 };
 struct InvalidPinConfigurationException : public CustomException {
     InvalidPinConfigurationException(int pin, bool expectedMode, int actualMode);

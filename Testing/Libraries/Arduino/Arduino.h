@@ -2,6 +2,7 @@
 #include <thread>
 #include <Serial.h>
 #include <Simulator.h>
+#include <Interrupts.h>
 
 #define LOW 0
 #define HIGH 1

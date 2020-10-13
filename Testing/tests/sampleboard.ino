@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#define SIMULATOR_BOARD TEENSY
+#define __HT_ARDUINO__ TEENSY_32
 
 int inputPin = 4;
 

@@ -46,12 +46,11 @@ public:
 
 };
 
-void interrupts(){}
-#define IRQ_CAN_MESSAGE 4
-#define FLEXCAN0_IMASK1 int x
-#define FLEXCAN_IMASK1_BUF5M 1
-void NVIC_ENABLE_IRQ(int x){}
-void attachInterruptVector(int x, void(*func)()) {}
+#if __HT_ARDUINO__ == TEENSY_32
+	#define IRQ_CAN_MESSAGE 29
+  unsigned long long FLEXCAN0_IMASK1 = 0;
+#else if __HT_ARDUINO == TEENSY_35
+    unsigned long long FLEXCAN0_MCR = 0xFFFFFFFF;
+#endif
 
-
-#endif // __FLEXCAN_H__
+// TODO - 3.2 interrupt-based can requires FLEXCAN0_IMASK1 = FLEXCAN_IMASK1_BUF5M

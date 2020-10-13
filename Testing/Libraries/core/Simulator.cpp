@@ -63,8 +63,8 @@ bool Simulator::nextIteration() {
 }
 
 void Simulator::cleanup() {
-    for (int pin = 0; pin < NUM_PINS; ++i)
+    for (int pin = 0; pin < NUM_PINS; ++pin)
         io[pin].close();
-    Serial1.end();
+    Serial.end();
     Serial2.end();
 }

@@ -3,9 +3,13 @@
 #include "MockPin.h"
 
 // (add an extra pin because pins are 1-indexed)
-#if SIMULATOR_BOARD == TEENSY
+#if __HT_ARDUINO__ == TEENSY_32
     #define NUM_PINS 22
-#elif SIMULATOR_BOARD == UNO
+#elif __HT_ARDUINO__ == TEENSY_35
+    #define NUM_PINS 22
+#elif __HT_ARDUINO__ == TEENSY_40
+    #define NUM_PINS 22
+#elif __HT_ARDUINO__ == UNO
     #define NUM_PINS 15
 #else
     #error "Failed to specify board type"
@@ -22,7 +26,7 @@ public:
     friend unsigned long long millis();
     friend void delay(unsigned long long);
 private:
-    unsigned long long sys_time;
+    static unsigned long long sys_time;
     const unsigned long long LOOP_PERIOD;
     const unsigned long long SIMULATION_LENGTH;
 };
