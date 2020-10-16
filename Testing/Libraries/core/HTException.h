@@ -1,10 +1,12 @@
-#pragma once
+#ifndef __HYTECH_EXCEPTION__
+#define __HYTECH_EXCEPTION__
+
 #include <exception>
 #include <string>
 
 struct CustomException : public std::exception {
     CustomException();
-    CustomException(std::string& msg);
+    CustomException(const char* msg);
     const char* what() const throw();
     protected: char msg [128];
 };
@@ -24,3 +26,5 @@ struct InvalidPinConfigurationException : public CustomException {
 struct InvalidHeaderException : public CustomException {
     InvalidHeaderException(std::string expected, std::string actual);
 };
+
+#endif

@@ -5,6 +5,10 @@ BOARD = -x c++ $(board)
 depend:
 	bash depend
 
+.PHONY: clean
+clean:
+	rm -rf Linker
+
 include Libraries/.depend
 
 Linker/main.o: main.cpp

@@ -1,4 +1,6 @@
-#pragma once
+#ifndef __HYTECH_MOCKPIN__
+#define __HYTECH_MOCKPIN__
+
 #include "fstream"
 #include "string"
 
@@ -8,19 +10,21 @@
 
 class MockPin {
 public:
-    ~MockPin();
-    void init(int pin, std::string filepath);
-    unsigned value();
-    void write(unsigned value);
-    void mode(bool mode);
-    void close();
+    MockPin();
+    MockPin(int pin);
+    unsigned sim_value();
+    void sim_write(unsigned value);
+    void sim_pinMode(int mode);
+    int value();
+    void setInputToPullup();
+    int pinMode();
 private:
-    unsigned long long fNextRefresh;
     int fPin;
-    int fValue = -1;
+    int fInputValue = -1;
+    int fOutputValue = -1;
     int fMode = -1;
-    std::fstream file;
-    std::string fFilepath;
 };
 
 std::string decodePinMode(int mode);
+
+#endif

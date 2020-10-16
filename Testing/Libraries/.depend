@@ -9,7 +9,7 @@ LIBS = \
 DEPS = \
 Linker/sim/Arduino/Arduino.o \
 Linker/sim/Serial/Serial.o \
-Linker/sim/core/Exception.o \
+Linker/sim/core/HTException.o \
 Linker/sim/core/MockPin.o \
 Linker/sim/core/Simulator.o \
 Linker/ext/HyTech_CAN/BMS_balancing_status.o \

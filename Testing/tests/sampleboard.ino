@@ -1,5 +1,6 @@
+#define HYTECH_ARDUINO_TEENSY_35
+
 #include <Arduino.h>
-#define __HT_ARDUINO__ TEENSY_32
 
 int inputPin = 4;
 
@@ -7,12 +8,12 @@ int inputPin = 4;
 void setup() {
   // initialize the digital pin as an output.
   Serial.begin(512000);
-  pinMode(inputPin, INPUT);
+  // pinMode(inputPin, INPUT);
 }
 
 // the loop routine runs over and over again forever:
 void loop() {
-  Serial.print(millis());
-  Serial.print(" ");
-  Serial.println(analogRead(inputPin));   // turn the LED on (HIGH is the voltage level)
+  Serial.println(millis());
+  // Serial.print(" ");
+  // Serial.println(analogRead(inputPin));   // turn the LED on (HIGH is the voltage level)
 }

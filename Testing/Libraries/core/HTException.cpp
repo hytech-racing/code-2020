@@ -1,9 +1,9 @@
-#include "Exception.h"
+#include "HTException.h"
 #include "MockPin.h"
 #include <cstring>
 
 CustomException::CustomException() {}
-CustomException::CustomException(std::string& msg) { strcpy(&msg[0], this->msg); }
+CustomException::CustomException(const char* msg) { strcpy((char*) msg, this->msg); }
 const char* CustomException::what() const throw() { return msg; }
 
 DoublePinModeException::

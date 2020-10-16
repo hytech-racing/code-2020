@@ -1,32 +1,39 @@
-#pragma once
+#ifndef __HYTECH_SIMULATOR__
+#define __HYTECH_SIMULATOR__
+
 #include <string>
 #include "MockPin.h"
 
 // (add an extra pin because pins are 1-indexed)
-#if __HT_ARDUINO__ == TEENSY_32
+#ifdef HYTECH_ARDUINO_TEENSY_32
     #define NUM_PINS 22
-#elif __HT_ARDUINO__ == TEENSY_35
+#endif
+#ifdef HYTECH_ARDUINO_TEENSY_35
     #define NUM_PINS 22
-#elif __HT_ARDUINO__ == TEENSY_40
+#endif
+#ifdef HYTECH_ARDUINO_TEENSY_40
     #define NUM_PINS 22
-#elif __HT_ARDUINO__ == UNO
+#endif
+#ifdef HYTECH_ARDUINO_UNO
     #define NUM_PINS 15
-#else
-    #error "Failed to specify board type"
+#endif
+#ifndef NUM_PINS
+    #define NUM_PINS 0
+    // #error "Failed to specify board type"
 #endif
 
-extern MockPin io [NUM_PINS];
+extern MockPin* io;
 
 class Simulator {
 public:
-    static Simulator load(std::string filepath);
-    Simulator(unsigned long long runtime, unsigned long long period);
-    bool nextIteration();
+    Simulator(unsigned long long period);
+    void next();
     void cleanup();
     friend unsigned long long millis();
     friend void delay(unsigned long long);
 private:
     static unsigned long long sys_time;
     const unsigned long long LOOP_PERIOD;
-    const unsigned long long SIMULATION_LENGTH;
 };
+
+#endif

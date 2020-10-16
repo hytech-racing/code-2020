@@ -1,6 +1,8 @@
 #if __HYTECH_ARDUINO__ == TEENSY_32
 
 #include "Interrupts.h"
+#include <HTException.h>
+#include <map>
 
 std::map<int, void(*)()> interruptMap;
 bool interruptsEnabled = false;

@@ -1,14 +1,15 @@
-#pragma once
-
-#if __HT_ARDUINO__ == TEENSY_32
+#ifdef HT_ARDUINO_TEENSY_32
+#ifndef __HT_INTERRUPTS__
+#define __HT_INTERRUPTS__
 
 #include <map>
-#include "Exception.h"
+#include <HTException.h>
 
-std::map<int, void(*)()> interruptMap;
+extern std::map<int, void(*)()> interruptMap;
 
 void interrupts();
 void NVIC_ENABLE_IRQ(int irq);
 void attachInterruptVector(int irq, void(*interruptVector)());
 
+#endif
 #endif
