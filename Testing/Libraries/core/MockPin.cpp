@@ -4,7 +4,11 @@
 
 inline bool isInput(int pinMode) { return (pinMode & 1) == INPUT; }
 
-MockPin::MockPin(int pin) { fPin = pin; }
+MockPin::MockPin() {}
+
+MockPin::MockPin(int pin) { 
+    fPin = pin; 
+}
 
 unsigned MockPin::sim_value() {
     if (!isInput(fMode))
@@ -31,6 +35,7 @@ void MockPin::sim_pinMode(int mode) {
 }
 
 int MockPin::value() { return fOutputValue; }
+void MockPin::setValue(unsigned value) { fInputValue = value; }
 void MockPin::setInputToPullup() { fInputValue = -1; }
 int MockPin::pinMode() { return fMode; }
 
@@ -40,6 +45,7 @@ std::string decodePinMode(int mode) {
         case INPUT: return "INPUT";
         case OUTPUT: return "OUTPUT";
         case INPUT_PULLUP: return "INPUT_PULLUP";
+        case RESERVED: return "RESERVED";
     }
     return "__UNEXPECTED VALUE__";
 }

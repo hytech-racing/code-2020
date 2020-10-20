@@ -1,11 +1,12 @@
-#ifndef __HYTECH_ARDUINO__
-#define __HYTECH_ARDUINO__
+#pragma once
 
 #define ARDUINO 0
 
+#include "BoardDef.h"
 #include <Serial.h>
 #include <Simulator.h>
 #include <Interrupts.h>
+#include <cstring>
 
 #define LOW 0
 #define HIGH 1
@@ -28,5 +29,3 @@ void pinMode(int pin, unsigned mode);
 // used for time management
 unsigned long long millis();
 void delay (unsigned long long time);
-
-#endif

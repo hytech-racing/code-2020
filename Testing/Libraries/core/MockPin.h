@@ -1,5 +1,4 @@
-#ifndef __HYTECH_MOCKPIN__
-#define __HYTECH_MOCKPIN__
+#pragma once
 
 #include "fstream"
 #include "string"
@@ -7,6 +6,7 @@
 #define INPUT 0
 #define OUTPUT 1
 #define INPUT_PULLUP 2
+#define RESERVED 3
 
 class MockPin {
 public:
@@ -16,6 +16,7 @@ public:
     void sim_write(unsigned value);
     void sim_pinMode(int mode);
     int value();
+    void setValue(unsigned value);
     void setInputToPullup();
     int pinMode();
 private:
@@ -26,5 +27,3 @@ private:
 };
 
 std::string decodePinMode(int mode);
-
-#endif

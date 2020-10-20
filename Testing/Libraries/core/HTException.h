@@ -1,5 +1,4 @@
-#ifndef __HYTECH_EXCEPTION__
-#define __HYTECH_EXCEPTION__
+#pragma once
 
 #include <exception>
 #include <string>
@@ -26,5 +25,3 @@ struct InvalidPinConfigurationException : public CustomException {
 struct InvalidHeaderException : public CustomException {
     InvalidHeaderException(std::string expected, std::string actual);
 };
-
-#endif

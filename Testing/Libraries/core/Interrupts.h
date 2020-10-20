@@ -1,6 +1,6 @@
-#ifdef HT_ARDUINO_TEENSY_32
-#ifndef __HT_INTERRUPTS__
-#define __HT_INTERRUPTS__
+#pragma once
+
+#ifdef HYTECH_ARDUINO_TEENSY_32
 
 #include <map>
 #include <HTException.h>
@@ -11,5 +11,4 @@ void interrupts();
 void NVIC_ENABLE_IRQ(int irq);
 void attachInterruptVector(int irq, void(*interruptVector)());
 
-#endif
 #endif

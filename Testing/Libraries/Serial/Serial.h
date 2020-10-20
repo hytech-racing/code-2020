@@ -1,11 +1,12 @@
-#ifndef __HYTECH_SERIAL__
-#define __HYTECH_SERIAL__
+#pragma once
 
 #include <MockPin.h>
 #include <HTException.h>
 #include <fstream>
 #include <sstream>
 #include <bitset>
+
+#define HEX 16
 
 class MockSerial {
 public:
@@ -37,5 +38,3 @@ private:
 };
 
 extern MockSerial Serial, Serial2;
-
-#endif

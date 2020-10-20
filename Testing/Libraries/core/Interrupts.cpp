@@ -1,4 +1,6 @@
-#if __HYTECH_ARDUINO__ == TEENSY_32
+#include <BoardDef.h>
+
+#ifdef HYTECH_ARDUINO_TEENSY_32
 
 #include "Interrupts.h"
 #include <HTException.h>

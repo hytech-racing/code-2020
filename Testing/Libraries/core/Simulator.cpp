@@ -1,3 +1,4 @@
+#include <BoardDef.h>
 #include <fstream>
 #include <HTException.h>
 #include <Simulator.h>
@@ -25,6 +26,12 @@ Simulator::Simulator(unsigned long long period) : LOOP_PERIOD(period) {
     setup();
 }
 
+Simulator::~Simulator() {
+    delete [] io;
+    Serial.end();
+    Serial2.end();
+}
+
 void Simulator::next() {
     if (LOOP_PERIOD) {
         sys_time -= sys_time % LOOP_PERIOD; 
@@ -35,10 +42,4 @@ void Simulator::next() {
     #endif
 
     loop();
-}
-
-void Simulator::cleanup() {
-    delete [] io;
-    Serial.end();
-    Serial2.end();
 }
