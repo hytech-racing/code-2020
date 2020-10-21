@@ -1,7 +1,12 @@
 #pragma once
-#include <thread>
+
+#define ARDUINO 0
+
+#include "BoardDef.h"
 #include <Serial.h>
 #include <Simulator.h>
+#include <Interrupts.h>
+#include <cstring>
 
 #define LOW 0
 #define HIGH 1
@@ -13,7 +18,7 @@ extern void setup();
 extern void loop();
 
 // used to manage pin i/o
-extern MockPin io [NUM_PINS];
+extern MockPin* io;
 
 bool digitalRead(int pin);
 void digitalWrite(int pin, bool value);
@@ -23,4 +28,4 @@ void pinMode(int pin, unsigned mode);
 
 // used for time management
 unsigned long long millis();
-void delay(unsigned long long time);
+void delay (unsigned long long time);

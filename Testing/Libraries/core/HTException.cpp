@@ -1,6 +1,9 @@
-#include "Exception.h"
+#include "HTException.h"
 #include "MockPin.h"
+#include <cstring>
 
+CustomException::CustomException() {}
+CustomException::CustomException(const char* msg) { strcpy((char*) msg, this->msg); }
 const char* CustomException::what() const throw() { return msg; }
 
 DoublePinModeException::
@@ -12,6 +15,11 @@ DoublePinModeException(int pin, bool currentMode, bool newMode) {
 FileNotOpenException::
 FileNotOpenException(int pin, std::string filepath) {
     sprintf(&msg[0], "Pin %d was unable to open file %s\n", pin, &filepath[0]);
+}
+
+InterruptNotEnabledException::
+InterruptNotEnabledException(int interruptId) {
+    sprintf(&msg[0], "Cannot attach interrupt vector - interrupt %d not enabled", interruptId);
 }
 
 InvalidPinConfigurationException::

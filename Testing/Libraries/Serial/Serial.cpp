@@ -1,39 +1,37 @@
 #include <Arduino.h>
 #include <iostream>
-#include "Exception.h"
+#include <HTException.h>
 #include "Serial.h"
 
 MockSerial::MockSerial(int id) { fId = id; }
 
 MockSerial::~MockSerial() {
-    if (file.is_open())
-        file.close();
+    if (fFilepath.size()) {
+        ((std::ofstream*)(fos))->close();
+        delete fos;
+    }
 }
 
-void MockSerial::init(std::string filepath) { fFilepath = filepath; }
+void MockSerial::setOutputPath(std::string filepath) { fFilepath = filepath; }
 
 void MockSerial::begin(unsigned int baudRate) {
-    if (file.is_open())
+    if (fos)
         throw DoublePinModeException(fId, OUTPUT, OUTPUT);
-    file.open(fFilepath, std::ios::ios_base::out);
-    if (!file.is_open())
-        throw FileNotOpenException(fId, fFilepath);
+    if (fFilepath.size()) {
+        std::ofstream* tmpFos = new std::ofstream(fFilepath, std::ios::ios_base::out);
+        if (tmpFos->fail())
+            throw FileNotOpenException(fId, fFilepath);
+        fos = tmpFos;
+    }
+    else fos = &std::cout;
 }
 
-void MockSerial::end() {
-    if (file.is_open())
-        file.close();
-}
+void MockSerial::end() { this->~MockSerial(); }
 
-void MockSerial::validate() {
-    if (!file.is_open())
-        throw InvalidPinConfigurationException(-1, OUTPUT, -1);
-}
-
-inline void MockSerial::write(uint8_t* buf, int size) {
+void MockSerial::write(uint8_t* buf, int size) {
     validate();
     for (int i = 0; i < size; ++i)
-        file << std::hex << buf[i];
+        *fos << std::hex << buf[i];
 }
 
 MockSerial Serial(-1);

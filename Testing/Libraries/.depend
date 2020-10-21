@@ -1,15 +1,19 @@
 LIBS = \
 -ILibraries/Arduino \
+-ILibraries/HyTech_FlexCAN \
 -ILibraries/Serial \
 -ILibraries/Stubs \
 -ILibraries/core \
 -I../Libraries/HyTech_CAN \
 -I../Libraries/Metro \
+-I../Libraries
 
 DEPS = \
 Linker/sim/Arduino/Arduino.o \
+Linker/sim/HyTech_FlexCAN/HyTech_FlexCAN.o \
 Linker/sim/Serial/Serial.o \
-Linker/sim/core/Exception.o \
+Linker/sim/core/HTException.o \
+Linker/sim/core/Interrupts.o \
 Linker/sim/core/MockPin.o \
 Linker/sim/core/Simulator.o \
 Linker/ext/HyTech_CAN/BMS_balancing_status.o \

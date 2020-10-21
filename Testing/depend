@@ -12,6 +12,7 @@ do
     echo "    Adding external library - $lib"
     echo "-I../Libraries/$lib" \\ >> Libraries/.depend
 done
+echo "-I../Libraries" >> Libraries/.depend
 
 echo "" >> Libraries/.depend
 echo DEPS = \\ >> Libraries/.depend
