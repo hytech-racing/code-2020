@@ -1,21 +1,25 @@
 LIBS = \
 -ILibraries/Arduino \
+-ILibraries/CAN_sim \
 -ILibraries/HyTech_FlexCAN \
 -ILibraries/Serial \
 -ILibraries/Stubs \
 -ILibraries/core \
+-ILibraries/mcp_can \
 -I../Libraries/HyTech_CAN \
 -I../Libraries/Metro \
 -I../Libraries
 
 DEPS = \
 Linker/sim/Arduino/Arduino.o \
+Linker/sim/CAN_sim/CAN_sim.o \
 Linker/sim/HyTech_FlexCAN/HyTech_FlexCAN.o \
 Linker/sim/Serial/Serial.o \
 Linker/sim/core/HTException.o \
 Linker/sim/core/Interrupts.o \
 Linker/sim/core/MockPin.o \
 Linker/sim/core/Simulator.o \
+Linker/sim/mcp_can/mcp_can.o \
 Linker/ext/HyTech_CAN/BMS_balancing_status.o \
 Linker/ext/HyTech_CAN/BMS_coulomb_counts.o \
 Linker/ext/HyTech_CAN/BMS_detailed_temperatures.o \

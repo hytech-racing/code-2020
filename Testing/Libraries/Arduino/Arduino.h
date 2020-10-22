@@ -11,7 +11,7 @@
 #define LOW 0
 #define HIGH 1
 
-typedef char byte;
+typedef uint8_t byte;
 
 // defined in microcontroller code
 extern void setup();

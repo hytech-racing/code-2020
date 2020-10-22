@@ -1,17 +1,14 @@
 #include <Arduino.h>
 #include <Simulator.h>
-#include <HyTech_FlexCAN.h>
+#include <CAN_sim.h>
 #include <stdio.h>
 
 int main(int argc, char* argv []) {
-    printf("-1\n");
     Simulator simulator (100);
-    printf("A\n");
     // int reading = 1;
     // while (millis() < 1000) {
     //     io[4].setValue(reading++);
     // }
-    printf("B\n");
     CAN_message_t msg;
 
     msg.id = 0x1;
@@ -32,9 +29,6 @@ int main(int argc, char* argv []) {
 
     while (CAN_simulator::get(msg))
         printf("Received (id %d): %s\n", msg.id, msg.buf);
-    // else
-    //     printf("FAILED\n");
-    printf("C\n");
 
     return 0;
 }

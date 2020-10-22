@@ -1,27 +1,38 @@
 #include "HyTech_FlexCAN.h"
+#include <CAN_sim.h>
 #include <Interrupts.h>
+
+inline void setBase(uint32_t& packed, int tx, int rx) { packed = tx << 16 | rx; }
+
+inline void getBase(uint32_t packed, int& tx, int& rx) { 
+	tx = packed >> 16;
+	rx = packed & 0xFFFF;
+}
 
 extern bool interruptsEnabled;
 
 FlexCAN::FlexCAN(uint32_t baud, uint8_t id, uint8_t txAlt, uint8_t rxAlt) {
 	defaultMask = { 0, 0, 0 };
-	for (int i = 0; i < 8; ++i) allMasks[i] = defaultMask;
 
 	if (baud != 500000)
 		throw CustomException("CAN bus baud rate must be 500000");
 
 	#ifdef HYTECH_ARDUINO_TEENSY_32
-		txPin = 3; rxPin = 4;
+		int txPin = 3, rxPin = 4;
 	#endif
 
 	#ifdef HYTECH_ARDUINO_TEENSY_35
-		txPin = 3; rxPin = 4;
+		int txPin = 3, rxPin = 4;
 	#endif
+
+	setBase(flexcanBase, txPin, rxPin);
 }
 
 void FlexCAN::begin(const CAN_filter_t &mask) {
-	io[txPin].sim_pinMode(RESERVED);
-	io[rxPin].sim_pinMode(RESERVED);
+	int txPin, rxPin;
+	getBase(flexcanBase, txPin, rxPin);
+	pinMode(txPin, RESERVED);
+	pinMode(rxPin, RESERVED);
 
 	#ifdef HYTECH_ARDUINO_TEENSY_32
 		if (interruptsEnabled && FLEXCAN0_IMASK1 != FLEXCAN_IMASK1_BUF5M && interruptsEnabled)
@@ -32,53 +43,46 @@ void FlexCAN::begin(const CAN_filter_t &mask) {
 	    if (FLEXCAN0_MCR != 0xFFFDFFFF)
 			throw CustomException("Teensy 3.5 expects CAN self-reception enabled (FLEXCAN0_MCR = 0xFFFDFFFF)");
 	#endif
-
-	valid = true;
 }
 
 void FlexCAN::setFilter(const CAN_filter_t &filter, uint8_t n) {
-	if (n < 8)
+	static CAN_filter_t allMasks[8];
+	if (n == -1)
+		for (int i = 0; i < 8; ++i)
+			allMasks[i] = filter;
+	else if (n < 8)
 		allMasks[n] = filter;
-	valid = true;
+
+	bool valid = true;
 	for (int i = 0; valid && i < 8; ++i)
 		if (allMasks[i].rtr != filter.rtr || allMasks[i].ext != filter.ext || allMasks[i].id != filter.id)
 			valid = false;
+	if (valid) defaultMask = filter;
+	else defaultMask.id = ~0u;
 }
-void FlexCAN::end(void) { io[txPin].sim_pinMode(-1); io[rxPin].sim_pinMode(-1); }
+void FlexCAN::end(void) { 
+	int txPin, rxPin;
+	getBase(flexcanBase, txPin, rxPin);
+	pinMode(txPin, -1); pinMode(rxPin, -1); 
+}
 
 int FlexCAN::available(void) { return true; }
 
 int FlexCAN::write(const CAN_message_t &msg) { 
-	if (!valid) 
+	if (defaultMask.id == ~0u) 
 		throw CustomException("CAN configuration not valid");
 	CAN_simulator::outbox.push(msg); 
 	return true;
 }
 
 int FlexCAN::read(CAN_message_t &msg) {
-	if (!valid) throw CustomException("CAN configuration not valid");
+	if (defaultMask.id == ~0u) 
+		throw CustomException("CAN configuration not valid");
 	do {
-		printf("MESSAGES: %d\n", CAN_simulator::inbox.size());
-		if (CAN_simulator::inbox.empty())
-			return false;
-		msg = CAN_simulator::inbox.front(); 
-		CAN_simulator::inbox.pop(); 
-	} while (msg.rtr == allMasks[0].rtr && msg.id == allMasks[0].id && msg.ext == allMasks[0].ext);
+		if (!CAN_simulator::sim_read(msg))
+			return false; 
+	} while (msg.rtr == defaultMask.rtr && msg.id == defaultMask.id && msg.ext == defaultMask.ext);
 	return true;
-}
-
-namespace CAN_simulator {
-	std::queue<CAN_message_t> inbox;
-	std::queue<CAN_message_t> outbox;
-
-	int push(const CAN_message_t& msg) { inbox.push(msg); return true; }
-
-	int get(CAN_message_t &msg) { 
-		if (outbox.empty())
-			return false;
-		msg = outbox.front(); outbox.pop();
-		return true;
-	}
 }
 
 #ifdef HYTECH_ARDUINO_TEENSY_32
