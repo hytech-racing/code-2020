@@ -25,6 +25,10 @@ int main(){
     no_pack none;
     pack packed;
 
-    cout << &none << endl << &none.state << endl << &none.flags << endl << &none.temperature << endl << &none.glv_battery_voltage << endl << endl;
+    cout << &none << endl;
+    cout << &(none.state) << endl;
+    cout << &(none.flags) << endl;
+    cout << &(none.temperature) << endl;
+    cout << &(none.glv_battery_voltage) << endl << endl;
     // cout << &packed << endl << &packed.state << endl << &packed.flags << endl << &packed.temperature << endl << &packed.glv_battery_voltage << endl << endl;
 }
