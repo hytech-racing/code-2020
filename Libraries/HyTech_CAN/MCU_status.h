@@ -13,8 +13,23 @@
 #pragma pack(push,1)
 
 typedef struct CAN_message_mcu_status_t {
-    uint8_t state;
-    uint8_t flags;
+    /*
+     * OKHS
+     * BMS_OK
+     * BSPD
+     * software shutdown
+     */
+    uint8_t shutdown_inputs;
+    /*
+     * shutdown A
+     * shutdown B
+     * shutdown C
+     * shutdown D
+     * shutdown E
+     * Current high
+     * brake high
+     */
+    uint8_t shutdown_states;
     int16_t temperature;
     uint16_t glv_battery_voltage;
 } CAN_message_mcu_status_t;
@@ -64,3 +79,5 @@ public:
 private:
     CAN_message_mcu_status_t message;
 };
+
+#endif
