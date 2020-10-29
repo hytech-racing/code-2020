@@ -151,7 +151,7 @@ dist
 .pnp.*
 
 # VSCode
-*/.vscode/**
+.vscode/**
 *.code-workspace
 
 # VS

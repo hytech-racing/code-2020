@@ -1,8 +1,10 @@
-#ifndef __MCU_WHEEL_SPEED_H__
-#define __MCU_WHEEL_SPEED_H__
-
 #include <cstdint>
 #include <cstring>
+#include <iostream>
+#include <type_traits>
+
+using namespace std;
+
 
 #pragma pack(push,1)
 
@@ -47,4 +49,9 @@ private:
 
 #pragma pack(pop)
 
-#endif
+int main(){
+    cout << is_pod<MCU_wheel_speed>() << endl;
+    cout << is_standard_layout<MCU_wheel_speed>() << endl;
+    cout << is_trivial<MCU_wheel_speed>() << endl;
+    cout << sizeof(MCU_wheel_speed) << endl;
+}
