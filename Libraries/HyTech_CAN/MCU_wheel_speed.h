@@ -12,19 +12,8 @@ public:
 
     MCU_wheel_speed(const uint8_t buf[8]) { load(buf); }
 
-    inline void load(const uint8_t buf[8]) {
-         memcpy(&wheel_rpm_front_left, &buf[0], sizeof(wheel_rpm_front_left));
-         memcpy(&wheel_rpm_front_right, &buf[2], sizeof(wheel_rpm_front_right));
-         memcpy(&wheel_rpm_rear_left, &buf[4], sizeof(wheel_rpm_rear_left));
-         memcpy(&wheel_rpm_rear_right, &buf[6], sizeof(wheel_rpm_rear_right));
-    }
-
-    inline void write(uint8_t buf[8]) const {
-         memcpy(&buf[0], &wheel_rpm_front_left, sizeof(wheel_rpm_front_left));
-         memcpy(&buf[2], &wheel_rpm_front_right, sizeof(wheel_rpm_front_right));
-         memcpy(&buf[4], &wheel_rpm_rear_left, sizeof(wheel_rpm_rear_left));
-         memcpy(&buf[6], &wheel_rpm_rear_right, sizeof(wheel_rpm_rear_right));
-    }
+    inline void load(const uint8_t buf[8]) { memcpy(this, buf, sizeof(*this)); }
+    inline void write(uint8_t buf[8]) const { memcpy(buf, this, sizeof(*this)); }
 
     // Getters
     inline uint16_t getRpmFrontLeft()  const { return wheel_rpm_front_left; }

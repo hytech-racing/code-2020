@@ -12,6 +12,13 @@
 
 #pragma pack(push,1)
 
+/* lost: need to add
+ *  bool MCU_pedal_readings::get_accelerator_implausibility() {
+ *  bool MCU_pedal_readings::get_brake_implausibility() {
+ *  bool MCU_pedal_readings::get_brake_pedal_active() {
+ *  uint8_t MCU_pedal_readings::get_torque_map_mode() {
+ */
+
 typedef struct CAN_message_mcu_status_t {
     /*
      * OKHS
