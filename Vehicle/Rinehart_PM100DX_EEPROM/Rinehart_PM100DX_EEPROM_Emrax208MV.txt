@@ -36,7 +36,7 @@ CAN_Diag_Data_Tx_Active_EEPROM        ,      1
 CAN_Inv_Enab_Switch_Active_EEPROM     ,      0  
 CAN_TimeOut_(/3ms)_EEPROM             ,    200  
 IQ_Limit_EEPROM_(Amps)_x_10           ,   4250  
-ID_Limit_EEPROM_(Amps)_x_10           ,   4250  
+ID_Limit_EEPROM_(Amps)_x_10           ,   2860  
 Ia_Offset_EEPROM                      ,   2048  
 Ib_Offset_EEPROM                      ,   2048  
 Ic_Offset_EEPROM                      ,   2048  
