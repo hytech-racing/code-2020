@@ -118,10 +118,6 @@
 /*
  * Timers
  */
-Metro timer_can_update_fast = Metro(100);
-Metro timer_can_update_slow = Metro(1000);
-Metro timer_process_cells_fast = Metro(100);
-Metro timer_process_cells_slow = Metro(1000);
 Metro timer_watchdog_timer = Metro(250);
 Metro timer_charge_enable_limit = Metro(30000, 1); // Don't allow charger to re-enable more than once every 30 seconds
 Metro timer_charge_timeout = Metro(1000);
@@ -344,113 +340,87 @@ void loop() {
         digitalWrite(LED_STATUS, LOW);
     }
 
-    if (timer_process_cells_fast.check()) {}
+    process_voltages(); // Poll controllers, process values, populate bms_voltages
+    balance_cells(); // Check local cell voltage data and balance individual cells as necessary
+    process_temps(); // Poll controllers, process values, populate populate bms_temperatures, bms_detailed_temperatures, bms_onboard_temperatures, and bms_onboard_detailed_temperatures
+    process_adc(); // Poll ADC, process values, populate bms_status
+    
+    print_temps(); // Print cell and pcb temperatures to serial
+    print_cells(); // Print the cell voltages and balancing status to serial
+    print_current(); // Print measured current sensor value
+    //process_coulombs(); // Process new coulomb counts, sending over CAN and printing to Serial
+    print_uptime(); // Print the BMS uptime to serial
 
-    if (timer_process_cells_slow.check()) {
-        process_voltages(); // Poll controllers, process values, populate bms_voltages
-        balance_cells(); // Check local cell voltage data and balance individual cells as necessary
-        process_temps(); // Poll controllers, process values, populate populate bms_temperatures, bms_detailed_temperatures, bms_onboard_temperatures, and bms_onboard_detailed_temperatures
-        process_adc(); // Poll ADC, process values, populate bms_status
-        
-        print_temps(); // Print cell and pcb temperatures to serial
-        print_cells(); // Print the cell voltages and balancing status to serial
-        print_current(); // Print measured current sensor value
-        //process_coulombs(); // Process new coulomb counts, sending over CAN and printing to Serial
-        print_uptime(); // Print the BMS uptime to serial
+    Serial.print("State: ");
+    if (bms_status.get_state() == BMS_STATE_DISCHARGING) {Serial.println("DISCHARGING");}
+    if (bms_status.get_state() == BMS_STATE_CHARGING) {Serial.println("CHARGING");}
+    if (bms_status.get_state() == BMS_STATE_BALANCING) {Serial.println("BALANCING");}
+    if (bms_status.get_state() == BMS_STATE_BALANCING_OVERHEATED) {Serial.println("BALANCING_OVERHEATED");}
 
-        Serial.print("State: ");
-        if (bms_status.get_state() == BMS_STATE_DISCHARGING) {Serial.println("DISCHARGING");}
-        if (bms_status.get_state() == BMS_STATE_CHARGING) {Serial.println("CHARGING");}
-        if (bms_status.get_state() == BMS_STATE_BALANCING) {Serial.println("BALANCING");}
-        if (bms_status.get_state() == BMS_STATE_BALANCING_OVERHEATED) {Serial.println("BALANCING_OVERHEATED");}
-
-        if (bms_status.get_error_flags()) { // BMS error - drive BMS_OK signal low
-            error_flags_history |= bms_status.get_error_flags();
-            digitalWrite(BMS_OK, LOW);
-            Serial.print("---------- STATUS NOT GOOD * Error Code 0x");
-            Serial.print(bms_status.get_error_flags(), HEX);
-            Serial.println(" ----------");
-        } else {
-            digitalWrite(BMS_OK, HIGH);
-            Serial.println("---------- STATUS GOOD ----------");
-            if (error_flags_history) {
-                Serial.println("An Error Occured But Has Been Cleared");
-                Serial.print("Error code: 0x");
-                Serial.println(error_flags_history, HEX);
-            }
+    if (bms_status.get_error_flags()) { // BMS error - drive BMS_OK signal low
+        error_flags_history |= bms_status.get_error_flags();
+        digitalWrite(BMS_OK, LOW);
+        Serial.print("---------- STATUS NOT GOOD * Error Code 0x");
+        Serial.print(bms_status.get_error_flags(), HEX);
+        Serial.println(" ----------");
+    } else {
+        digitalWrite(BMS_OK, HIGH);
+        Serial.println("---------- STATUS GOOD ----------");
+        if (error_flags_history) {
+            Serial.println("An Error Occured But Has Been Cleared");
+            Serial.print("Error code: 0x");
+            Serial.println(error_flags_history, HEX);
         }
     }
 
-    if (timer_can_update_fast.check()) {
+    tx_msg.timeout = 4; // Use blocking mode, wait up to 4ms to send each message instead of immediately failing (keep in mind this is slower)
 
-        tx_msg.timeout = 4; // Use blocking mode, wait up to 4ms to send each message instead of immediately failing (keep in mind this is slower)
+    bms_voltages.write(tx_msg.buf);
+    tx_msg.id = ID_BMS_VOLTAGES;
+    tx_msg.len = sizeof(CAN_message_bms_voltages_t);
+    CAN.write(tx_msg);
 
-        bms_status.write(tx_msg.buf);
-        tx_msg.id = ID_BMS_STATUS;
-        tx_msg.len = sizeof(CAN_message_bms_status_t);
-        CAN.write(tx_msg);
+    bms_temperatures.write(tx_msg.buf);
+    tx_msg.id = ID_BMS_TEMPERATURES;
+    tx_msg.len = sizeof(CAN_message_bms_temperatures_t);
+    CAN.write(tx_msg);
 
-        tx_msg.timeout = 0;
+    bms_onboard_temperatures.write(tx_msg.buf);
+    tx_msg.id = ID_BMS_ONBOARD_TEMPERATURES;
+    tx_msg.len = sizeof(CAN_message_bms_onboard_temperatures_t);
+    CAN.write(tx_msg);
 
-    }
-
-    if (timer_can_update_slow.check()) {
-
-        tx_msg.timeout = 4; // Use blocking mode, wait up to 4ms to send each message instead of immediately failing (keep in mind this is slower)
-
-        bms_voltages.write(tx_msg.buf);
-        tx_msg.id = ID_BMS_VOLTAGES;
-        tx_msg.len = sizeof(CAN_message_bms_voltages_t);
-        CAN.write(tx_msg);
-
-        bms_temperatures.write(tx_msg.buf);
-        tx_msg.id = ID_BMS_TEMPERATURES;
-        tx_msg.len = sizeof(CAN_message_bms_temperatures_t);
-        CAN.write(tx_msg);
-
-        bms_onboard_temperatures.write(tx_msg.buf);
-        tx_msg.id = ID_BMS_ONBOARD_TEMPERATURES;
-        tx_msg.len = sizeof(CAN_message_bms_onboard_temperatures_t);
-        CAN.write(tx_msg);
-
-        tx_msg.id = ID_BMS_DETAILED_VOLTAGES;
-        tx_msg.len = sizeof(CAN_message_bms_detailed_voltages_t);
-        for (int i = 0; i < TOTAL_IC; i++) {
-            for (int j = 0; j < 3; j++) {
-                bms_detailed_voltages[i][j].write(tx_msg.buf);
-                CAN.write(tx_msg);
-            }
-        }
-
-        tx_msg.id = ID_BMS_DETAILED_TEMPERATURES;
-        tx_msg.len = sizeof(CAN_message_bms_detailed_temperatures_t);
-        for (int i = 0; i < TOTAL_IC; i++) {
-            bms_detailed_temperatures[i].write(tx_msg.buf);
+    tx_msg.id = ID_BMS_DETAILED_VOLTAGES;
+    tx_msg.len = sizeof(CAN_message_bms_detailed_voltages_t);
+    for (int i = 0; i < TOTAL_IC; i++) {
+        for (int j = 0; j < 3; j++) {
+            bms_detailed_voltages[i][j].write(tx_msg.buf);
             CAN.write(tx_msg);
         }
-
-        tx_msg.id = ID_BMS_ONBOARD_DETAILED_TEMPERATURES;
-        tx_msg.len = sizeof(CAN_message_bms_onboard_detailed_temperatures_t);
-        for (int i = 0; i < TOTAL_IC; i++) {
-            bms_onboard_detailed_temperatures[i].write(tx_msg.buf);
-            CAN.write(tx_msg);
-        }
-        
-        tx_msg.id = ID_BMS_BALANCING_STATUS;
-        tx_msg.len = sizeof(CAN_message_bms_balancing_status_t);
-        for (int i = 0; i < (TOTAL_IC + 3) / 4; i++) {
-            bms_balancing_status[i].write(tx_msg.buf);
-            CAN.write(tx_msg);
-        }
-
-        tx_msg.timeout = 0;
-
     }
 
-    if (timer_watchdog_timer.check() && !fh_watchdog_test) { // Send alternating keepalive signal to watchdog timer
-        watchdog_high = !watchdog_high;
-        digitalWrite(WATCHDOG, watchdog_high);
+    tx_msg.id = ID_BMS_DETAILED_TEMPERATURES;
+    tx_msg.len = sizeof(CAN_message_bms_detailed_temperatures_t);
+    for (int i = 0; i < TOTAL_IC; i++) {
+        bms_detailed_temperatures[i].write(tx_msg.buf);
+        CAN.write(tx_msg);
     }
+
+    tx_msg.id = ID_BMS_ONBOARD_DETAILED_TEMPERATURES;
+    tx_msg.len = sizeof(CAN_message_bms_onboard_detailed_temperatures_t);
+    for (int i = 0; i < TOTAL_IC; i++) {
+        bms_onboard_detailed_temperatures[i].write(tx_msg.buf);
+        CAN.write(tx_msg);
+    }
+    
+    tx_msg.id = ID_BMS_BALANCING_STATUS;
+    tx_msg.len = sizeof(CAN_message_bms_balancing_status_t);
+    for (int i = 0; i < (TOTAL_IC + 3) / 4; i++) {
+        bms_balancing_status[i].write(tx_msg.buf);
+        CAN.write(tx_msg);
+    }
+
+    tx_msg.timeout = 0;
 }
 
 /*
