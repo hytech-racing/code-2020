@@ -4,6 +4,45 @@
 
 #pragma pack(push,1)
 
+#define MCU_STATE_TRACTIVE_SYSTEM_NOT_ACTIVE 1
+#define MCU_STATE_TRACTIVE_SYSTEM_ACTIVE 2
+#define MCU_STATE_ENABLING_INVERTER 3
+#define MCU_STATE_WAITING_READY_TO_DRIVE_SOUND 4
+#define MCU_STATE_READY_TO_DRIVE 5
+
+
+/* lost: need to add
+ *  bool MCU_pedal_readings::get_accelerator_implausibility() {
+ *  bool MCU_pedal_readings::get_brake_implausibility() {
+ *  bool MCU_pedal_readings::get_brake_pedal_active() {
+ *  uint8_t MCU_pedal_readings::get_torque_map_mode() {
+ */
+
+typedef struct CAN_message_mcu_status_t {
+    /*
+     * OKHS
+     * BMS_OK
+     * BSPD
+     * software shutdown
+     */
+    uint8_t shutdown_inputs;
+    /*
+     * shutdown A
+     * shutdown B
+     * shutdown C
+     * shutdown D
+     * shutdown E
+     * Current high
+     * brake high
+     */
+    uint8_t shutdown_states;
+// state
+// pedal_flags
+// torque_map_mpde
+// distance travelled
+} CAN_message_mcu_status_t;
+
+
 class MCU_status {
 public:
     MCU_status() = default;
