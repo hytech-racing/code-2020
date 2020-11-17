@@ -13,9 +13,10 @@
 MCU_launch_control mcu_launch_control;
  
 // launch control variables
+float efficiency_loss = .2 //placeholder value
+float gear_ratio: 40/9; //based on current 9-tooth gear 
 float rear_rpm = 0;
 float front_rpm = 0;
-float torque_coefficient = 1;
 float optimal_slip_ratio = 0.2;
 float last_excess_slip = 0;
 float total_excess_slip = 0;
@@ -32,7 +33,7 @@ void setup() {
 
 void loop() {
   // put your main code here, to run repeatedly:
-  update_torque_coeff(); //use the pid to update the slip limiting factor based on current slip ratio
+  update_torque(); //use the pid to update the slip limiting factor based on current slip ratio
 
   if (timer_can_update.check()) {
     // Send launch control information
@@ -99,11 +100,9 @@ int calculate_torque() {
 
 //Gets excess slip at wheels 
 float get_excess_slip() {
-    float front_ang_vel = front_rpm * 2 * M_PI / 60;
-    float rear_ang_vel = rear_rpm * 2 * M_PI / 60;
     float slip_ratio = 0; //slip ratio is 0 by default
     if(front_rpm > 10 && rear_rpm > 30) 
-        slip_ratio = (rear_ang_vel - front_ang_vel) / rear_ang_vel; //if both front and rear are spinning, calculate the ratio
+        slip_ratio = (rear_rpm - front_rpm) / front_rpm; //if both front and rear are spinning, calculate the ratio
     mcu_launch_control.set_slip_ratio(slip_ratio * 100);
     float excess_slip = optimal_slip_ratio - slip_ratio;
     Serial.print("ESR: ");
@@ -111,7 +110,7 @@ float get_excess_slip() {
     return excess_slip;
 }
 
-void update_torque_coeff() {
+void update_torque() {
     currentTime = millis();
     elaspedTime = currentTime - previousTime;
     float excess_slip = get_excess_slip();
@@ -126,16 +125,16 @@ void update_torque_coeff() {
     float D = KD * change_in_excess_slip;
     
     PID_out = P + I + D;
-    if (PID_out > optimal_slip_ratio)
-    {
-      torque_coefficent = 1;
-    }
-    else
-    {
-      torque coefficient = map(PID_out, -.8*(KP + KI). 0.2, .5, 1);  
-    }
-    mcu_launch_control.set_slip_limiting_factor(slip_limiting_factor * 100); //Needs to be changed to match current variable torque_coeff
-    Serial.print("    Torque Coeff: ");
-    Serial.println(torque_coefficient);
-    optimal_rpm = front_rpm / (1 - optimal_slip_ratio); 
+
+    optimal_RPM = front_rpm / (1 - PID_out);
+    //both the watts and hp formulas are given for completeness; will use one implementation for final 
+    float req_torque_from_hp = hp * 5252 / optimal_RPM; //hp is currently undefined-need CAN message
+    float req_torque_from_watts =  watts * 60 / (2 * M_PI * optimal_RPM); //watts is currently undefined-need CAN message
+    adjusted_torque = req_torque / gear_ratio / efficiency_loss; //req_torque will be replaced by chosen torque formula
+    return adjusted_torque;
+
+    //None of the following is relevant anymore
+    //mcu_launch_control.set_slip_limiting_factor(slip_limiting_factor * 100); Needs to be changed to match current variable torque_coeff
+    //Serial.print("    Torque Coeff: ");
+    //Serial.println(torque_coefficient);
 }
