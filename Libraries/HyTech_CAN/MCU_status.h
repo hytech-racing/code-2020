@@ -29,10 +29,10 @@ public:
     inline void write(uint8_t buf[]) const { memcpy(buf, this, sizeof(*this)); }
 
     inline uint8_t get_shutdown_inputs()           const { return shutdown_inputs; }
-    inline SHUTDOWN_INPUTS get_okhs_state()        const { return shutdown_inputs & 0x03; }
-    inline SHUTDOWN_INPUTS get_bms_ok_state()      const { return shutdown_inputs & 0x0C; }
-    inline SHUTDOWN_INPUTS get_bspd_ok_state()     const { return shutdown_inputs & 0x30; }
-    inline SHUTDOWN_INPUTS get_software_ok_state() const { return shutdown_inputs & 0xF0; }
+    inline SHUTDOWN_INPUTS get_okhs_state()        const { return (shutdown_inputs & 0x03); }
+    inline SHUTDOWN_INPUTS get_bms_ok_state()      const { return (shutdown_inputs & 0x0C) >> 2; }
+    inline SHUTDOWN_INPUTS get_bspd_ok_state()     const { return (shutdown_inputs & 0x30) >> 4; }
+    inline SHUTDOWN_INPUTS get_software_ok_state() const { return (shutdown_inputs & 0xF0) >> 6; }
 
     inline void set_shutdown_inputs(const uint8_t inputs)          { shutdown_inputs = inputs; }
     inline void set_okhs_state(const SHUTDOWN_INPUTS input)        { shutdown_inputs = (shutdown_inputs & 0xFC) | (input); }
@@ -79,7 +79,7 @@ public:
     inline uint16_t get_distance_travelled() const { return distance_travelled; }
     
     inline void set_distance_travelled(const uint16_t distance) { distance_travelled = distance; }
-    
+
 private:
     /*
      * OKHS (2)
