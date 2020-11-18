@@ -11,7 +11,7 @@ public:
 
     MCU_wheel_speed(const uint8_t buf[8]) { load(buf); }
 
-    inline void load(const uint8_t buf[8]) { memcpy(this, buf, sizeof(*this)); }
+    inline void load(const uint8_t buf[8])  { memcpy(this, buf, sizeof(*this)); }
     inline void write(uint8_t buf[8]) const { memcpy(buf, this, sizeof(*this)); }
 
     // Getters
