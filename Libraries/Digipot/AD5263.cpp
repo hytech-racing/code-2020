@@ -22,7 +22,7 @@ void AD5263::writeAndUpdate(uint8_t address, uint8_t value) {
 
 
 void AD5263::spiWrite(uint8_t* message) {
-    SPI.beginTransaction(SPISettings(50000000, MSBFIRST, SPI_MODE1));
+    SPI.beginTransaction(SPISettings(25000000, MSBFIRST, SPI_MODE1));
     digitalWrite(_chipSelectPin, LOW);
 
     delay(100);
