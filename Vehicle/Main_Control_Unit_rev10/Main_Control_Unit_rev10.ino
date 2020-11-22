@@ -4,8 +4,6 @@
 #include <kinetis_flexcan.h>
 #include <Metro.h>
 #include <Wire.h>
-#include <MCP23S17.h>
-
 /*
  * Teensy Pin definitions
  */

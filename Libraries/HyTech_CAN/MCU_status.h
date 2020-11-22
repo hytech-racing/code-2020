@@ -43,24 +43,22 @@ public:
 
 
     inline uint8_t get_shutdown_states()         const { return shutdown_states; }
-    inline bool get_shutdown_a_above_threshold() const { return shutdown_states & 0x01; }
-    inline bool get_shutdown_b_above_threshold() const { return shutdown_states & 0x02; }
-    inline bool get_shutdown_c_above_threshold() const { return shutdown_states & 0x04; }
-    inline bool get_shutdown_d_above_thershold() const { return shutdown_states & 0x08; }
-    inline bool get_shutdown_e_abive_threshold() const { return shutdown_states & 0x10; }
-    inline bool get_bspd_current_high()          const { return shutdown_states & 0x20; }
-    inline bool get_bspd_brake_high()            const { return shutdown_states & 0x40; }
-    inline bool get_software_is_ok()             const { return shutdown_states & 0x80; }
+    inline bool get_shutdown_b_above_threshold() const { return shutdown_states & 0x01; }
+    inline bool get_shutdown_c_above_threshold() const { return shutdown_states & 0x02; }
+    inline bool get_shutdown_d_above_thershold() const { return shutdown_states & 0x04; }
+    inline bool get_shutdown_e_abive_threshold() const { return shutdown_states & 0x08; }
+    inline bool get_bspd_current_high()          const { return shutdown_states & 0x10; }
+    inline bool get_bspd_brake_high()            const { return shutdown_states & 0x20; }
+    inline bool get_software_is_ok()             const { return shutdown_states & 0x40; }
 
     inline void set_shutdown_states(const uint8_t states)        { this->shutdown_states = states; }
-    inline void set_shutdown_a_above_threshold(const bool above) { shutdown_states = (shutdown_states & 0xFE) | (above); }
-    inline void set_shutdown_b_above_threshold(const bool above) { shutdown_states = (shutdown_states & 0xFD) | (above << 1); }
-    inline void set_shutdown_c_above_threshold(const bool above) { shutdown_states = (shutdown_states & 0xFB) | (above << 2); }
-    inline void set_shutdown_d_above_threshold(const bool above) { shutdown_states = (shutdown_states & 0xF7) | (above << 3); }
-    inline void set_shutdown_e_above_threshold(const bool above) { shutdown_states = (shutdown_states & 0xEF) | (above << 4); }
-    inline void set_bspd_current_high(const bool high)           { shutdown_states = (shutdown_states & 0xDF) | (high  << 5); }
-    inline void set_bspd_brake_high(const bool high)             { shutdown_states = (shutdown_states & 0xBF) | (high  << 6); }
-    inline void set_software_is_ok(const bool is_ok)             { shutdown_states = (shutdown_states & 0x7F) | (is_ok << 7); }
+    inline void set_shutdown_b_above_threshold(const bool above) { shutdown_states = (shutdown_states & 0xFE) | (above); }
+    inline void set_shutdown_c_above_threshold(const bool above) { shutdown_states = (shutdown_states & 0xFD) | (above << 1); }
+    inline void set_shutdown_d_above_threshold(const bool above) { shutdown_states = (shutdown_states & 0xFB) | (above << 2); }
+    inline void set_shutdown_e_above_threshold(const bool above) { shutdown_states = (shutdown_states & 0xF7) | (above << 3); }
+    inline void set_bspd_current_high(const bool high)           { shutdown_states = (shutdown_states & 0xEF) | (high  << 4); }
+    inline void set_bspd_brake_high(const bool high)             { shutdown_states = (shutdown_states & 0xDF) | (high  << 5); }
+    inline void set_software_is_ok(const bool is_ok)             { shutdown_states = (shutdown_states & 0xBF) | (is_ok << 6); }
     
     inline uint8_t get_ecu_states()              const { return (ecu_states); }
     inline MCU_STATE get_mcu_state()             const { return (ecu_states & 0x07); }
@@ -86,7 +84,6 @@ private:
      */
     uint8_t shutdown_inputs;
     /*
-     * shutdown A
      * shutdown B
      * shutdown C
      * shutdown D
@@ -94,6 +91,7 @@ private:
      * Current high
      * brake high
      * software_is_ok
+     * (empty bit)
      */
     uint8_t shutdown_states;
 
@@ -102,6 +100,7 @@ private:
      * torque_mode (2 bits)
      * inverter powered
      * energy_meter
+     * (empty bit)
      */
     uint8_t ecu_states;
     uint16_t distance_travelled;
