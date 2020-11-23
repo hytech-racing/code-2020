@@ -3,16 +3,16 @@
 #include <string.h>
 #include <cstdint>
 
-enum class MCU_STATE {TRACTIVE_SYSTEM_NOT_ACTIVE = 0,
-                      TRACTIVE_SYSTEM_ACTIVE = 1,
-                      ENABLING_INVERTER = 2,
-                      WAITING_READY_TO_DRIVE_SOUND = 3,
-                      READY_TO_DRIVE = 4};
+enum class MCU_STATE {TRACTIVE_SYSTEM_NOT_ACTIVE   = 1,
+                      TRACTIVE_SYSTEM_ACTIVE       = 2,
+                      ENABLING_INVERTER            = 3,
+                      WAITING_READY_TO_DRIVE_SOUND = 4,
+                      READY_TO_DRIVE               = 5};
 
 enum class SHUTDOWN_INPUTS {HIGH_UNLATCHED = 0,
-                            HIGH_LATCHED = 1,
-                            UNKNOWN_ERROR = 2,
-                            LOW = 3};
+                            HIGH_LATCHED   = 1,
+                            UNKNOWN_ERROR  = 2,
+                            LOW            = 3};
 
 enum class TORQUE_MAP_MODE {MODE_0 = 0,
                             MODE_1 = 1,
