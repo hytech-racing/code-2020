@@ -54,7 +54,8 @@
 /*
  * pedal sensor constant
  */
-#define BRAKE_ACTIVE 600                // Threshold for brake pedal active
+#define BRAKE_ACTIVE 1200               // Threshold for brake pedal active  
+    // this is twice the original of 600 because we sum both brake transducers
 #define MIN_ACCELERATOR_PEDAL_1 1850    // Low accelerator implausibility threshold
 #define START_ACCELERATOR_PEDAL_1 2050  // Position to start acceleration
 #define END_ACCELERATOR_PEDAL_1 2355    // Position to max out acceleration

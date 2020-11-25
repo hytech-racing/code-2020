@@ -1,3 +1,5 @@
+#include <cstdint>
+
 #include "ADC_SPI.h"
 #include "HyTech_FlexCAN.h"
 #include "HyTech_CAN.h"
@@ -43,10 +45,10 @@ Metro timer_status_send = Metro(100);
 /*
  * Variables to store filtered values from ADC channels
  */
-float filtered_accel1_reading = 0;
-float filtered_accel2_reading = 0;
-float filtered_brake_reading = 0;
-float filtered_glv_reading = 0;
+float filtered_accel1_reading{};
+float filtered_accel2_reading{};
+float filtered_brake1_reading{};
+float filtered_brake2_reading{};
 
 bool imd_faulting = false;
 bool inverter_restart = false; // True when restarting the inverter
@@ -94,13 +96,13 @@ void setup() {
     #endif
 
     set_state(MCU_STATE_TRACTIVE_SYSTEM_NOT_ACTIVE);
-    digitalWrite(SOFTWARE_SHUTDOWN_RELAY, HIGH);
-    digitalWrite(SSR_INVERTER, HIGH);
-    digitalWrite(PUMP_CTRL, HIGH);
+    // should the inveter be powered on start up?
+    digitalWrite(INVERTER_CTRL, HIGH);
     analogWrite(FAN_1, FAN_1_DUTY_CYCLE);
     analogWrite(FAN_2, FAN_2_DUTY_CYCLE);
-    mcu_status.set_bms_ok_high(true);
-    mcu_status.set_imd_okhs_high(true);
+    // these are false by default
+    // mcu_status.set_bms_ok_high(false);
+    // mcu_status.set_imd_okhs_high(false);
     mcu_status.set_inverter_powered(true);
 }
 
@@ -357,22 +359,24 @@ void read_pedal_values() {
      */
     filtered_accel1_reading = ALPHA * filtered_accel1_reading + (1 - ALPHA) * ADC.read_adc(ADC_ACCEL_1_CHANNEL);
     filtered_accel2_reading = ALPHA * filtered_accel2_reading + (1 - ALPHA) * ADC.read_adc(ADC_ACCEL_2_CHANNEL);
-    filtered_brake_reading  = ALPHA * filtered_brake_reading  + (1 - ALPHA) * ADC.read_adc(ADC_BRAKE_CHANNEL);
-    // Serial.print("ACCEL 1: "); Serial.println(filtered_accel1_reading);
-    // Serial.print("ACCEL 2: "); Serial.println(filtered_accel2_reading);
-    // Serial.print("BRAKE: "); Serial.println(filtered_brake_reading);
-
-
-    //Serial.println(ADC.read_adc(ADC_ACCEL_1_CHANNEL));
+    filtered_brake1_reading = ALPHA * filtered_brake1_reading + (1 - ALPHA) * ADC.read_adc(ADC_BRAKE_1_CHANNEL);
+    filtered_brake2_reading = ALPHA * filtered_brake2_reading + (1 - ALPHA) * ADC.read_adc(ADC_BRAKE_2_CHANNEL);
+    #if DEBUG
+    Serial.print("ACCEL 1: "); Serial.println(filtered_accel1_reading);
+    Serial.print("ACCEL 2: "); Serial.println(filtered_accel2_reading);
+    Serial.print("BRAKE 1: "); Serial.println(filtered_brake1_reading);
+    Serial.print("BRAKE 2: "); Serial.println(filtered_brake2_reading);
+    #endif
 
     // set the brake pedal active flag if the median reading is above the threshold
-    mcu_pedal_readings.set_brake_pedal_active(filtered_brake_reading >= BRAKE_ACTIVE);
-    digitalWrite(SSR_BRAKE_LIGHT, mcu_pedal_readings.get_brake_pedal_active());
+    mcu_pedal_readings.set_brake_pedal_active((filtered_brake1_reading + filtered_brake2_reading) >= BRAKE_ACTIVE);
+    digitalWrite(BRAKE_LIGHT_CTRL, mcu_pedal_readings.get_brake_pedal_active());
 
     /*
      * Print values for debugging
      */
-    if (debug && timer_debug.check()) {
+    #if DEBUG
+    if (timer_debug.check()) {
         Serial.print("MCU PEDAL ACCEL 1: ");
         Serial.println(mcu_pedal_readings.get_accelerator_pedal_raw_1());
         Serial.print("MCU PEDAL ACCEL 2: ");
@@ -384,55 +388,75 @@ void read_pedal_values() {
         Serial.print("MCU STATE: ");
         Serial.println(mcu_status.get_state());
     }
+    #endif
 }
 
 void read_status_values() {
-
-    /*
-     * Filter ADC readings of GLV voltage
-     */
-    //filtered_glv_reading += ALPHA * filtered_glv_reading + (1 - ALPHA) * ADC.read_adc(ADC_12V_SUPPLY_CHANNEL);
-
-    mcu_status.set_glv_battery_voltage(ADC.read_adc(ADC_12V_SUPPLY_CHANNEL) * GLV_VOLTAGE_MULTIPLIER); // convert GLV voltage and to send it over CAN
-
-
     /*
      * Check for BMS fault
      */
-    if (ADC.read_adc(ADC_BMS_OK_CHANNEL) > BMS_HIGH) {
-        mcu_status.set_bms_ok_high(true);
-    } else {
-        mcu_status.set_bms_ok_high(false);
-        if (timer_bms_print_fault.check()) {
-            Serial.println("BMS fault detected");
-        }
-    }
+    uint_16t BMS_fault = analogRead(BMS_OK_READ);
+    if(BMS_fault < RELAY_INPUT_LOW_FAULT)
+        mcu_status.set_bms_ok_state(SHUTDOWN_INPUTS::LOW);
+    else if (BMS_fault < RELAY_INPUT_HIGH_LATCHED)
+        mcu_status.set_bms_ok_state(SHUTDOWN_INPUTS::UNKNOWN_ERROR);
+    else if (BMS_fault < RELAY_INPUT_HIGH_UNLATCHED)
+        mcu_status.set_bms_ok_state(SHUTDOWN_INPUTS::HIGH_LATCHED);
+    else
+        mcu_status.set_bms_ok_state(SHUTDOWN_INPUTS::HIGH_UNLATCHED);
 
+    #if DEBUG
+    if (timer_bms_print_fault.check() && mcu_status.get_bms_ok_state() < SHUTDOWN_INPUTS::RELAY_INPUT_HIGH_LATCHED) {
+        Serial.println("BMS fault detected");
+    }
+    #endif
     /*
      * Check for IMD fault
      */
-    if (ADC.read_adc(ADC_OKHS_CHANNEL) > IMD_HIGH) {
-        mcu_status.set_imd_okhs_high(true);
-    } else {
-        mcu_status.set_imd_okhs_high(false);
-        if (timer_imd_print_fault.check()) {
-            Serial.println("IMD fault detected");
-        }
-    }
+    uint_16t IMD_fault = analogRead(IMD_OK_READ);
+    if(IMD_fault < RELAY_INPUT_LOW_FAULT)
+        mcu_status.set_imd_ok_state(SHUTDOWN_INPUTS::LOW);
+    else if (IMD_fault < RELAY_INPUT_HIGH_LATCHED)
+        mcu_status.set_imd_ok_state(SHUTDOWN_INPUTS::UNKNOWN_ERROR);
+    else if (IMD_fault < RELAY_INPUT_HIGH_UNLATCHED)
+        mcu_status.set_imd_ok_state(SHUTDOWN_INPUTS::HIGH_LATCHED);
+    else
+        mcu_status.set_imd_ok_state(SHUTDOWN_INPUTS::HIGH_UNLATCHED);
+
+    /*
+     * Check for BSPD fault
+     */
+    uint_16t BSPD_fault = analogRead(BSPD_OK_READ);
+    if(BSPD_fault < RELAY_INPUT_LOW_FAULT)
+        mcu_status.set_bspd_ok_state(SHUTDOWN_INPUTS::LOW);
+    else if (BSPD_fault < RELAY_INPUT_HIGH_LATCHED)
+        mcu_status.set_bspd_ok_state(SHUTDOWN_INPUTS::UNKNOWN_ERROR);
+    else if (BSPD_fault < RELAY_INPUT_HIGH_UNLATCHED)
+        mcu_status.set_bspd_ok_state(SHUTDOWN_INPUTS::HIGH_LATCHED);
+    else
+        mcu_status.set_bspd_ok_state(SHUTDOWN_INPUTS::HIGH_UNLATCHED);
+
+    /*
+     * Check for software shutdown fault
+     */
+    uint_16t SOFTWARE_fault = analogRead(SOFTWARE_OK_READ);
+    if(SOFTWARE_fault < RELAY_INPUT_LOW_FAULT)
+        mcu_status.set_software_ok_state(SHUTDOWN_INPUTS::LOW);
+    else if (SOFTWARE_fault < RELAY_INPUT_HIGH_LATCHED)
+        mcu_status.set_software_ok_state(SHUTDOWN_INPUTS::UNKNOWN_ERROR);
+    else if (SOFTWARE_fault < RELAY_INPUT_HIGH_UNLATCHED)
+        mcu_status.set_software_ok_state(SHUTDOWN_INPUTS::HIGH_LATCHED);
+    else
+        mcu_status.set_software_ok_state(SHUTDOWN_INPUTS::HIGH_UNLATCHED);
 
     /*
      * Measure shutdown circuits' voltages
      */
-     mcu_status.set_shutdown_b_above_threshold(analogRead(SENSE_SHUTDOWN_B) > SHUTDOWN_B_HIGH);
-     mcu_status.set_shutdown_c_above_threshold(analogRead(SENSE_SHUTDOWN_C) > SHUTDOWN_C_HIGH);
-     mcu_status.set_shutdown_d_above_threshold(ADC.read_adc(ADC_SHUTDOWN_D_READ_CHANNEL) > SHUTDOWN_D_HIGH);
-     mcu_status.set_shutdown_e_above_threshold(analogRead(SENSE_SHUTDOWN_E) > SHUTDOWN_E_HIGH);
-     mcu_status.set_shutdown_f_above_threshold(analogRead(SENSE_SHUTDOWN_F) > SHUTDOWN_F_HIGH);
+     mcu_status.set_shutdown_b_above_threshold(analogRead(SHUTDOWN_B_READ) > SHUTDOWOWN_X_HIGH);
+     mcu_status.set_shutdown_c_above_threshold(analogRead(SHUTDOWN_C_READ) > SHUTDOWOWN_X_HIGH);
+     mcu_status.set_shutdown_d_above_threshold(analogRead(SHUTDOWN_D_READ) > SHUTDOWOWN_X_HIGH);
+     mcu_status.set_shutdown_e_above_threshold(analogRead(SHUTDOWN_E_READ) > SHUTDOWOWN_X_HIGH);
 
-     /*
-      * Measure the temperature from on-board thermistors
-      */
-     mcu_status.set_temperature(ADC.read_adc(ADC_TEMPSENSE_CHANNEL) * 100); // send temperatures in 0.01 C
 }
 
 /*

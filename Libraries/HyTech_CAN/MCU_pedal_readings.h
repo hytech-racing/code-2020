@@ -28,11 +28,11 @@ public:
 
     inline bool get_accel_implausability() const { return brake_transducer_2 & 0x1000; }
     inline bool get_brake_implausability() const { return brake_transducer_2 & 0x2000; }
-    inline bool get_brake_pressed()        const { return brake_transducer_2 & 0x4000; }
+    inline bool get_brake_pedal_active()   const { return brake_transducer_2 & 0x4000; }
 
     inline void set_accel_implausability(const bool implausable) { brake_transducer_2 = (brake_transducer_2 & 0xEFFF) | (implausable << 12); }
     inline void set_brake_implausability(const bool implausable) { brake_transducer_2 = (brake_transducer_2 & 0xDFFF) | (implausable << 13); }
-    inline void set_brake_pressed(const bool pressed)            { brake_transducer_2 = (brake_transducer_2 & 0xBFFF) | (pressed     << 14); }
+    inline void set_brake_pedal_active(const bool pressed)       { brake_transducer_2 = (brake_transducer_2 & 0xBFFF) | (pressed     << 14); }
 private:
     uint16_t accelerator_pedal_1;
     uint16_t accelerator_pedal_2;
