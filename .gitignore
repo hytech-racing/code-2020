@@ -155,7 +155,7 @@ dist
 *.code-workspace
 
 # VS
-*/.vs/**
+.vs/**
 
 # Local History for Visual Studio Code
 .history/
@@ -231,3 +231,6 @@ $RECYCLE.BIN/
 
 # .nfs files are created when an open file is removed but is still being accessed
 .nfs*
+
+# CMake
+*/build/**
