@@ -1,3 +1,5 @@
+// later we should update the ids to be more intelligent
+
 #define ID_MC_TEMPERATURES_1										0xA0
 #define ID_MC_TEMPERATURES_2										0xA1
 #define ID_MC_TEMPERATURES_3										0xA2
@@ -18,6 +20,7 @@
 #define ID_MC_COMMAND_MESSAGE										0xC0
 #define ID_MC_READ_WRITE_PARAMETER_COMMAND							0xC1
 #define ID_MC_READ_WRITE_PARAMETER_RESPONSE							0xC2
+
 #define ID_MCU_STATUS												0xC3
 #define ID_MCU_PEDAL_READINGS										0xC4
 #define ID_GLV_CURRENT_READINGS										0xCC

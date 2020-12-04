@@ -24,6 +24,8 @@ BMS_coulomb_counts bms_coulomb_counts{};
 Dashboard_status dashboard_status{};
 MC_motor_position_information mc_motor_position_information{};
 MC_current_information mc_current_informtarion{};
+MC_voltage_information mc_voltage_information{};
+MC_internal_states mc_internal_states{};
 
 //Timers
 #if DEBUG
@@ -63,8 +65,41 @@ uint32_t total_discharge_amount = 0;
 static CAN_message_t rx_msg;
 static CAN_message_t tx_msg;
 ADC_SPI ADC(ADC_CS, ADC_SPI_SPEED);
-MCP23S17 EXPANDER(0, EXPANDER_CS, EXPANDER_SPI_SPEED);
 FlexCAN CAN(500000);
+
+/*
+ * Wheel speed stuff
+ */
+volatile uint8_t cur_state_front_left{};
+volatile uint8_t cur_state_front_right{};
+volatile uint8_t prev_state_front_left{};
+volatile uint8_t prev_state_front_right{};
+int cur_time_front_left{};
+int cur_time_front_right{};
+int prev_time_front_left{};
+int prev_time_front_right{};
+int total_ticks_front_left{};
+int total_ticks_front_right{};
+float rpm_front_left{};
+float rpm_front_right{};
+
+volatile uint8_t cur_state_back_left{};
+volatile uint8_t cur_state_back_right{};
+volatile uint8_t prev_state_back_left{};
+volatile uint8_t prev_state_back_right{};
+int cur_time_back_left{};
+int cur_time_back_right{};
+int prev_time_back_left{};
+int prev_time_back_right{};
+int total_ticks_back_left{};
+int total_ticks_back_right{};
+float rpm_back_left{};
+float rpm_back_right{};
+
+float total_revs{};
+
+constexpr int num_teeth = 24; //CHANGE THIS FOR #OF TEETH PER REVOLUTION
+constexpr float wheel_circumference = 1.300619; //CIRCUMFERENCE OF WHEEL IN METERS
 
 void setup() {
     pinMode(BRAKE_LIGHT_CTRL,OUTPUT);
@@ -73,6 +108,9 @@ void setup() {
     pinMode(WS1_READ,INPUT);
     pinMode(WS2_READ,INPUT);
     pinMode(INVERTER_CTRL,OUTPUT);
+
+    pinMode(FAN_1, OUTPUT);
+    pinMode(FAN_2, OUTPUT);
 
     pinMode(WATCHDOG_INPUT, OUTPUT);
     pinMode(TEENSY_OK, OUTPUT);
@@ -107,9 +145,9 @@ void setup() {
 }
 
 void loop() {
-
     read_pedal_values();
     read_dashboard_buttons();
+
     set_dashboard_leds();
 
     /*
@@ -294,48 +332,44 @@ void loop() {
  */
 void parse_can_message() {
     while (CAN.read(rx_msg)) {
-        if (rx_msg.id == ID_MC_VOLTAGE_INFORMATION) {
-            MC_voltage_information mc_voltage_information = MC_voltage_information(rx_msg.buf);
-            if (mc_voltage_information.get_dc_bus_voltage() >= MIN_HV_VOLTAGE && mcu_status.get_state() == MCU_STATE_TRACTIVE_SYSTEM_NOT_ACTIVE) {
-                set_state(MCU_STATE_TRACTIVE_SYSTEM_ACTIVE);
-            }
-            if (mc_voltage_information.get_dc_bus_voltage() < MIN_HV_VOLTAGE && mcu_status.get_state() > MCU_STATE_TRACTIVE_SYSTEM_NOT_ACTIVE) {
-                set_state(MCU_STATE_TRACTIVE_SYSTEM_NOT_ACTIVE);
-            }
-        }
-
-        if (rx_msg.id == ID_MC_INTERNAL_STATES) {
-            MC_internal_states mc_internal_states = MC_internal_states(rx_msg.buf);
-            if (mc_internal_states.get_inverter_enable_state() && mcu_status.get_state() == MCU_STATE_ENABLING_INVERTER) {
-                //set_state(MCU_STATE_WAITING_READY_TO_DRIVE_SOUND);
-                set_state(MCU_STATE_READY_TO_DRIVE);
-            }
-            if (!mc_internal_states.get_inverter_enable_state() && mcu_status.get_state() == MCU_STATE_READY_TO_DRIVE) {
-                set_state(MCU_STATE_TRACTIVE_SYSTEM_ACTIVE);
-            }
-        }
-
-        if (rx_msg.id == ID_MC_MOTOR_POSITION_INFORMATION) {
-            mc_motor_position_information.load(rx_msg.buf);
-        }
-
-        if (rx_msg.id == ID_BMS_STATUS) {
-            bms_status.load(rx_msg.buf);
-        }
-
-        if (rx_msg.id == ID_BMS_TEMPERATURES) {
-            bms_temperatures.load(rx_msg.buf);
-        }
-
-        if (rx_msg.id == ID_BMS_VOLTAGES) {
-            bms_voltages.load(rx_msg.buf);
-        }
-
-        if (rx_msg.id == ID_MC_CURRENT_INFORMATION) {
-            if (mcu_status.get_state() == MCU_STATE_READY_TO_DRIVE) {
-                mc_current_informtarion.load(rx_msg.buf);
-                update_couloumb_count();
-            }
+        switch (rx_msg.id) {
+            case ID_MC_VOLTAGE_INFORMATION:
+                mc_voltage_information.load(rx_msg.buf);
+                if (mc_voltage_information.get_dc_bus_voltage() >= MIN_HV_VOLTAGE && mcu_status.get_state() == MCU_STATE::TRACTIVE_SYSTEM_NOT_ACTIVE) {
+                    set_state(MCU_STATE::TRACTIVE_SYSTEM_ACTIVE);
+                }
+                if (mc_voltage_information.get_dc_bus_voltage() < MIN_HV_VOLTAGE && static_cast<uint8_t>(mcu_status.get_state()) > static_cast<uint8_t>(MCU_STATE::TRACTIVE_SYSTEM_NOT_ACTIVE)) {
+                    set_state(MCU_STATE::TRACTIVE_SYSTEM_NOT_ACTIVE);
+                }
+                break;
+            case ID_MC_INTERNAL_STATES:
+                mc_internal_states.load(rx_msg.buf);
+                if (mc_internal_states.get_inverter_enable_state() && mcu_status.get_state() == MCU_STATE::ENABLING_INVERTER) {
+                    //set_state(MCU_STATE_WAITING_READY_TO_DRIVE_SOUND);
+                    set_state(MCU_STATE::READY_TO_DRIVE);
+                }
+                if (!mc_internal_states.get_inverter_enable_state() && mcu_status.get_state() == MCU_STATE::READY_TO_DRIVE) {
+                    set_state(MCU_STATE::TRACTIVE_SYSTEM_ACTIVE);
+                }
+                break;
+            case ID_MC_MOTOR_POSITION_INFORMATION:
+                mc_motor_position_information.load(rx_msg.buf);
+                break;
+            case ID_BMS_STATUS:
+                bms_status.load(rx_msg.buf);
+                break;
+            case ID_BMS_TEMPERATURES:
+                bms_temperatures.load(rx_msg.buf);
+                break;
+            case ID_BMS_VOLTAGES:
+                bms_voltages.load(rx_msg.buf);
+                break;
+            case ID_MC_CURRENT_INFORMATION:
+                if (mcu_status.get_state() == MCU_STATE::READY_TO_DRIVE) {
+                    mc_current_informtarion.load(rx_msg.buf);
+                    update_couloumb_count();
+                }
+                break;
         }
     }
 
@@ -343,10 +377,12 @@ void parse_can_message() {
 
 void reset_inverter() {
     inverter_restart = true;
-    digitalWrite(SSR_INVERTER, LOW);
+    digitalWrite(INVERTER_CTRL, LOW);
     timer_restart_inverter.reset();
     mcu_status.set_inverter_powered(false);
+    #if DEBUG
     Serial.println("INVERTER RESET");
+    #endif
 }
 
 /*
@@ -395,15 +431,23 @@ void read_status_values() {
     /*
      * Check for BMS fault
      */
-    uint_16t BMS_fault = analogRead(BMS_OK_READ);
-    if(BMS_fault < RELAY_INPUT_LOW_FAULT)
-        mcu_status.set_bms_ok_state(SHUTDOWN_INPUTS::LOW);
-    else if (BMS_fault < RELAY_INPUT_HIGH_LATCHED)
-        mcu_status.set_bms_ok_state(SHUTDOWN_INPUTS::UNKNOWN_ERROR);
-    else if (BMS_fault < RELAY_INPUT_HIGH_UNLATCHED)
-        mcu_status.set_bms_ok_state(SHUTDOWN_INPUTS::HIGH_LATCHED);
+    uint16_t BMS_fault = analogRead(BMS_OK_READ);
+    // the most likely state is high latched so optimze for that
+
+    if (BMS_fault >= RELAY_INPUT_HIGH_LATCHED)
+        // adding the comparison should be faster than adding another if block
+        mcu_status.set_bms_ok_state(static_cast<SHUTDOWN_INPUTS>(2 + BMS_fault >= RELAY_INPUT_HIGH_UNLATCHED));
     else
-        mcu_status.set_bms_ok_state(SHUTDOWN_INPUTS::HIGH_UNLATCHED);
+        mcu_status.set_bms_ok_state(static_cast<SHUTDOWN_INPUTS>(BMS_fault >= RELAY_INPUT_LOW_FAULT));
+
+    // if(BMS_fault < RELAY_INPUT_LOW_FAULT)
+    //     mcu_status.set_bms_ok_state(SHUTDOWN_INPUTS::LOW);
+    // else if (BMS_fault < RELAY_INPUT_HIGH_LATCHED)
+    //     mcu_status.set_bms_ok_state(SHUTDOWN_INPUTS::UNKNOWN_ERROR);
+    // else if (BMS_fault < RELAY_INPUT_HIGH_UNLATCHED)
+    //     mcu_status.set_bms_ok_state(SHUTDOWN_INPUTS::HIGH_LATCHED);
+    // else
+    //     mcu_status.set_bms_ok_state(SHUTDOWN_INPUTS::HIGH_UNLATCHED);
 
     #if DEBUG
     if (timer_bms_print_fault.check() && mcu_status.get_bms_ok_state() < SHUTDOWN_INPUTS::RELAY_INPUT_HIGH_LATCHED) {
@@ -413,41 +457,60 @@ void read_status_values() {
     /*
      * Check for IMD fault
      */
-    uint_16t IMD_fault = analogRead(IMD_OK_READ);
-    if(IMD_fault < RELAY_INPUT_LOW_FAULT)
-        mcu_status.set_imd_ok_state(SHUTDOWN_INPUTS::LOW);
-    else if (IMD_fault < RELAY_INPUT_HIGH_LATCHED)
-        mcu_status.set_imd_ok_state(SHUTDOWN_INPUTS::UNKNOWN_ERROR);
-    else if (IMD_fault < RELAY_INPUT_HIGH_UNLATCHED)
-        mcu_status.set_imd_ok_state(SHUTDOWN_INPUTS::HIGH_LATCHED);
+    uint16_t IMD_fault = analogRead(IMD_OK_READ);
+
+    if (IMD_fault >= RELAY_INPUT_HIGH_LATCHED)
+        // adding the comparison should be faster than adding another if block
+        mcu_status.set_imd_ok_state(static_cast<SHUTDOWN_INPUTS>(2 + IMD_fault >= RELAY_INPUT_HIGH_UNLATCHED));
     else
-        mcu_status.set_imd_ok_state(SHUTDOWN_INPUTS::HIGH_UNLATCHED);
+        mcu_status.set_imd_ok_state(static_cast<SHUTDOWN_INPUTS>(IMD_fault >= RELAY_INPUT_LOW_FAULT));
+
+    // if(IMD_fault < RELAY_INPUT_LOW_FAULT)
+    //     mcu_status.set_imd_ok_state(SHUTDOWN_INPUTS::LOW);
+    // else if (IMD_fault < RELAY_INPUT_HIGH_LATCHED)
+    //     mcu_status.set_imd_ok_state(SHUTDOWN_INPUTS::UNKNOWN_ERROR);
+    // else if (IMD_fault < RELAY_INPUT_HIGH_UNLATCHED)
+    //     mcu_status.set_imd_ok_state(SHUTDOWN_INPUTS::HIGH_LATCHED);
+    // else
+    //     mcu_status.set_imd_ok_state(SHUTDOWN_INPUTS::HIGH_UNLATCHED);
 
     /*
      * Check for BSPD fault
      */
-    uint_16t BSPD_fault = analogRead(BSPD_OK_READ);
-    if(BSPD_fault < RELAY_INPUT_LOW_FAULT)
-        mcu_status.set_bspd_ok_state(SHUTDOWN_INPUTS::LOW);
-    else if (BSPD_fault < RELAY_INPUT_HIGH_LATCHED)
-        mcu_status.set_bspd_ok_state(SHUTDOWN_INPUTS::UNKNOWN_ERROR);
-    else if (BSPD_fault < RELAY_INPUT_HIGH_UNLATCHED)
-        mcu_status.set_bspd_ok_state(SHUTDOWN_INPUTS::HIGH_LATCHED);
+    uint16_t BSPD_fault = analogRead(BSPD_OK_READ);
+    if (BSPD_fault >= RELAY_INPUT_HIGH_LATCHED)
+        // adding the comparison should be faster than adding another if block
+        mcu_status.set_bspd_ok_state(static_cast<SHUTDOWN_INPUTS>(2 + BSPD_fault >= RELAY_INPUT_HIGH_UNLATCHED));
     else
-        mcu_status.set_bspd_ok_state(SHUTDOWN_INPUTS::HIGH_UNLATCHED);
+        mcu_status.set_bspd_ok_state(static_cast<SHUTDOWN_INPUTS>(BSPD_fault >= RELAY_INPUT_LOW_FAULT));
+
+    // if(BSPD_fault < RELAY_INPUT_LOW_FAULT)
+    //     mcu_status.set_bspd_ok_state(SHUTDOWN_INPUTS::LOW);
+    // else if (BSPD_fault < RELAY_INPUT_HIGH_LATCHED)
+    //     mcu_status.set_bspd_ok_state(SHUTDOWN_INPUTS::UNKNOWN_ERROR);
+    // else if (BSPD_fault < RELAY_INPUT_HIGH_UNLATCHED)
+    //     mcu_status.set_bspd_ok_state(SHUTDOWN_INPUTS::HIGH_LATCHED);
+    // else
+    //     mcu_status.set_bspd_ok_state(SHUTDOWN_INPUTS::HIGH_UNLATCHED);
 
     /*
      * Check for software shutdown fault
      */
-    uint_16t SOFTWARE_fault = analogRead(SOFTWARE_OK_READ);
-    if(SOFTWARE_fault < RELAY_INPUT_LOW_FAULT)
-        mcu_status.set_software_ok_state(SHUTDOWN_INPUTS::LOW);
-    else if (SOFTWARE_fault < RELAY_INPUT_HIGH_LATCHED)
-        mcu_status.set_software_ok_state(SHUTDOWN_INPUTS::UNKNOWN_ERROR);
-    else if (SOFTWARE_fault < RELAY_INPUT_HIGH_UNLATCHED)
-        mcu_status.set_software_ok_state(SHUTDOWN_INPUTS::HIGH_LATCHED);
+    uint16_t SOFTWARE_fault = analogRead(SOFTWARE_OK_READ);
+    if (SOFTWARE_fault >= RELAY_INPUT_HIGH_LATCHED)
+        // adding the comparison should be faster than adding another if block
+        mcu_status.set_software_ok_state(static_cast<SHUTDOWN_INPUTS>(2 + SOFTWARE_fault >= RELAY_INPUT_HIGH_UNLATCHED));
     else
-        mcu_status.set_software_ok_state(SHUTDOWN_INPUTS::HIGH_UNLATCHED);
+        mcu_status.set_software_ok_state(static_cast<SHUTDOWN_INPUTS>(SOFTWARE_fault >= RELAY_INPUT_LOW_FAULT));
+
+    // if(SOFTWARE_fault < RELAY_INPUT_LOW_FAULT)
+    //     mcu_status.set_software_ok_state(SHUTDOWN_INPUTS::LOW);
+    // else if (SOFTWARE_fault < RELAY_INPUT_HIGH_LATCHED)
+    //     mcu_status.set_software_ok_state(SHUTDOWN_INPUTS::UNKNOWN_ERROR);
+    // else if (SOFTWARE_fault < RELAY_INPUT_HIGH_UNLATCHED)
+    //     mcu_status.set_software_ok_state(SHUTDOWN_INPUTS::HIGH_LATCHED);
+    // else
+    //     mcu_status.set_software_ok_state(SHUTDOWN_INPUTS::HIGH_UNLATCHED);
 
     /*
      * Measure shutdown circuits' voltages
