@@ -3,15 +3,16 @@
 #include "AD5721.h"
 
 
-AD5271::AD5721(int chipSelectPin) _chipSelectPin(chipSelectPin) { }
+AD5721::AD5721(int chipSelectPin) : _chipSelectPin(chipSelectPin) { }
 
 
-void AD5271::init() {
+void AD5721::init() {
     pinMode(_chipSelectPin, OUTPUT);
+    digitalWrite(_chipSelectPin, HIGH);
 }
 
 
-void AD5271::writeAndUpdate(uint16_t value) {
+void AD5721::writeAndUpdate(uint16_t value) {
     uint8_t message[3];
     message[0] = 3;
     value <<= 4;
@@ -22,7 +23,7 @@ void AD5271::writeAndUpdate(uint16_t value) {
 }
 
 
-void AD5271::dataReset() {
+void AD5721::dataReset() {
     uint8_t message[3];
     message[0] = 7;
     message[1] = 0;
@@ -32,7 +33,7 @@ void AD5271::dataReset() {
 }
 
 
-void AD5271::fullReset() {
+void AD5721::fullReset() {
     uint8_t message[3];
     message[0] = 15;
     message[1] = 0;
@@ -43,7 +44,7 @@ void AD5271::fullReset() {
 }
 
 
-void AD5271::spiWrite(uint8_t* message) {
+void AD5721::spiWrite(uint8_t* message) {
     SPI.beginTransaction(SPISettings(50000000, MSBFIRST, SPI_MODE1));
     digitalWrite(_chipSelectPin, LOW);
 

@@ -3,11 +3,14 @@
 #include "AD5684.h"
 
 
-AD5684::AD5684(int chipSelectPin) _chipSelectPin(chipSelectPin) { }
+AD5684::AD5684(int chipSelectPin, int gainPin) : _chipSelectPin(chipSelectPin), _gainPin(gainPin) { }
 
 
 void AD5684::init() {
     pinMode(_chipSelectPin, OUTPUT);
+    pinMode(_gainPin, OUTPUT);
+    digitalWrite(_chipSelectPin, HIGH);
+    setGain(HIGH);
 }
 
 
@@ -39,6 +42,10 @@ void AD5684::reset() {
     message[2] = 0;
 
     spiWrite(message);
+}
+
+void AD5684::setGain(int set) {
+    digitalWrite(_gainPin, set);
 }
 
 

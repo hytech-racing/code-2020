@@ -3,11 +3,12 @@
 #include "AD5263.h"
 
 
-AD5263::AD5263(int chipSelectPin) _chipSelectPin(chipSelectPin) { }
+AD5263::AD5263(int chipSelectPin) : _chipSelectPin(chipSelectPin) { }
 
 
 void AD5263::init() {
     pinMode(_chipSelectPin, OUTPUT);
+    digitalWrite(_chipSelectPin, HIGH);
 }
 
 
