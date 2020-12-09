@@ -70,27 +70,11 @@ FlexCAN CAN(500000);
 /*
  * Wheel speed stuff
  */
-volatile uint8_t cur_state_front_left{};
-volatile uint8_t cur_state_front_right{};
-volatile uint8_t prev_state_front_left{};
-volatile uint8_t prev_state_front_right{};
-int cur_time_front_left{};
-int cur_time_front_right{};
-int prev_time_front_left{};
-int prev_time_front_right{};
 int total_ticks_front_left{};
 int total_ticks_front_right{};
 float rpm_front_left{};
 float rpm_front_right{};
 
-volatile uint8_t cur_state_back_left{};
-volatile uint8_t cur_state_back_right{};
-volatile uint8_t prev_state_back_left{};
-volatile uint8_t prev_state_back_right{};
-int cur_time_back_left{};
-int cur_time_back_right{};
-int prev_time_back_left{};
-int prev_time_back_right{};
 int total_ticks_back_left{};
 int total_ticks_back_right{};
 float rpm_back_left{};
@@ -98,15 +82,16 @@ float rpm_back_right{};
 
 float total_revs{};
 
-constexpr int num_teeth = 24; //CHANGE THIS FOR #OF TEETH PER REVOLUTION
-constexpr float wheel_circumference = 1.300619; //CIRCUMFERENCE OF WHEEL IN METERS
+#define NUM_TEETH 24 //CHANGE THIS FOR #OF TEETH PER REVOLUTION
+#define WHEEL_CIRCUMFERENCE 1.300619 //CIRCUMFERENCE OF WHEEL IN METERS
+#define TIME_OUT 500000
 
 void setup() {
     pinMode(BRAKE_LIGHT_CTRL,OUTPUT);
-    pinMode(WS3_READ,INPUT);
-    pinMode(WS4_READ,INPUT);
-    pinMode(WS1_READ,INPUT);
-    pinMode(WS2_READ,INPUT);
+    pinMode(FRONT_LEFT_WHEEL, INPUT_PULLUP);
+    pinMode(FRONT_RIGHT_WHEEL, INPUT_PULLUP);
+    pinMode(BACK_LEFT_WHEEL, INPUT_PULLUP);
+    pinMode(BACK_RIGHT_WHEEL, INPUT_PULLUP);
     pinMode(INVERTER_CTRL,OUTPUT);
 
     pinMode(FAN_1, OUTPUT);
@@ -146,9 +131,9 @@ void setup() {
 
 void loop() {
     read_pedal_values();
-    read_dashboard_buttons();
-
-    set_dashboard_leds();
+    read_wheel_speed();
+    // read_dashboard_buttons();
+    // set_dashboard_leds();
 
     /*
      * Send state over CAN
@@ -436,9 +421,15 @@ void read_status_values() {
 
     if (BMS_fault >= RELAY_INPUT_HIGH_LATCHED)
         // adding the comparison should be faster than adding another if block
-        mcu_status.set_bms_ok_state(static_cast<SHUTDOWN_INPUTS>(2 + BMS_fault >= RELAY_INPUT_HIGH_UNLATCHED));
+        if (BMS_fault >= RELAY_INPUT_HIGH_UNLATCHED)
+            mcu_status.set_bms_ok_state(SHUTDOWN_INPUTS::HIGH_UNLATCHED);
+        else
+            mcu_status.set_bms_ok_state(SHUTDOWN_INPUTS::HIGH_LATCHED);
     else
-        mcu_status.set_bms_ok_state(static_cast<SHUTDOWN_INPUTS>(BMS_fault >= RELAY_INPUT_LOW_FAULT));
+        if (BMS_fault >= RELAY_INPUT_LOW_FAULT)
+            mcu_status.set_bms_ok_state(SHUTDOWN_INPUTS::UNKNOWN_ERROR);
+        else
+            mcu_status.set_bms_ok_state(SHUTDOWN_INPUTS::LOW);
 
     // if(BMS_fault < RELAY_INPUT_LOW_FAULT)
     //     mcu_status.set_bms_ok_state(SHUTDOWN_INPUTS::LOW);
@@ -659,3 +650,104 @@ void update_couloumb_count() {
         }
     }
 */
+
+void read_wheel_speed(){
+    // this gets reused
+    static int micros_elapsed{};
+    {
+        static uint8_t cur_state_front_left{};
+        static uint8_t prev_state_front_left{};
+        static int cur_time_front_left{};
+        static int prev_time_front_left{};
+
+        cur_state_front_left = digitalRead(FRONT_LEFT_WHEEL);
+
+        if (cur_state_front_left == 0 && prev_state_front_left == 1){
+            cur_time_front_left = micros();
+            micros_elapsed = cur_time_front_left - prev_time_front_left;
+            if (micros_elapsed > 500) {
+                rpm_front_left = (60000000 / NUM_TEETH) / micros_elapsed;
+                prev_time_front_left = cur_time_front_left;
+                total_ticks_front_left += 1;
+            }
+        }
+
+        if (micros() - prev_time_front_left > TIME_OUT && rpm_front_left){
+            rpm_front_left = 0;
+        }
+
+        prev_state_front_left = cur_state_front_left;
+    }
+    {
+        static uint8_t cur_state_front_right{};
+        static uint8_t prev_state_front_right{};
+        static int cur_time_front_right{};
+        static int prev_time_front_right{};
+
+        cur_state_front_right = digitalRead(FRONT_RIGHT_WHEEL);
+
+        if (cur_state_front_right == 0 && prev_state_front_right == 1){
+            cur_time_front_right = micros();
+            micros_elapsed = cur_time_front_right - prev_time_front_right;
+            if (micros_elapsed > 500) {
+                rpm_front_right = (60000000 / NUM_TEETH) / micros_elapsed;
+                prev_time_front_right = cur_time_front_right;
+                total_ticks_front_right += 1;
+            }
+        }
+
+        if (micros() - prev_time_front_right > TIME_OUT && rpm_front_right){
+            rpm_front_right = 0;
+        }
+
+        prev_state_front_right = cur_state_front_right;
+    }
+    {
+        static uint8_t cur_state_back_left{};
+        static uint8_t prev_state_back_left{};
+        static int cur_time_back_left{};
+        static int prev_time_back_left{};
+
+        cur_state_back_left = digitalRead(BACK_LEFT_WHEEL);
+
+        if (cur_state_back_left == 0 && prev_state_back_left == 1){
+            cur_time_back_left = micros();
+            micros_elapsed = cur_time_back_left - prev_time_back_left;
+            if (micros_elapsed > 500) {
+                rpm_back_left = (60000000 / NUM_TEETH) / micros_elapsed;
+                prev_time_back_left = cur_time_back_left;
+                total_ticks_back_left += 1;
+            }
+        }
+
+        if (micros() - prev_time_back_left > TIME_OUT && rpm_back_left){
+            rpm_back_left = 0;
+        }
+
+        prev_state_back_left = cur_state_back_left;
+    }
+    {
+        static uint8_t cur_state_back_right{};
+        static uint8_t prev_state_back_right{};
+        static int cur_time_back_right{};
+        static int prev_time_back_right{};
+
+        cur_state_back_right = digitalRead(BACK_RIGHT_WHEEL);
+
+        if (cur_state_back_right == 0 && prev_state_back_right == 1){
+            cur_time_back_right = micros();
+            micros_elapsed = cur_time_back_right - prev_time_back_right;
+            if (micros_elapsed > 500) {
+                rpm_back_right = (60000000 / NUM_TEETH) / micros_elapsed;
+                prev_time_back_right = cur_time_back_right;
+                total_ticks_back_right += 1;
+            }
+        }
+
+        if (micros() - prev_time_back_right > TIME_OUT && rpm_back_right){
+            rpm_back_right = 0;
+        }
+
+        prev_state_back_right = cur_state_back_right;
+    }
+}

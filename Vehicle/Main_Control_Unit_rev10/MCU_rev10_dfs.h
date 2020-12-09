@@ -4,10 +4,10 @@
  * Teensy Pin definitions
  */
 #define BRAKE_LIGHT_CTRL 0
-#define WS3_READ 1
-#define WS4_READ 2
-#define FAN_1 5
-#define FAN_2 6
+#define FRONT_LEFT_WHEEL 1
+#define FRONT_RIGHT_WHEEL 2
+#define BACK_LEFT_WHEEL 5
+#define BACK_RIGHT_WHEEL 6
 #define WS1_READ 7
 #define WS2_READ 8
 #define INVERTER_CTRL 9
