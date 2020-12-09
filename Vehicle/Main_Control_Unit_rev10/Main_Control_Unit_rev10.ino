@@ -95,10 +95,13 @@ void setup() {
     pinMode(BACK_RIGHT_WHEEL, INPUT_PULLUP);
     pinMode(INVERTER_CTRL,OUTPUT);
 
-    pinMode(FAN_1, OUTPUT);
-    pinMode(FAN_2, OUTPUT);
+    // pinMode(FAN_1, OUTPUT);
+    // pinMode(FAN_2, OUTPUT);
 
     pinMode(WATCHDOG_INPUT, OUTPUT);
+    // the initial state of the watchdog is high 
+    // this is reflected in the static watchdog_state
+    // starting high
     digitalWrite(WATCHDOG_INPUT, HIGH);
     pinMode(TEENSY_OK, OUTPUT);
 
@@ -237,7 +240,7 @@ void loop() {
 
         case MCU_STATE_READY_TO_DRIVE:
         if (timer_motor_controller_send.check()) {
-            MC_command_message mc_command_message = MC_command_message(0, 0, 1, 1, 0, 0);
+            MC_command_message mc_command_message(0, 0, 1, 1, 0, 0);
             //read_pedal_values();
 
             // Check for accelerator implausibility FSAE EV2.3.10
@@ -245,7 +248,7 @@ void loop() {
             if (mcu_pedal_readings.get_accelerator_pedal_raw_1() < MIN_ACCELERATOR_PEDAL_1 || mcu_pedal_readings.get_accelerator_pedal_raw_1() > MAX_ACCELERATOR_PEDAL_1) {
                 mcu_pedal_readings.set_accelerator_implausibility(true);
             }
-            if (mcu_pedal_readings.get_accelerator_pedal_raw_2() > MIN_ACCELERATOR_PEDAL_2 || mcu_pedal_readings.get_accelerator_pedal_raw_2() < MAX_ACCELERATOR_PEDAL_2) {
+            else if (mcu_pedal_readings.get_accelerator_pedal_raw_2() > MIN_ACCELERATOR_PEDAL_2 || mcu_pedal_readings.get_accelerator_pedal_raw_2() < MAX_ACCELERATOR_PEDAL_2) {
                 mcu_pedal_readings.set_accelerator_implausibility(true);
             }
 
@@ -263,17 +266,16 @@ void loop() {
                 // Implausibility exists, command 0 torque
                 calculated_torque = 0;
             }
-
             // FSAE FMEA specifications // if BMS or IMD are faulting, set torque to 0
-            if (!mcu_status.get_bms_ok_high() ) {
+            else if (!mcu_status.get_bms_ok_high() ) {
+                calculated_torque = 0;
+            }
+            else if (!mcu_status.get_imd_okhs_high()) {
                 calculated_torque = 0;
             }
 
-            if (!mcu_status.get_imd_okhs_high()) {
-                calculated_torque = 0;
-            }
-
-            if (debug && timer_debug_torque.check()) {
+            #if DEBUG
+            if (timer_debug_torque.check()) {
                 Serial.print("MCU REQUESTED TORQUE: ");
                 Serial.println(calculated_torque);
                 Serial.print("MCU IMPLAUS ACCEL: ");
@@ -281,6 +283,7 @@ void loop() {
                 Serial.print("MCU IMPLAUS BRAKE: ");
                 Serial.println(mcu_pedal_readings.get_brake_implausibility());
             }
+            #endif
 
             // Serial.print("RPM: ");
             // Serial.println(mc_motor_position_information.get_motor_speed());
