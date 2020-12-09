@@ -43,6 +43,7 @@ Metro timer_can_update = Metro(100);
 Metro timer_pedal_can_update = Metro(5);
 Metro timer_restart_inverter = Metro(500, 1); // Allow the MCU to restart the inverter
 Metro timer_status_send = Metro(100);
+Metro timer_watchdog_timer = Metro(1000);
 
 /*
  * Variables to store filtered values from ADC channels
@@ -98,6 +99,7 @@ void setup() {
     pinMode(FAN_2, OUTPUT);
 
     pinMode(WATCHDOG_INPUT, OUTPUT);
+    digitalWrite(WATCHDOG_INPUT, HIGH);
     pinMode(TEENSY_OK, OUTPUT);
 
     #if DEBUG
@@ -309,6 +311,13 @@ void loop() {
         tx_msg.id = ID_MC_COMMAND_MESSAGE;
         tx_msg.len = 8;
         CAN.write(tx_msg);
+    }
+
+    // Watchdog timer
+    if (timer_watchdog_timer.check()){
+        static bool watchdog_state = HIGH;
+        watchdog_state = !watchdog_state;
+        digitalWrite(WATCHDOG_INPUT, watchdog_state);
     }
 }
 
