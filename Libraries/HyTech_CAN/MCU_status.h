@@ -1,7 +1,7 @@
 #pragma once
 
 #include <string.h>
-#include <cstdint>
+#include <stdint.h>
 
 enum class MCU_STATE : unit_8t
 {

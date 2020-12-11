@@ -20,7 +20,6 @@
 #define ID_MC_COMMAND_MESSAGE										0xC0
 #define ID_MC_READ_WRITE_PARAMETER_COMMAND							0xC1
 #define ID_MC_READ_WRITE_PARAMETER_RESPONSE							0xC2
-
 #define ID_MCU_STATUS												0xC3
 #define ID_MCU_PEDAL_READINGS										0xC4
 #define ID_GLV_CURRENT_READINGS										0xCC
@@ -44,3 +43,4 @@
 #define ID_TCU_WHEEL_RPM_REAR										0xEA
 #define ID_TCU_WHEEL_RPM_FRONT										0xEB
 #define ID_TCU_DISTANCE_TRAVELED									0xED
+#define ID_DASHBOARD_STATUS                                         0xEE
