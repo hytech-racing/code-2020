@@ -137,8 +137,6 @@ void setup() {
 void loop() {
     read_pedal_values();
     read_wheel_speed();
-    // read_dashboard_buttons();
-    // set_dashboard_leds();
 
     /*
      * Send state over CAN
