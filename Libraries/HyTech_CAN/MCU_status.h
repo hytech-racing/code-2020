@@ -74,17 +74,20 @@ public:
     inline void set_bspd_brake_high(const bool high)             { shutdown_states = (shutdown_states & 0xDF) | (high  << 5); }
     inline void set_software_is_ok(const bool is_ok)             { shutdown_states = (shutdown_states & 0xBF) | (is_ok << 6); }
     
+    
     inline uint8_t get_ecu_states()              const { return (ecu_states); }
-    inline MCU_STATE get_state()             const { return static_cast<MCU_STATE>((ecu_states & 0x07)); }
+    inline MCU_STATE get_state()                 const { return static_cast<MCU_STATE>((ecu_states & 0x07)); }
     inline TORQUE_MAP_MODE get_torque_map_mode() const { return static_cast<TORQUE_MAP_MODE>((ecu_states & 0x18) >> 3); }
     inline bool get_inverter_powered()           const { return (ecu_states & 0x20); }
     inline bool get_energy_meter_present()       const { return (ecu_states & 0x40); }
+    inline bool get_activate_buzzer()            const { return (ecu_states & 0x80); }
 
     inline void set_ecu_states(const uint8_t states)             { this->ecu_states = ecu_states; }
-    inline void set_state(const MCU_STATE state)            { ecu_states = (ecu_states & 0xF8) | (static_cast<uint8_t>(state)); }
-    inline void set_torque_map_mode(const TORQUE_MAP_MODE mode)  { ecu_states = (ecu_states & 0xE7) | (static_cast<uint8_t>(mode)    << 3); }
-    inline void set_inverter_powered(const bool powered)         { ecu_states = (ecu_states & 0xDF) | (powered << 5); }
-    inline void set_energy_meter_present(const bool present)     { ecu_states = (ecu_states & 0xBF) | (present << 6); }
+    inline void set_state(const MCU_STATE state)                 { ecu_states = (ecu_states & 0xF8) | (static_cast<uint8_t>(state)); }
+    inline void set_torque_map_mode(const TORQUE_MAP_MODE mode)  { ecu_states = (ecu_states & 0xE7) | (static_cast<uint8_t>(mode) << 3); }
+    inline void set_inverter_powered(const bool powered)         { ecu_states = (ecu_states & 0xDF) | (powered  << 5); }
+    inline void set_energy_meter_present(const bool present)     { ecu_states = (ecu_states & 0xBF) | (present  << 6); }
+    inline void set_activate_buzzer(const bool activate)         { ecu_states = (ecu_states & 0x7F) | (activate << 7); }
 
     inline uint16_t get_distance_travelled() const { return distance_travelled; }
     inline void set_distance_travelled(const uint16_t distance) { distance_travelled = distance; }
@@ -114,7 +117,7 @@ private:
      * torque_mode (2 bits)
      * inverter powered
      * energy_meter
-     * (empty bit)
+     * activate_buzzer
      */
     uint8_t ecu_states;
     uint16_t distance_travelled;

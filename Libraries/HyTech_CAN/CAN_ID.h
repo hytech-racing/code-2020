@@ -40,7 +40,5 @@
 #define ID_BMS_PARAMETER_RESPONSE									0xE1 // TODO define this message
 #define ID_BMS_COULOMB_COUNTS										0xE2
 #define ID_MCU_GPS_READINGS											0xE7
-#define ID_TCU_WHEEL_RPM_REAR										0xEA
-#define ID_TCU_WHEEL_RPM_FRONT										0xEB
-#define ID_TCU_DISTANCE_TRAVELED									0xED
+#define ID_MCU_WHEEL_SPEED  										0xEA
 #define ID_DASHBOARD_STATUS                                         0xEE

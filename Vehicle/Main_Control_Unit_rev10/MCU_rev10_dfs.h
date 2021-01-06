@@ -6,10 +6,10 @@
 #define BRAKE_LIGHT_CTRL 0
 #define FRONT_LEFT_WHEEL 1
 #define FRONT_RIGHT_WHEEL 2
-#define BACK_LEFT_WHEEL 5
-#define BACK_RIGHT_WHEEL 6
-#define WS1_READ 7
-#define WS2_READ 8
+#define FAN_1 5
+#define FAN_2 6
+#define BACK_LEFT_WHEEL 7
+#define BACK_RIGHT_WHEEL 8
 #define INVERTER_CTRL 9
 #define ADC_CS 10
 
@@ -82,3 +82,8 @@
 
 // this is just for reference
 #define MAX_POSSIBLE_TORQUE 1200         
+
+
+#define NUM_TEETH 24 //CHANGE THIS FOR #OF TEETH PER REVOLUTION
+#define WHEEL_CIRCUMFERENCE 1.300619 //CIRCUMFERENCE OF WHEEL IN METERS
+#define TIME_OUT 500000

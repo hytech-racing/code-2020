@@ -331,6 +331,8 @@ void loop() {
             int calculated_torque = calculate_torque();
 
             // FSAE EV2.5 APPS / Brake Pedal Plausibility Check
+
+            // ONLY WORKS BECAUSE OF LINEAR TORQUE MAPPING
             if (mcu_pedal_readings.get_brake_implausibility() && calculated_torque < (MAX_TORQUE / 20)) {
                 mcu_pedal_readings.set_brake_implausibility(false); // Clear implausibility
             }
