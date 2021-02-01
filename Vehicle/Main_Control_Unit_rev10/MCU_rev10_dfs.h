@@ -36,26 +36,14 @@
 /*
  * Shutdown read thresholds
  */
-// actually goes down to 10 but this rarely happens
-// Car battery 11 - 14.6V
-// resistor divider : 0.2181818 of actual value
 
-// minimum unlatched: 10.63829787 -> 720
-// maximum latched: 10.62590975 -> 719
-// minimum latched:  8.0058 -> 540
-// ground <0.5 33
-#define RELAY_INPUT_LOW_FAULT 33
-#define RELAY_INPUT_HIGH_LATCHED 540
-#define RELAY_INPUT_HIGH_UNLATCHED 720
-
-#define SHUTDOWOWN_X_HIGH 350 //5V
+#define SHUTDOWN_HIGH 350 //5V
 
 
 /*
  * pedal sensor constant
  */
-#define BRAKE_ACTIVE 1200               // Threshold for brake pedal active  
-    // this is twice the original of 600 because we sum both brake transducers
+#define BRAKE_ACTIVE 600               // Threshold for brake pedal active  
 #define MIN_ACCELERATOR_PEDAL_1 1850    // Low accelerator implausibility threshold
 #define START_ACCELERATOR_PEDAL_1 2050  // Position to start acceleration
 #define END_ACCELERATOR_PEDAL_1 2355    // Position to max out acceleration

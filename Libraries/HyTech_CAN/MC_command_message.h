@@ -1,7 +1,7 @@
 #pragma once
 #include <string.h>
 #include <stdint.h>
-i
+
 #pragma pack(push,1)
 
 class MC_command_message {

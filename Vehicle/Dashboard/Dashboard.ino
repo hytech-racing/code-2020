@@ -55,6 +55,7 @@ void loop() {
     read_can();
     led_update();
     btn_update();
+    
     static uint8_t prev_buttons{}, curr_buttons{}, temp_buttons{};
     prev_buttons = curr_buttons;
     curr_buttons = dashboard_status.get_button_flags();
@@ -83,8 +84,8 @@ inline void led_update(){
     dashboard_status.set_ams_led(!mcu_status.get_bms_ok_high());
     
     //IMD LED
-    digitalWrite(LED_IMD, !mcu_status.get_imd_okhs_high());//get_imd_okhs_high outputs 1 if things are good.  We want light on when things are bad so negate
-    dashboard_status.set_imd_led(!mcu_status.get_imd_okhs_high());
+    digitalWrite(LED_IMD, !mcu_status.get_imd_ok_high());//get_imd_okhs_high outputs 1 if things are good.  We want light on when things are bad so negate
+    dashboard_status.set_imd_led(!mcu_status.get_imd_ok_high());
 
     //MC Error LED
     digitalWrite(LED_MC_ERR, is_mc_err);
@@ -92,15 +93,15 @@ inline void led_update(){
 
     //Start LED
     switch(mcu_status.get_state()){
-        case MCU_STATE_TRACTIVE_SYSTEM_NOT_ACTIVE:
+        case MCU_STATE::TRACTIVE_SYSTEM_NOT_ACTIVE:
             variable_led_start.setMode(BLINK_MODES::OFF);
             dashboard_status.set_start_led(0);
             break;
-        case MCU_STATE_TRACTIVE_SYSTEM_ACTIVE:
+        case MCU_STATE::TRACTIVE_SYSTEM_ACTIVE:
             variable_led_start.setMode(BLINK_MODES::FAST);
             dashboard_status.set_start_led(2);
             break;
-        case MCU_STATE_ENABLING_INVERTER:
+        case MCU_STATE::ENABLING_INVERTER:
             variable_led_start.setMode(BLINK_MODES::ON);
             dashboard_status.set_start_led(1);
             break;

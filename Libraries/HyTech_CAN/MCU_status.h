@@ -3,7 +3,7 @@
 #include <string.h>
 #include <stdint.h>
 
-enum class MCU_STATE : unit_8t
+enum class MCU_STATE
 {
     STARTUP                      = 0,
     TRACTIVE_SYSTEM_NOT_ACTIVE   = 1,
@@ -13,20 +13,12 @@ enum class MCU_STATE : unit_8t
     READY_TO_DRIVE               = 5
 };
 
-enum class SHUTDOWN_INPUTS : unit_8t
+enum class TORQUE_MODE
 {
-    LOW            = 0,
-    UNKNOWN_ERROR  = 1,
-    HIGH_LATCHED   = 2,
-    HIGH_UNLATCHED = 3
-};
-
-enum class TORQUE_MAP_MODE : unit_8t 
-{
-    MODE_0 = 0,
-    MODE_1 = 1,
-    MODE_2 = 2,
-    MODE_3 = 3
+    MAX_0 = 0,
+    MAX_60 = 1,
+    MAX_100 = 2,
+    MAX_120 = 3
 };
 
 #pragma pack(push,1)
@@ -39,87 +31,103 @@ public:
     inline void load(const uint8_t buf[])  { memcpy(this, buf, sizeof(*this)); }
     inline void write(uint8_t buf[]) const { memcpy(buf, this, sizeof(*this)); }
 
-    inline uint8_t get_shutdown_inputs()           const { return shutdown_inputs; }
-    inline bool get_imd_ok_high()                  const { return shutdown_inputs & 0x02; }
-    inline SHUTDOWN_INPUTS get_imd_ok_state()      const { return static_cast<SHUTDOWN_INPUTS>((shutdown_inputs & 0x03)     ); }
-    inline bool get_bms_ok_high()                  const { return shutdown_inputs & 0x04; }
-    inline SHUTDOWN_INPUTS get_bms_ok_state()      const { return static_cast<SHUTDOWN_INPUTS>((shutdown_inputs & 0x0C) >> 2); }
-    inline bool get_bspd_ok_high()                 const { return shutdown_inputs & 0x06; }
-    inline SHUTDOWN_INPUTS get_bspd_ok_state()     const { return static_cast<SHUTDOWN_INPUTS>((shutdown_inputs & 0x30) >> 4); }
-    inline bool get_software_ok_high()             const { return shutdown_inputs & 0x08; }
-    inline SHUTDOWN_INPUTS get_software_ok_state() const { return static_cast<SHUTDOWN_INPUTS>((shutdown_inputs & 0xF0) >> 6); }
+    /* Shutdown system monitoring */
 
-    inline void set_shutdown_inputs(const uint8_t inputs)          { shutdown_inputs = inputs; }
-    inline void set_imd_ok_state(const SHUTDOWN_INPUTS input)      { shutdown_inputs = (shutdown_inputs & 0xFC) | (static_cast<uint8_t>(input)); }
-    inline void set_bms_ok_state(const SHUTDOWN_INPUTS input)      { shutdown_inputs = (shutdown_inputs & 0xF3) | (static_cast<uint8_t>(input) << 2); }
-    inline void set_bspd_ok_state(const SHUTDOWN_INPUTS input)     { shutdown_inputs = (shutdown_inputs & 0xCF) | (static_cast<uint8_t>(input) << 4); }
-    inline void set_software_ok_state(const SHUTDOWN_INPUTS input) { shutdown_inputs = (shutdown_inputs & 0x3F) | (static_cast<uint8_t>(input) << 6); }
+    inline uint8_t get_shutdown_inputs()           const { return shutdown_states; }
+    inline bool get_imd_ok_high()                  const { return shutdown_states & 0x01; }
+    inline bool get_shutdown_b_above_threshold()   const { return shutdown_states & 0x02; }
+    inline bool get_bms_ok_high()                  const { return shutdown_states & 0x04; }
+    inline bool get_shutdown_c_above_threshold()   const { return shutdown_states & 0x08; }
+    inline bool get_bspd_ok_high()                 const { return shutdown_states & 0x10; }
+    inline bool get_shutdown_d_above_threshold()   const { return shutdown_states & 0x20; }
+    inline bool get_software_ok_high()             const { return shutdown_states & 0x40; }
+    inline bool get_shutdown_e_above_threshold()   const { return shutdown_states & 0x80; }
 
+    inline void set_shutdown_inputs(const uint8_t inputs)        { shutdown_states = inputs; }
+    inline void set_imd_ok_high(const bool high)                 { shutdown_states = (shutdown_states & 0xFE) | (high      ); }
+    inline void set_shutdown_b_above_threshold(const bool above) { shutdown_states = (shutdown_states & 0xFD) | (above << 1); }
+    inline void set_bms_ok_high(const bool high)                 { shutdown_states = (shutdown_states & 0xFB) | (high  << 2); }
+    inline void set_shutdown_c_above_threshold(const bool above) { shutdown_states = (shutdown_states & 0xF7) | (above << 3); }
+    inline void set_bspd_ok_high(const bool high)                { shutdown_states = (shutdown_states & 0xEF) | (high  << 4); }
+    inline void set_shutdown_d_above_threshold(const bool above) { shutdown_states = (shutdown_states & 0xDF) | (above << 5); }
+    inline void set_software_ok_high(const bool high)            { shutdown_states = (shutdown_states & 0xBF) | (high  << 6); }
+    inline void set_shutdown_e_above_threshold(const bool above) { shutdown_states = (shutdown_states & 0x7F) | (above << 7); }
 
-    inline uint8_t get_shutdown_states()         const { return shutdown_states; }
-    inline bool get_shutdown_b_above_threshold() const { return shutdown_states & 0x01; }
-    inline bool get_shutdown_c_above_threshold() const { return shutdown_states & 0x02; }
-    inline bool get_shutdown_d_above_threshold() const { return shutdown_states & 0x04; }
-    inline bool get_shutdown_e_above_threshold() const { return shutdown_states & 0x08; }
-    inline bool get_bspd_current_high()          const { return shutdown_states & 0x10; }
-    inline bool get_bspd_brake_high()            const { return shutdown_states & 0x20; }
-    inline bool get_software_is_ok()             const { return shutdown_states & 0x40; }
+    /* Pedal system monitoring */
 
-    inline void set_shutdown_states(const uint8_t states)        { this->shutdown_states = states; }
-    inline void set_shutdown_b_above_threshold(const bool above) { shutdown_states = (shutdown_states & 0xFE) | (above); }
-    inline void set_shutdown_c_above_threshold(const bool above) { shutdown_states = (shutdown_states & 0xFD) | (above << 1); }
-    inline void set_shutdown_d_above_threshold(const bool above) { shutdown_states = (shutdown_states & 0xFB) | (above << 2); }
-    inline void set_shutdown_e_above_threshold(const bool above) { shutdown_states = (shutdown_states & 0xF7) | (above << 3); }
-    inline void set_bspd_current_high(const bool high)           { shutdown_states = (shutdown_states & 0xEF) | (high  << 4); }
-    inline void set_bspd_brake_high(const bool high)             { shutdown_states = (shutdown_states & 0xDF) | (high  << 5); }
-    inline void set_software_is_ok(const bool is_ok)             { shutdown_states = (shutdown_states & 0xBF) | (is_ok << 6); }
+    inline uint8_t get_pedal_states()            const { return pedal_states; }
+    inline TORQUE_MODE get_torque_mode() const { return static_cast<TORQUE_MODE>(pedal_states & 0x03)}
+    inline bool get_accel_implausability()       const { return pedal_states & 0x04; }
+    inline bool get_brake_implausability()       const { return pedal_states & 0x08; }
+    inline bool get_brake_pedal_active()         const { return pedal_states & 0x10; }
+    inline bool get_bspd_current_high()          const { return pedal_states & 0x20; }
+    inline bool get_bspd_brake_high()            const { return pedal_states & 0x40; }
+
+    inline uint8_t set_pedal_states(const uint8_t states)        { pedal_states = states; }
+    inline void set_torque_mode(const TORQUE_MODE mode)  { pedal_states = (pedal_states & 0xFC) | (static_cast<uint8_t>(mode)); }
+    inline void set_accel_implausability(const bool implausable) { pedal_states = (pedal_states & 0xFB) | (implausable << 2); }
+    inline void set_brake_implausability(const bool implausable) { pedal_states = (pedal_states & 0xF7) | (implausable << 3); }
+    inline void set_brake_pedal_active(const bool pressed)       { pedal_states = (pedal_states & 0xEF) | (pressed     << 4); }
+    inline void set_bspd_current_high(const bool high)           { pedal_states = (pedal_states & 0xDF) | (high        << 5); }
+    inline void set_bspd_brake_high(const bool high)             { pedal_states = (pedal_states & 0xBF) | (high        << 6); }
     
+    /* ECU state */
     
-    inline uint8_t get_ecu_states()              const { return (ecu_states); }
-    inline MCU_STATE get_state()                 const { return static_cast<MCU_STATE>((ecu_states & 0x07)); }
-    inline TORQUE_MAP_MODE get_torque_map_mode() const { return static_cast<TORQUE_MAP_MODE>((ecu_states & 0x18) >> 3); }
-    inline bool get_inverter_powered()           const { return (ecu_states & 0x20); }
-    inline bool get_energy_meter_present()       const { return (ecu_states & 0x40); }
-    inline bool get_activate_buzzer()            const { return (ecu_states & 0x80); }
+    inline uint8_t get_ecu_states()        const { return (ecu_states); }
+    inline MCU_STATE get_state()           const { return static_cast<MCU_STATE>((ecu_states & 0x07)); }
+    inline bool get_inverter_powered()     const { return (ecu_states & 0x08); }
+    inline bool get_energy_meter_present() const { return (ecu_states & 0x10); }
+    inline bool get_activate_buzzer()      const { return (ecu_states & 0x20); }
+    inline bool get_software_is_ok()       const { return (ecu_states & 0x40); }
+    inline bool get_launch_ctrl_active()   const { return (ecu_states & 0x80); }
 
-    inline void set_ecu_states(const uint8_t states)             { this->ecu_states = ecu_states; }
-    inline void set_state(const MCU_STATE state)                 { ecu_states = (ecu_states & 0xF8) | (static_cast<uint8_t>(state)); }
-    inline void set_torque_map_mode(const TORQUE_MAP_MODE mode)  { ecu_states = (ecu_states & 0xE7) | (static_cast<uint8_t>(mode) << 3); }
-    inline void set_inverter_powered(const bool powered)         { ecu_states = (ecu_states & 0xDF) | (powered  << 5); }
-    inline void set_energy_meter_present(const bool present)     { ecu_states = (ecu_states & 0xBF) | (present  << 6); }
-    inline void set_activate_buzzer(const bool activate)         { ecu_states = (ecu_states & 0x7F) | (activate << 7); }
+    inline void set_ecu_states(const uint8_t states)         { ecu_states = states; }
+    inline void set_state(const MCU_STATE state)             { ecu_states = (ecu_states & 0xF8) | (static_cast<uint8_t>(state)); }
+    inline void set_inverter_powered(const bool powered)     { ecu_states = (ecu_states & 0xF7) | (powered  << 3); }
+    inline void set_energy_meter_present(const bool present) { ecu_states = (ecu_states & 0xEF) | (present  << 4); }
+    inline void set_activate_buzzer(const bool activate)     { ecu_states = (ecu_states & 0xDF) | (activate << 5); }
+    inline void set_software_is_ok(const bool is_ok)         { ecu_states = (ecu_states & 0xBF) | (is_ok    << 6); }
+    inline void set_launch_ctrl_active(const bool active)    { ecu_states = (ecu_states & 0x7F) | (active   << 7); }
 
+    inline void toggle_launch_ctrl_active() { ecu_states ^= 0x80; }
+
+    /* distance travelled */
     inline uint16_t get_distance_travelled() const { return distance_travelled; }
     inline void set_distance_travelled(const uint16_t distance) { distance_travelled = distance; }
 
 private:
     /*
-     * IMD_OK (2)
-     * BMS_OK (2)
-     * BSPD (2)
-     * software shutdown (2)
-     */
-    uint8_t shutdown_inputs;
-    /*
-     * shutdown B
-     * shutdown C
-     * shutdown D
-     * shutdown E
-     * Current high
-     * brake high
-     * software_is_ok
-     * (empty bit)
+     * IMD_OK
+     * shutdown b
+     * BMS_OK
+     * shutodwn c
+     * BSPD
+     * shutdown d
+     * software shutdown
+     * shutdown e
      */
     uint8_t shutdown_states;
+    /*
+     * torque_mode (2 bits)
+     * accel_implausability
+     * brake_implausability
+     * brake_pressed
+     * Current high
+     * brake high
+     * (1 free bit)
+     */
+    uint8_t pedal_states;
 
     /**
      * state (3 bits)
-     * torque_mode (2 bits)
      * inverter powered
      * energy_meter
      * activate_buzzer
+     * software_is_ok
+     * launch_control_active
      */
     uint8_t ecu_states;
+
     uint16_t distance_travelled;
 };
 
