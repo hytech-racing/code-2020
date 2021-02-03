@@ -53,6 +53,13 @@ Metro timer_restart_inverter = Metro(500, 1); // Allow the MCU to restart the in
 Metro timer_status_send = Metro(100);
 Metro timer_watchdog_timer = Metro(1000);
 
+// this abuses Metro timer functionality to stay faulting once a fault has occurred
+// autoreset makes the timer update to the current time and not by the interval
+// this allows me to set the interval as 0 once a fault has occurred, leading to continuous faulting
+// until a CAN message comes in which resets the timer and the interval
+Metro timer_bms_heartbeat = Metro(0, 1);
+Metro timer_software_enable_interval = Metro(TIMER_SOFTWARE_ENABLE, 1);
+
 /*
  * Variables to store filtered values from ADC channels
  */
@@ -90,6 +97,7 @@ static CAN_message_t tx_msg;
 void setup() {
     // no torque can be provided on startup
     mcu_status.set_torque_mode(TORQUE_MODE::MAX_0);
+    mcu_status.set_software_is_ok(false);
 
     pinMode(BRAKE_LIGHT_CTRL,OUTPUT);
     pinMode(FRONT_LEFT_WHEEL, INPUT_PULLUP);
@@ -197,39 +205,10 @@ void loop() {
         mcu_status.set_inverter_powered(true);
     }
 
-    /* Watchdog timer */
-    if (timer_watchdog_timer.check()){
-        static bool watchdog_state = HIGH;
-        watchdog_state = !watchdog_state;
-        digitalWrite(WATCHDOG_INPUT, watchdog_state);
-    }
-
     /* handle state functionality */
     state_machine();
 
-    /* process dashboard buttons */
-    if (dashboard_status.get_mode_btn()){
-        switch (mcu_status.get_torque_mode()){
-            case TORQUE_MODE::MAX_60:
-                mcu_status.set_torque_mode(TORQUE_MODE::MAX_100); break;
-            case TORQUE_MODE::MAX_100:
-                mcu_status.set_torque_mode(TORQUE_MODE::MAX_120); break;
-            case TORQUE_MODE::MAX_120:
-                mcu_status.set_torque_mode(TORQUE_MODE::MAX_60); break;
-        }
-    }
-
-    if (dashboard_status.get_launch_ctrl_btn()){
-        mcu_status.toggle_launch_ctrl_active();
-    }
-
-    if (dashboard_status.get_mc_cycle_btn()){
-        reset_inverter();
-    }
-    // mark button being pressed gets recorded in the logs
-
-    // eliminate all action buttons to not process twice
-    dashboard_status.set_button_flags(0);
+    software_shutdown();
 }
 
 inline void state_machine() {
@@ -282,37 +261,69 @@ inline void state_machine() {
             update_couloumb_count();
             if (timer_motor_controller_send.check()) {
                 MC_command_message mc_command_message(0, 0, 1, 1, 0, 0);
-                //read_pedal_values();
 
                 // Check for accelerator implausibility FSAE EV2.3.10
-                mcu_pedal_readings.set_accelerator_implausibility(false);
-                if (mcu_pedal_readings.get_accelerator_pedal_raw_1() < MIN_ACCELERATOR_PEDAL_1 || mcu_pedal_readings.get_accelerator_pedal_raw_1() > MAX_ACCELERATOR_PEDAL_1) {
-                    mcu_pedal_readings.set_accelerator_implausibility(true);
+                // voltage out of range
+                /**
+                 * TODO: need to get/check actual ranges
+                 */
+                
+                // FSAE T.4.2.10
+                if (filtered_accel1_reading < 409 || filtered_accel1_reading > 3687) {
+                    mcu_status.set_no_accel_implausability(false);
                 }
-                else if (mcu_pedal_readings.get_accelerator_pedal_raw_2() > MIN_ACCELERATOR_PEDAL_2 || mcu_pedal_readings.get_accelerator_pedal_raw_2() < MAX_ACCELERATOR_PEDAL_2) {
-                    mcu_pedal_readings.set_accelerator_implausibility(true);
+                else if (filtered_accel2_reading < 409 ||filtered_accel2_reading > 3687) {
+                    mcu_status.set_no_accel_implausability(false);
+                }
+                // check that the pedals are reading within 10% of each other
+                // sum of the two readings should be within 10% of the 5V signal
+                // T.4.2.4
+                else if (abs( 4096- filtered_accel1_reading - filtered_accel2_reading) > 410 ){
+                    mcu_status.set_no_accel_implausability(false);
+                }
+                else{
+                    mcu_status.set_no_accel_implausability(true);
                 }
 
-                int calculated_torque = calculate_torque();
-
-                // FSAE EV2.5 APPS / Brake Pedal Plausibility Check
-                if (mcu_pedal_readings.get_brake_implausibility() && calculated_torque < (MAX_TORQUE / 20)) {
-                    mcu_pedal_readings.set_brake_implausibility(false); // Clear implausibility
+                // BSE check
+                // FSAE T.4.3.4
+                if (filtered_brake1_reading < 409 || filtered_brake1_reading > 3687) {
+                    mcu_status.set_no_brake_implausability(false);
                 }
-                // if (mcu_pedal_readings.get_brake_pedal_active() && calculated_torque > (MAX_TORQUE / 4)) {
-                //     mcu_pedal_readings.set_brake_implausibility(true);
-                // }
+                else{
+                    mcu_status.set_no_brake_implausability(true);
+                }
 
-                if (mcu_pedal_readings.get_brake_implausibility() || mcu_pedal_readings.get_accelerator_implausibility()) {
+                // FSAE EV.5.7
+                // need pedal values to implement this one
+                {
+                    static bool previous_accel_brake_implausability = false;
+                    int DUMMY_THRESHOLD = 0;
+                    if ((filtered_accel1_reading > DUMMY_THRESHOLD || filtered_accel2_reading < DUMMY_THRESHOLD) && mcu_status.get_brake_pedal_active()){
+                        mcu_status.set_no_accel_brake_implausability(false);
+                        previous_accel_brake_implausability = true;
+                    }
+                    else if (!previous_accel_brake_implausability){
+                        mcu_status.set_no_accel_brake_implausability(true);
+                    }
+                    else if ((filtered_accel1_reading < DUMMY_THRESHOLD || filtered_accel2_reading > DUMMY_THRESHOLD)){
+                        mcu_status.set_no_accel_brake_implausability(true);
+                        previous_accel_brake_implausability = false;
+                    }
+                }
+
+                int calculated_torque = 0;
+
+                if (
+                    mcu_status.get_no_brake_implausability() &&
+                    mcu_status.get_no_accel_implausability() &&
+                    mcu_status.get_no_accel_brake_implausability() &&
+                    mcu_status.get_software_is_ok() &&
+                    mcu_status.get_bms_ok_high() &&
+                    mcu_status.get_imd_ok_high()
+                    ) {
                     // Implausibility exists, command 0 torque
-                    calculated_torque = 0;
-                }
-                // FSAE FMEA specifications // if BMS or IMD are faulting, set torque to 0
-                else if (!mcu_status.get_bms_ok_high() ) {
-                    calculated_torque = 0;
-                }
-                else if (!mcu_status.get_imd_okhs_high()) {
-                    calculated_torque = 0;
+                    calculated_torque = calculate_torque();
                 }
 
                 #if DEBUG
@@ -367,6 +378,64 @@ inline void inverter_heartbeat() {
     }
 }
 
+/* Implementation of software shutdown */
+inline void software_shutdown() {
+    // conditionally check depending on current state
+    if (mcu_status.get_software_is_ok()){
+        // check that software high ok and shutdown e are high when software is OK
+        if (timer_software_enable_interval.check()){
+            // once 100 ms passes, check this every loop
+            timer_software_enable_interval.interval(0);
+            // if software ok based signals are low 100 ms after software ok has been turned on, fault software ok
+            if ((mcu_status.get_shutdown_inputs() && 0xC0) != 0xC0){
+                mcu_status.set_software_is_ok(false);
+            }
+        }
+    }
+    else {
+        // if the software ok based signals are high, software ok is false
+        if ((mcu_status.get_shutdown_inputs() && 0xC0) != 0) {
+            mcu_status.set_software_is_ok(false);
+        }
+        // assume software is ok because any subsequent check will fail it
+        // because all software ok based checks have been preforned
+        else {
+            mcu_status.set_software_is_ok(true);
+        }
+    }
+
+    // check inputs
+    // BMS heartbeat has not arrived within time interval
+    if (timer_bms_heartbeat.check()){
+        timer_bms_heartbeat.interval(0);
+        mcu_status.set_software_is_ok(false);
+    }
+    // check if any shutdown circuit inputs are low except software shutdown ones
+    else if ((mcu_status.get_shutdown_inputs() & 0x3F) != 0x3F){
+        mcu_status.set_software_is_ok(false);
+    }
+    // uncomment once dashboard has been installed
+    // else if (!dashboard_status.get_shutdown_h_above_thershold() && !dashboard_status.get_ssok_above_threshold()){
+    //     mcu_status.set_software_is_ok(false);
+    // }
+    // add BMS software checks
+    // software ok/not ok action
+    if (mcu_status.get_software_is_ok()){
+        digitalWrite(TEENSY_OK, HIGH);
+        /* Watchdog timer */
+        if (timer_watchdog_timer.check()){
+            static bool watchdog_state = HIGH;
+            watchdog_state = !watchdog_state;
+            digitalWrite(WATCHDOG_INPUT, watchdog_state);
+        }
+    }
+    else {
+        digitalWrite(TEENSY_OK, LOW);
+        timer_software_enable_interval.interval(TIMER_SOFTWARE_ENABLE);
+        timer_software_enable_interval.reset();
+    }
+}
+
 /* Parse incoming CAN messages */
 void parse_can_message() {
     static CAN_message_t rx_msg;
@@ -376,11 +445,37 @@ void parse_can_message() {
             case ID_MC_INTERNAL_STATES:            mc_internal_states.load(rx_msg.buf);            break;
             case ID_MC_CURRENT_INFORMATION:        mc_current_informtarion.load(rx_msg.buf);       break;
             case ID_MC_MOTOR_POSITION_INFORMATION: mc_motor_position_information.load(rx_msg.buf); break;
-            case ID_BMS_STATUS:                    bms_status.load(rx_msg.buf);                    break;
             case ID_BMS_TEMPERATURES:              bms_temperatures.load(rx_msg.buf);              break;
             case ID_BMS_VOLTAGES:                  bms_voltages.load(rx_msg.buf);                  break;
             case ID_BMS_COULOMB_COUNTS:            bms_coulomb_counts.load(rx_msg.buf);            break;
-            case ID_DASHBOARD_STATUS:              dashboard_status.load(rx_msg.buf);              break;
+            case ID_BMS_STATUS:
+                bms_status.load(rx_msg.buf);
+                // BMS heartbeat timer
+                timer_bms_heartbeat.reset();
+                timer_bms_heartbeat.interval(BMS_HEARTBEAT_TIMEOUT);
+                break;
+            case ID_DASHBOARD_STATUS:
+                dashboard_status.load(rx_msg.buf);
+                /* process dashboard buttons */
+                if (dashboard_status.get_mode_btn()){
+                    switch (mcu_status.get_torque_mode()){
+                        case TORQUE_MODE::MAX_60:
+                            mcu_status.set_torque_mode(TORQUE_MODE::MAX_100); break;
+                        case TORQUE_MODE::MAX_100:
+                            mcu_status.set_torque_mode(TORQUE_MODE::MAX_120); break;
+                        case TORQUE_MODE::MAX_120:
+                            mcu_status.set_torque_mode(TORQUE_MODE::MAX_60); break;
+                    }
+                }
+                if (dashboard_status.get_launch_ctrl_btn()){
+                    mcu_status.toggle_launch_ctrl_active();
+                }
+                if (dashboard_status.get_mc_cycle_btn()){
+                    reset_inverter();
+                }
+                // eliminate all action buttons to not process twice
+                dashboard_status.set_button_flags(0);
+                break;
         }
     }
 }
@@ -469,41 +564,38 @@ int calculate_torque() {
         torque2 = max_torque;
     }
     // compare torques to check for accelerator implausibility
-    if (abs(torque1 - torque2) * 100 / max_torque > 10) {
-        mcu_status.set_accel_implausability(true);
-        Serial.println("ACCEL IMPLAUSIBILITY: COMPARISON FAILED");
-    } else {
-        calculated_torque = (torque1 + torque2) / 2; //min(torque1, torque2);
+    calculated_torque = min(torque1, torque2) / 2;
 
-        #if DEBUG
-        if (timer_debug_raw_torque.check()) {
-            Serial.print("TORQUE REQUEST DELTA PERCENT: "); // Print the % difference between the 2 accelerator sensor requests
-            Serial.println(abs(torque1 - torque2) / (double) max_torque * 100);
-            Serial.print("MCU RAW TORQUE: ");
-            Serial.println(calculated_torque);
-            Serial.print("TORQUE 1: ");
-            Serial.println(torque1);
-            Serial.print("TORQUE 2: ");
-            Serial.print(torque2);
-        }
-        #endif
-        if (calculated_torque > max_torque) {
-            calculated_torque = max_torque;
-        }
-        if (calculated_torque < 0) {
-            calculated_torque = 0;
-        }
+    if (calculated_torque > max_torque) {
+        calculated_torque = max_torque;
     }
+    if (calculated_torque < 0) {
+        calculated_torque = 0;
+    }
+    
+    #if DEBUG
+    if (timer_debug_raw_torque.check()) {
+        Serial.print("TORQUE REQUEST DELTA PERCENT: "); // Print the % difference between the 2 accelerator sensor requests
+        Serial.println(abs(torque1 - torque2) / (double) max_torque * 100);
+        Serial.print("MCU RAW TORQUE: ");
+        Serial.println(calculated_torque);
+        Serial.print("TORQUE 1: ");
+        Serial.println(torque1);
+        Serial.print("TORQUE 2: ");
+        Serial.print(torque2);
+    }
+    #endif
 
     return calculated_torque;
 }
 
 inline int compute_max_torque(){
     switch (mcu_status.get_torque_mode()){
-        case TORQUE_MODE::MAX_0:   return 0;
         case TORQUE_MODE::MAX_60:  return 60;
         case TORQUE_MODE::MAX_100: return 100;
         case TORQUE_MODE::MAX_120: return 120;
+        case TORQUE_MODE::MAX_0:   
+        default:                   return 0;
     }
 }
 
