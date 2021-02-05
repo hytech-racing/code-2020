@@ -262,23 +262,18 @@ inline void state_machine() {
             if (timer_motor_controller_send.check()) {
                 MC_command_message mc_command_message(0, 0, 1, 1, 0, 0);
 
-                // Check for accelerator implausibility FSAE EV2.3.10
-                // voltage out of range
-                /**
-                 * TODO: need to get/check actual ranges
-                 */
-                
+                // FSAE EV.5.5
                 // FSAE T.4.2.10
-                if (filtered_accel1_reading < 409 || filtered_accel1_reading > 3687) {
+                if (filtered_accel1_reading < MIN_ACCELERATOR_PEDAL_1 || filtered_accel1_reading > MAX_ACCELERATOR_PEDAL_1) {
                     mcu_status.set_no_accel_implausability(false);
                 }
-                else if (filtered_accel2_reading < 409 ||filtered_accel2_reading > 3687) {
+                else if (filtered_accel2_reading < MIN_ACCELERATOR_PEDAL_2 ||filtered_accel2_reading > MAX_ACCELERATOR_PEDAL_2) {
                     mcu_status.set_no_accel_implausability(false);
                 }
                 // check that the pedals are reading within 10% of each other
-                // sum of the two readings should be within 10% of the 5V signal
+                // sum of the two readings should be within 10% of the average travel
                 // T.4.2.4
-                else if (abs( 4096- filtered_accel1_reading - filtered_accel2_reading) > 410 ){
+                else if ((filtered_accel1_reading + 4096 - filtered_accel2_reading) > (END_ACCELERATOR_PEDAL_1 - START_ACCELERATOR_PEDAL_1 + START_ACCELERATOR_PEDAL_2 - END_ACCELERATOR_PEDAL_2)/10 ){
                     mcu_status.set_no_accel_implausability(false);
                 }
                 else{
@@ -286,6 +281,7 @@ inline void state_machine() {
                 }
 
                 // BSE check
+                // EV.5.6
                 // FSAE T.4.3.4
                 if (filtered_brake1_reading < 409 || filtered_brake1_reading > 3687) {
                     mcu_status.set_no_brake_implausability(false);
@@ -295,18 +291,30 @@ inline void state_machine() {
                 }
 
                 // FSAE EV.5.7
-                // need pedal values to implement this one
+                // APPS/Brake Pedal Plausability Check
                 {
                     static bool previous_accel_brake_implausability = false;
-                    int DUMMY_THRESHOLD = 0;
-                    if ((filtered_accel1_reading > DUMMY_THRESHOLD || filtered_accel2_reading < DUMMY_THRESHOLD) && mcu_status.get_brake_pedal_active()){
+                    if (
+                        (
+                         (filtered_accel1_reading > ((END_ACCELERATOR_PEDAL_1 - START_ACCELERATOR_PEDAL_1)/4 + START_ACCELERATOR_PEDAL_1))
+                         ||
+                         (filtered_accel2_reading < ((END_ACCELERATOR_PEDAL_2 - START_ACCELERATOR_PEDAL_2)/4 + START_ACCELERATOR_PEDAL_2))
+                        )
+                        && mcu_status.get_brake_pedal_active()
+                       )
+                    {
                         mcu_status.set_no_accel_brake_implausability(false);
                         previous_accel_brake_implausability = true;
                     }
                     else if (!previous_accel_brake_implausability){
                         mcu_status.set_no_accel_brake_implausability(true);
                     }
-                    else if ((filtered_accel1_reading < DUMMY_THRESHOLD || filtered_accel2_reading > DUMMY_THRESHOLD)){
+                    else if
+                    (
+                        (filtered_accel1_reading < ((END_ACCELERATOR_PEDAL_1 - START_ACCELERATOR_PEDAL_1)/20 + START_ACCELERATOR_PEDAL_1)) &&
+                        (filtered_accel2_reading > ((END_ACCELERATOR_PEDAL_2 - START_ACCELERATOR_PEDAL_2)/20 + START_ACCELERATOR_PEDAL_2))
+                    )
+                    {
                         mcu_status.set_no_accel_brake_implausability(true);
                         previous_accel_brake_implausability = false;
                     }
@@ -414,10 +422,6 @@ inline void software_shutdown() {
     else if ((mcu_status.get_shutdown_inputs() & 0x3F) != 0x3F){
         mcu_status.set_software_is_ok(false);
     }
-    // uncomment once dashboard has been installed
-    // else if (!dashboard_status.get_shutdown_h_above_thershold() && !dashboard_status.get_ssok_above_threshold()){
-    //     mcu_status.set_software_is_ok(false);
-    // }
     // add BMS software checks
     // software ok/not ok action
     if (mcu_status.get_software_is_ok()){
