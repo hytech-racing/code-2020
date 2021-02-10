@@ -115,6 +115,7 @@ void setup() {
     // starting high
     digitalWrite(WATCHDOG_INPUT, HIGH);
     pinMode(TEENSY_OK, OUTPUT);
+    digitalWrite(TEENSY_OK, LOW);
 
     #if DEBUG
     Serial.begin(115200);
@@ -134,13 +135,13 @@ void setup() {
     Serial.println("CAN system and serial communication initialized");
     #endif
 
-    // should the inveter be powered on start up?
-    digitalWrite(INVERTER_CTRL, HIGH);
     analogWrite(FAN_1, FAN_1_DUTY_CYCLE);
     analogWrite(FAN_2, FAN_2_DUTY_CYCLE);
     // these are false by default
-    // mcu_status.set_bms_ok_high(false);
-    // mcu_status.set_imd_okhs_high(false);
+    mcu_status.set_bms_ok_high(false);
+    mcu_status.set_imd_ok_high(false);
+
+    digitalWrite(INVERTER_CTRL, HIGH);
     mcu_status.set_inverter_powered(true);
 
     // present action for 5s
@@ -273,7 +274,8 @@ inline void state_machine() {
                 // check that the pedals are reading within 10% of each other
                 // sum of the two readings should be within 10% of the average travel
                 // T.4.2.4
-                else if ((filtered_accel1_reading + 4096 - filtered_accel2_reading) > (END_ACCELERATOR_PEDAL_1 - START_ACCELERATOR_PEDAL_1 + START_ACCELERATOR_PEDAL_2 - END_ACCELERATOR_PEDAL_2)/10 ){
+                else if ((filtered_accel1_reading - (4096 - filtered_accel2_reading)) >
+                         (END_ACCELERATOR_PEDAL_1 - START_ACCELERATOR_PEDAL_1 + START_ACCELERATOR_PEDAL_2 - END_ACCELERATOR_PEDAL_2)/20 ){
                     mcu_status.set_no_accel_implausability(false);
                 }
                 else{
@@ -292,32 +294,25 @@ inline void state_machine() {
 
                 // FSAE EV.5.7
                 // APPS/Brake Pedal Plausability Check
-                {
-                    static bool previous_accel_brake_implausability = false;
-                    if (
+                if  (
                         (
-                         (filtered_accel1_reading > ((END_ACCELERATOR_PEDAL_1 - START_ACCELERATOR_PEDAL_1)/4 + START_ACCELERATOR_PEDAL_1))
-                         ||
-                         (filtered_accel2_reading < ((END_ACCELERATOR_PEDAL_2 - START_ACCELERATOR_PEDAL_2)/4 + START_ACCELERATOR_PEDAL_2))
+                            (filtered_accel1_reading > ((END_ACCELERATOR_PEDAL_1 - START_ACCELERATOR_PEDAL_1)/4 + START_ACCELERATOR_PEDAL_1))
+                            ||
+                            (filtered_accel2_reading < ((END_ACCELERATOR_PEDAL_2 - START_ACCELERATOR_PEDAL_2)/4 + START_ACCELERATOR_PEDAL_2))
                         )
                         && mcu_status.get_brake_pedal_active()
-                       )
-                    {
-                        mcu_status.set_no_accel_brake_implausability(false);
-                        previous_accel_brake_implausability = true;
-                    }
-                    else if (!previous_accel_brake_implausability){
-                        mcu_status.set_no_accel_brake_implausability(true);
-                    }
-                    else if
-                    (
-                        (filtered_accel1_reading < ((END_ACCELERATOR_PEDAL_1 - START_ACCELERATOR_PEDAL_1)/20 + START_ACCELERATOR_PEDAL_1)) &&
-                        (filtered_accel2_reading > ((END_ACCELERATOR_PEDAL_2 - START_ACCELERATOR_PEDAL_2)/20 + START_ACCELERATOR_PEDAL_2))
                     )
-                    {
-                        mcu_status.set_no_accel_brake_implausability(true);
-                        previous_accel_brake_implausability = false;
-                    }
+                {
+                    mcu_status.set_no_accel_brake_implausability(false);
+                }
+                else if
+                (
+                    (filtered_accel1_reading < ((END_ACCELERATOR_PEDAL_1 - START_ACCELERATOR_PEDAL_1)/20 + START_ACCELERATOR_PEDAL_1))
+                    &&
+                    (filtered_accel2_reading > ((END_ACCELERATOR_PEDAL_2 - START_ACCELERATOR_PEDAL_2)/20 + START_ACCELERATOR_PEDAL_2))
+                )
+                {
+                    mcu_status.set_no_accel_brake_implausability(true);
                 }
 
                 int calculated_torque = 0;
@@ -330,9 +325,9 @@ inline void state_machine() {
                     mcu_status.get_bms_ok_high() &&
                     mcu_status.get_imd_ok_high()
                     ) {
-                    // Implausibility exists, command 0 torque
                     calculated_torque = calculate_torque();
                 }
+                // Implausibility exists, command 0 torque
 
                 #if DEBUG
                 if (timer_debug_torque.check()) {
@@ -501,8 +496,21 @@ void set_state(MCU_STATE new_state) {
         return;
     }
 
+    // exit logic
+    switch(mcu_status.get_state()){
+        case MCU_STATE::WAITING_READY_TO_DRIVE_SOUND:
+            // make dashboard stop buzzer
+            mcu_status.set_activate_buzzer(false);
+            mcu_status.write(tx_msg.buf);
+            tx_msg.id = ID_MCU_STATUS;
+            tx_msg.len = sizeof(mcu_status);
+            CAN.write(tx_msg);
+            break;
+    }
+
     mcu_status.set_state(new_state);
 
+    // entry logic
     switch (new_state) {
         case MCU_STATE::ENABLING_INVERTER: 
             MC_command_message mc_command_message = MC_command_message(0, 0, 1, 1, 0, 0);
@@ -541,12 +549,6 @@ void set_state(MCU_STATE new_state) {
             Serial.println("RTDS enabled");
             break;
         case MCU_STATE::READY_TO_DRIVE:
-            // make dashboard stop buzzer
-            mcu_status.set_activate_buzzer(false);
-            mcu_status.write(tx_msg.buf);
-            tx_msg.id = ID_MCU_STATUS;
-            tx_msg.len = sizeof(mcu_status);
-            CAN.write(tx_msg);
             Serial.println("Ready to drive");
             break;
     }
@@ -555,7 +557,7 @@ void set_state(MCU_STATE new_state) {
 int calculate_torque() {
     int calculated_torque = 0;
 
-    const int max_torque = compute_max_torque();
+    const int max_torque = static_cast<int>(mcu_status.get_torque_mode());
 
     int torque1 = map(round(filtered_accel1_reading), START_ACCELERATOR_PEDAL_1, END_ACCELERATOR_PEDAL_1, 0, max_torque);
     int torque2 = map(round(filtered_accel2_reading), START_ACCELERATOR_PEDAL_2, END_ACCELERATOR_PEDAL_2, 0, max_torque);
@@ -591,16 +593,6 @@ int calculate_torque() {
     #endif
 
     return calculated_torque;
-}
-
-inline int compute_max_torque(){
-    switch (mcu_status.get_torque_mode()){
-        case TORQUE_MODE::MAX_60:  return 60;
-        case TORQUE_MODE::MAX_100: return 100;
-        case TORQUE_MODE::MAX_120: return 120;
-        case TORQUE_MODE::MAX_0:   
-        default:                   return 0;
-    }
 }
 
 inline void update_couloumb_count() {
@@ -661,12 +653,6 @@ inline void read_status_values() {
      mcu_status.set_shutdown_c_above_threshold(analogRead(SHUTDOWN_C_READ) > SHUTDOWN_HIGH);
      mcu_status.set_shutdown_d_above_threshold(analogRead(SHUTDOWN_D_READ) > SHUTDOWN_HIGH);
      mcu_status.set_shutdown_e_above_threshold(analogRead(SHUTDOWN_E_READ) > SHUTDOWN_HIGH);
-
-    #if DEBUG
-    if (timer_bms_print_fault.check() && mcu_status.get_bms_ok_state() < SHUTDOWN_INPUTS::RELAY_INPUT_HIGH_LATCHED) {
-        Serial.println("BMS fault detected");
-    }
-    #endif
 }
 
 /* Read wheel speed values */

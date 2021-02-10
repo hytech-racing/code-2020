@@ -16,9 +16,9 @@ enum class MCU_STATE
 enum class TORQUE_MODE
 {
     MAX_0 = 0,
-    MAX_60 = 1,
-    MAX_100 = 2,
-    MAX_120 = 3
+    MAX_60 = 60,
+    MAX_100 = 100,
+    MAX_120 = 120
 };
 
 #pragma pack(push,1)
