@@ -178,7 +178,7 @@ void parse_can_message() {
 		else switch(msg_rx.id) {
 			case ID_MCU_STATUS:							mcu_status.load(msg_rx.buf);						break;
 			case ID_MCU_PEDAL_READINGS:					mcu_pedal_readings.load(msg_rx.buf);				break;
-			case ID_MCU_ANALOG_READINGS:				mcu_analog_readings.load(msg_rx.buf);					break;
+			case ID_MCU_ANALOG_READINGS:				mcu_analog_readings.load(msg_rx.buf);				break;
 			case ID_BMS_VOLTAGES:						bms_voltages.load(msg_rx.buf);						break;
 			case ID_BMS_TEMPERATURES:					bms_temperatures.load(msg_rx.buf);					break;
 			case ID_BMS_ONBOARD_TEMPERATURES:			bms_onboard_temperatures.load(msg_rx.buf);			break;
@@ -203,7 +203,7 @@ void parse_can_message() {
 			case ID_MC_COMMAND_MESSAGE:					mc_command_message.load(msg_rx.buf);				break;
 			case ID_MC_READ_WRITE_PARAMETER_COMMAND:	mc_read_write_parameter_command.load(msg_rx.buf);	break;
 			case ID_MC_READ_WRITE_PARAMETER_RESPONSE:	mc_read_write_parameter_response.load(msg_rx.buf);	break;
-			case ID_MCU_WHEEL_RPM:						mcu_wheel_speed.load(msg_rx.buf);				break;
+			case ID_MCU_WHEEL_RPM:						mcu_wheel_speed.load(msg_rx.buf);					break;
 		}
 	}
 }
@@ -222,9 +222,8 @@ void check_xbee_timers() {
 		send_xbee(ID_MC_COMMAND_MESSAGE, mc_command_message, xb_msg);
 		send_xbee(ID_MC_TORQUE_TIMER_INFORMATION, mc_torque_timer_information, xb_msg);
 		send_xbee(ID_MCU_PEDAL_READINGS, mcu_pedal_readings, xb_msg);
-		send_xbee(ID_TCU_WHEEL_RPM_REAR, tcu_wheel_rpm_rear, xb_msg);
-		send_xbee(ID_TCU_WHEEL_RPM_FRONT, tcu_wheel_rpm_front, xb_msg);
-		send_xbee(ID_TCU_DISTANCE_TRAVELED, tcu_distance_traveled, xb_msg);
+		send_xbee(ID_MCU_WHEEL_RPM, mcu_wheel_speed, xb_msg);
+
 	}
 	
 	static Metro xb_metro_1s = Metro(1000);
