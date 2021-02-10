@@ -5,10 +5,10 @@
 
 #pragma pack(push,1)
 
-class TCU_analog_readings {
+class MCU_analog_readings {
 public:
-    TCU_analog_readings() = default;
-    TCU_analog_readings(const uint8_t buf[8]) { load(buf); }
+    MCU_analog_readings() = default;
+    MCU_analog_readings(const uint8_t buf[8]) { load(buf); }
 
     inline void load(const uint8_t buf[])  { memcpy(this, buf, sizeof(*this)); }
     inline void write(uint8_t buf[]) const { memcpy(buf, this, sizeof(*this)); }

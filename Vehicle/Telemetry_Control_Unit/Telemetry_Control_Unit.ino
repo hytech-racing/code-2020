@@ -7,9 +7,10 @@
 
 #define HT_DEBUG_EN // allows use of CAN message print() commands
 
+#include "ADC_SPI.h"
+
 #include <SD.h>
 #include <Adafruit_Sensor.h>
-#include <Adafruit_ADXL345_U.h>
 #include <HyTech_FlexCAN.h>
 #include <HyTech_CAN.h>
 #include <Wire.h>
@@ -20,9 +21,25 @@
 #include "SDUtils.h"
 #include "XBUtils.h"
 
+/*
+ * ADC pin definitions
+ */
+#define TEMP_SENSE_CHANNEL 0
+#define ECU_CURRENT_CHANNEL 1
+#define SUPPLY_READ_CHANNEL 2
+#define COOLING_CURRENT_CHANNEL 3
+#define ADC_CS A1
+#define SCALE_CURRENT_READING(reading) ((reading - 2048) / 151) //self derived
+#define ALPHA 0.9772                     // parameter for the sowftware filter used on ADC pedal channels
+/*
+ * Variables to store filtered values from ADC channels
+ */
+float filtered_temp_reading{};
+float filtered_ecu_current_reading{};
+float filtered_supply_reading{};
+float filtered_cooling_current_reading{};
 
-#define SCALE_CURRENT_READING(reading) ((reading - 96) * 0.029412) //self derived
-
+ADC_SPI ADC(ADC_CS, ADC_SPI_SPEED);
 FlexCAN CAN(500000);
 static CAN_message_t xb_msg;
 File logfile;
@@ -31,7 +48,9 @@ Adafruit_GPS GPS(&Serial1);
 
 MCU_status mcu_status;
 MCU_pedal_readings mcu_pedal_readings;
-GLV_current_readings current_readings;
+MCU_analog_readings mcu_analog_readings;
+MCU_GPS_readings mcu_gps_readings;
+MCU_wheel_speed mcu_wheel_speed;
 BMS_voltages bms_voltages;
 BMS_detailed_voltages bms_detailed_voltages[8][3];
 BMS_temperatures bms_temperatures;
@@ -58,11 +77,6 @@ MC_firmware_information mc_firmware_information;
 MC_command_message mc_command_message;
 MC_read_write_parameter_command mc_read_write_parameter_command;
 MC_read_write_parameter_response mc_read_write_parameter_response;
-FCU_accelerometer_values fcu_accelerometer_values;
-MCU_GPS_readings mcu_gps_readings;
-TCU_wheel_rpm tcu_wheel_rpm_front;
-TCU_wheel_rpm tcu_wheel_rpm_rear;
-TCU_distance_traveled tcu_distance_traveled;
 
 time_t getTeensy3Clock() { return Teensy3Clock.get(); }
 
@@ -96,17 +110,20 @@ void setup() {
 void loop() {
 	parse_can_message();
 	check_xbee_timers();
+	read_analog_values();
 
     static Metro timer_flush = Metro(1000);
 	if (timer_flush.check()) // Occasionally flush SD buffer (max one second data loss after power-off)
 		logfile.flush();
 
     // GLV Current
-    static Metro timer_current = Metro(500);
+    static Metro timer_current = Metro(100);
 	if (timer_current.check()) {
-        current_readings.set_ecu_current_value(SCALE_CURRENT_READING(analogRead(PIN_CURRENT_ECU)) * 100);
-        current_readings.set_cooling_current_value(SCALE_CURRENT_READING(analogRead(PIN_CURRENT_COOLING)) * 100);
-        send_xbee(ID_GLV_CURRENT_READINGS, current_readings, xb_msg);
+        mcu_analog_readings.set_ecu_current_value(SCALE_CURRENT_READING(filtered_ecu_current_reading)* 100);
+        mcu_analog_readings.set_cooling_current_value(SCALE_CURRENT_READING(filtered_cooling_current_reading) * 100);
+		mcu_analog_readings.set_glv_battery_voltage(filtered_supply_reading /4096 * 55/12 * 1000);
+		mcu_analog_readings.set_temperature(filtered_temp_reading);
+        send_xbee(ID_MCU_ANALOG_READINGS, mcu_analog_readings, xb_msg);
         CAN.write(xb_msg);
     }
 
@@ -126,6 +143,15 @@ void loop() {
         CAN.write(xb_msg);
 	}
 }
+
+inline void read_analog_values() {
+    /* Filter ADC readings */
+    filtered_temp_reading 		 	 = ALPHA * filtered_temp_reading 			+ (1 - ALPHA) * ADC.read_adc(TEMP_SENSE_CHANNEL);
+    filtered_ecu_current_reading 	 = ALPHA * filtered_ecu_current_reading 	+ (1 - ALPHA) * ADC.read_adc(ECU_CURRENT_CHANNEL);
+    filtered_supply_reading 	 	 = ALPHA * filtered_supply_reading 			+ (1 - ALPHA) * ADC.read_adc(SUPPLY_READ_CHANNEL);
+    filtered_cooling_current_reading = ALPHA * filtered_cooling_current_reading + (1 - ALPHA) * ADC.read_adc(COOLING_CURRENT_CHANNEL);
+}
+
 
 void parse_can_message() {
     CAN_message_t msg_rx;
@@ -152,7 +178,7 @@ void parse_can_message() {
 		else switch(msg_rx.id) {
 			case ID_MCU_STATUS:							mcu_status.load(msg_rx.buf);						break;
 			case ID_MCU_PEDAL_READINGS:					mcu_pedal_readings.load(msg_rx.buf);				break;
-			case ID_GLV_CURRENT_READINGS:				current_readings.load(msg_rx.buf);					break;
+			case ID_MCU_ANALOG_READINGS:				mcu_analog_readings.load(msg_rx.buf);					break;
 			case ID_BMS_VOLTAGES:						bms_voltages.load(msg_rx.buf);						break;
 			case ID_BMS_TEMPERATURES:					bms_temperatures.load(msg_rx.buf);					break;
 			case ID_BMS_ONBOARD_TEMPERATURES:			bms_onboard_temperatures.load(msg_rx.buf);			break;
@@ -177,10 +203,7 @@ void parse_can_message() {
 			case ID_MC_COMMAND_MESSAGE:					mc_command_message.load(msg_rx.buf);				break;
 			case ID_MC_READ_WRITE_PARAMETER_COMMAND:	mc_read_write_parameter_command.load(msg_rx.buf);	break;
 			case ID_MC_READ_WRITE_PARAMETER_RESPONSE:	mc_read_write_parameter_response.load(msg_rx.buf);	break;
-			case ID_FCU_ACCELEROMETER:					fcu_accelerometer_values.load(msg_rx.buf);			break;
-			case ID_TCU_WHEEL_RPM_REAR:					tcu_wheel_rpm_rear.load(msg_rx.buf);				break;
-			case ID_TCU_WHEEL_RPM_FRONT:				tcu_wheel_rpm_front.load(msg_rx.buf);				break;
-			case ID_TCU_DISTANCE_TRAVELED:				tcu_distance_traveled.load(msg_rx.buf);				break;
+			case ID_MCU_WHEEL_RPM:						mcu_wheel_speed.load(msg_rx.buf);				break;
 		}
 	}
 }
