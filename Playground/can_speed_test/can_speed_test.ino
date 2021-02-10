@@ -1,4 +1,4 @@
-#include <cstdint>
+#include <stdint.h>
 
 class CAN_msg {
 public:

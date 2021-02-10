@@ -1,4 +1,4 @@
-#include <cstdint>
+#include <stdint.h>
 
 typedef struct CAN_message_mcu_status_t {
     uint8_t state;
