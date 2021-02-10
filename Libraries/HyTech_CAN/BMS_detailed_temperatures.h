@@ -1,9 +1,10 @@
 #pragma once
 #include <string.h>
-#include <stdint.h>
+#include <cstdint>
 
 #pragma pack(push,1)
 
+// @Parseclass @Prefix(IC_{get_ic_id()})
 class BMS_detailed_temperatures {
 public:
     BMS_detailed_temperatures() = default;
@@ -45,9 +46,9 @@ public:
 
 private:
     uint8_t ic_id;
-    int16_t temperature_0;
-    int16_t temperature_1;
-    int16_t temperature_2;
+    int16_t temperature_0; // @Parse @Name(therm_0) @Scale(100) @Unit(C)
+    int16_t temperature_1; // @Parse @Name(therm_1) @Scale(100) @Unit(C)
+    int16_t temperature_2; // @Parse @Name(therm_2) @Scale(100) @Unit(C)
 };
 
 #pragma pack(pop)

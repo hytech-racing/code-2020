@@ -1,9 +1,10 @@
 #pragma once
 #include <string.h>
-#include <stdint.h>
+#include <cstdint>
 
 #pragma pack(push,1)
 
+// @Parseclass @Prefix(IC_{get_ic_id()}) @Custom(parse_detailed_voltages)
 class BMS_detailed_voltages {
 public:
     BMS_detailed_voltages() = default;

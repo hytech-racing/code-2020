@@ -1,9 +1,10 @@
 #pragma once
 #include <string.h>
-#include <stdint.h>
+#include <cstdint>
 
 #pragma pack(push,1)
 
+// @Parseclass
 class MC_voltage_information {
 public:
     MC_voltage_information() = default;
@@ -16,11 +17,23 @@ public:
     inline int16_t get_output_voltage()   const { return output_voltage; }
     inline int16_t get_phase_ab_voltage() const { return phase_ab_voltage; }
     inline int16_t get_phase_bc_voltage() const { return phase_bc_voltage; }
+
+#ifdef HT_DEBUG_EN
+    void print() {
+        Serial.println("\n\nMC Voltage Information");
+        Serial.println("----------------------");
+        Serial.print("DC BUS VOLTAGE: "); Serial.println(dc_bus_voltage / 10.0, 1);
+		Serial.print("OUTPUT VOLTAGE: "); Serial.println(output_voltage / 10.0, 1);
+		Serial.print("PHASE AB VOLTAGE: "); Serial.println(phase_ab_voltage / 10.0, 1);
+		Serial.print("PHASE BC VOLTAGE: "); Serial.println(phase_bc_voltage / 10.0, 1);
+    }
+#endif
+
 private:
-    int16_t dc_bus_voltage;
-    int16_t output_voltage;
-    int16_t phase_ab_voltage;
-    int16_t phase_bc_voltage;
+    int16_t dc_bus_voltage; // @Parse @Scale(10) @Unit(V)
+    int16_t output_voltage; // @Parse @Scale(10) @Unit(V)
+    int16_t phase_ab_voltage; // @Parse @Scale(10) @Unit(V)
+    int16_t phase_bc_voltage; // @Parse @Scale(10) @Unit(V)
 };
 
 #pragma pack(pop)
