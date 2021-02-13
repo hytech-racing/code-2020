@@ -1,5 +1,3 @@
-This utility is only valid for FlexCAN. I'll see about making a more generic version for T4 and MCP later.
-
 This utility operates on the assumption that you have two Teensy controllers, one running the transmitter code and one running the receiver code.
 
 Switch between send and receive configurations using the `#define MODE` flag in [flexcan_tester_rev2.ino](./flexcan_tester_rev2.ino).
