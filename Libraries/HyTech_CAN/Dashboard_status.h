@@ -46,12 +46,12 @@ public:
     inline void set_mark_btn (bool mark_btn)               { button_flags = (button_flags & 0xFE) | (mark_btn); }
     inline void set_mode_btn (bool mode_btn)               { button_flags = (button_flags & 0xFD) | (mode_btn        << 1); }
     inline void set_mc_cycle_btn (bool mc_cycle_btn)       { button_flags = (button_flags & 0xFB) | (mc_cycle_btn    << 2); }
-    inline void set_launch_ctrl_btn (bool launch_ctrl_btn) { button_flags = (button_flags & 0xEF) | (launch_ctrl_btn << 3); }
+    inline void set_launch_ctrl_btn (bool launch_ctrl_btn) { button_flags = (button_flags & 0xF7) | (launch_ctrl_btn << 3); }
 
-    inline void toggle_mark_btn()     { button_flags ^= 0x01; }
-    inline void toggle_mode_btn()     { button_flags ^= 0x02; }
-    inline void toggle_mc_cycle_btn() { button_flags ^= 0x04; }
-    inline void toggle_extra_btn()    { button_flags ^= 0x08; }
+    inline void toggle_mark_btn()        { button_flags ^= 0x01; }
+    inline void toggle_mode_btn()        { button_flags ^= 0x02; }
+    inline void toggle_mc_cycle_btn()    { button_flags ^= 0x04; }
+    inline void toggle_launch_ctrl_btn() { button_flags ^= 0x08; }
 
     /* Dashboard leds */
 

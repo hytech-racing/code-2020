@@ -3,7 +3,7 @@
 #define BTN_MODE 24
 #define BTN_MC_CYCLE 25
 #define BTN_START 26
-#define BTN_EXTRA 27
+#define BTN_LC 27
 
 // LED and buzzer pin definition
 #define BUZZER 28
@@ -15,3 +15,8 @@
 
 // MCP CAN pin definition
 #define SPI_CS 14
+
+#define SSOK_READ A6
+#define SHUTDOWN_H_READ A7
+
+#define SHUTDOWN_THERSHOLD 223 // 5V on the line

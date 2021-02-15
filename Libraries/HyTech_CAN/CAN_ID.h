@@ -38,3 +38,4 @@
 #define ID_BMS_COULOMB_COUNTS										0xE2
 #define ID_MCU_GPS_READINGS											0xE7
 #define ID_MCU_WHEEL_RPM									    	0xEA
+#define ID_DASHBOARD_STATUS                                         0xEB

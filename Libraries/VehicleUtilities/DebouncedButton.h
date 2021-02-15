@@ -14,7 +14,7 @@ public:
         metro = Metro(interval);
     }
 
-    bool check() {
+    bool isPressed() {
         reading = digitalRead(pin);
         if (reading == pressed && !debouncing) {
             debouncing = true;
