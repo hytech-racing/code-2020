@@ -29,6 +29,8 @@
 #define SUPPLY_READ_CHANNEL 2
 #define COOLING_CURRENT_CHANNEL 3
 #define ADC_CS A1
+#define ADC_SPI_SPEED 1800000            // max SPI clokc frequency for MCP3208 is 2MHz in ideal conditions
+
 #define SCALE_CURRENT_READING(reading) ((reading - 2048) / 151.0) //self derived
 #define ALPHA 0.9772                     // parameter for the sowftware filter used on ADC pedal channels
 /*
@@ -113,19 +115,14 @@ void loop() {
     static Metro timer_flush = Metro(1000);
     /* Flush data to SD card occasionally */
     if (timer_flush.check()) {
-        logger.flush(); // Flush data to disk (data is also flushed whenever the 512 Byte buffer fills up, but this call ensures we don't lose more than a second of data when the car turns off)
-    }
-
-    /* Print timestamp to serial occasionally */
-    if (timer_debug_RTC.check()) {
-        Serial.println(Teensy3Clock.get());
+        logfile.flush(); // Flush data to disk (data is also flushed whenever the 512 Byte buffer fills up, but this call ensures we don't lose more than a second of data when the car turns off)
     }
 
     // GLV Current
     static Metro timer_current = Metro(100);
 	if (timer_current.check()) {
-        mcu_analog_readings.set_ecu_current_value(SCALE_CURRENT_READING(filtered_ecu_current_reading)* 5000);
-        mcu_analog_readings.set_cooling_current_value(SCALE_CURRENT_READING(filtered_cooling_current_reading) * 5000);
+        mcu_analog_readings.set_ecu_current(SCALE_CURRENT_READING(filtered_ecu_current_reading)* 5000);
+        mcu_analog_readings.set_cooling_current(SCALE_CURRENT_READING(filtered_cooling_current_reading) * 5000);
 		mcu_analog_readings.set_glv_battery_voltage(filtered_supply_reading /4096 * 5 * 55/12 * 2500);
 		mcu_analog_readings.set_temperature(filtered_temp_reading);
         send_xbee(ID_MCU_ANALOG_READINGS, mcu_analog_readings, xb_msg);

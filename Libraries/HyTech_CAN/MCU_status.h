@@ -64,7 +64,7 @@ public:
     inline bool get_bspd_brake_high()               const { return pedal_states & 0x40; }
     inline bool get_no_accel_brake_implausability() const { return pedal_states & 0x80; }
 
-    inline uint8_t set_pedal_states(const uint8_t states)                 { pedal_states = states; }
+    inline void set_pedal_states(const uint8_t states)                 { pedal_states = states; }
     inline void set_torque_mode(const TORQUE_MODE mode)                   { pedal_states = (pedal_states & 0xFC) | (static_cast<uint8_t>(mode)); }
     inline void set_no_accel_implausability(const bool implausable)       { pedal_states = (pedal_states & 0xFB) | (implausable << 2); }
     inline void set_no_brake_implausability(const bool implausable)       { pedal_states = (pedal_states & 0xF7) | (implausable << 3); }

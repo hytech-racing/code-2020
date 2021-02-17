@@ -391,14 +391,14 @@ inline void software_shutdown() {
             // once 100 ms passes, check this every loop
             timer_software_enable_interval.interval(0);
             // if software ok based signals are low 100 ms after software ok has been turned on, fault software ok
-            if ((mcu_status.get_shutdown_inputs() && 0xC0) != 0xC0){
+            if ((mcu_status.get_shutdown_inputs() & 0xC0) != 0xC0){
                 mcu_status.set_software_is_ok(false);
             }
         }
     }
     else {
         // if the software ok based signals are high, software ok is false
-        if ((mcu_status.get_shutdown_inputs() && 0xC0) != 0) {
+        if ((mcu_status.get_shutdown_inputs() & 0xC0) != 0) {
             mcu_status.set_software_is_ok(false);
         }
         // assume software is ok because any subsequent check will fail it
@@ -513,8 +513,8 @@ void set_state(MCU_STATE new_state) {
 
     // entry logic
     switch (new_state) {
-        case MCU_STATE::ENABLING_INVERTER: 
-            MC_command_message mc_command_message = MC_command_message(0, 0, 1, 1, 0, 0);
+        case MCU_STATE::ENABLING_INVERTER: {
+            MC_command_message mc_command_message(0, 0, 1, 1, 0, 0);
             tx_msg.id = 0xC0;
             tx_msg.len = 8;
             mc_command_message.write(tx_msg.buf); // many enable commands
@@ -537,7 +537,7 @@ void set_state(MCU_STATE new_state) {
             Serial.println("MCU Sent enable command");
             timer_inverter_enable.reset();
             break;
-        
+        }
         case MCU_STATE::WAITING_READY_TO_DRIVE_SOUND:
             // make dashboard sound buzzer
             mcu_status.set_activate_buzzer(true);

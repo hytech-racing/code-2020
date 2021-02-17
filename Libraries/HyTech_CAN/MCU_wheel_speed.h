@@ -1,7 +1,7 @@
 #pragma once
 
 #include <stdint.h>
-#include <cstring>
+#include <string.h>
 
 #pragma pack(push,1)
 
