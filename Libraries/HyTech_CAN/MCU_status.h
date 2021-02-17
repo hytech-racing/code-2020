@@ -56,7 +56,7 @@ public:
     /* Pedal system monitoring */
 
     inline uint8_t get_pedal_states()               const { return pedal_states; }
-    inline TORQUE_MODE get_torque_mode()            const { return static_cast<TORQUE_MODE>(pedal_states & 0x03)}
+    inline TORQUE_MODE get_torque_mode()            const { return static_cast<TORQUE_MODE>(pedal_states & 0x03); }
     inline bool get_no_accel_implausability()       const { return pedal_states & 0x04; }
     inline bool get_no_brake_implausability()       const { return pedal_states & 0x08; }
     inline bool get_brake_pedal_active()            const { return pedal_states & 0x10; }

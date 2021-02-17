@@ -208,7 +208,7 @@ void parse_can_message() {
 			case ID_MC_COMMAND_MESSAGE:					mc_command_message.load(msg_rx.buf);				break;
 			case ID_MC_READ_WRITE_PARAMETER_COMMAND:	mc_read_write_parameter_command.load(msg_rx.buf);	break;
 			case ID_MC_READ_WRITE_PARAMETER_RESPONSE:	mc_read_write_parameter_response.load(msg_rx.buf);	break;
-			case ID_MCU_WHEEL_RPM:						mcu_wheel_speed.load(msg_rx.buf);					break;
+			case ID_MCU_WHEEL_SPEED:						mcu_wheel_speed.load(msg_rx.buf);					break;
 		}
 	}
 }
@@ -227,7 +227,7 @@ void check_xbee_timers() {
 		send_xbee(ID_MC_COMMAND_MESSAGE, mc_command_message, xb_msg);
 		send_xbee(ID_MC_TORQUE_TIMER_INFORMATION, mc_torque_timer_information, xb_msg);
 		send_xbee(ID_MCU_PEDAL_READINGS, mcu_pedal_readings, xb_msg);
-		send_xbee(ID_MCU_WHEEL_RPM, mcu_wheel_speed, xb_msg);
+		send_xbee(ID_MCU_WHEEL_SPEED, mcu_wheel_speed, xb_msg);
 
 	}
 	
