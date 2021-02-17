@@ -4,6 +4,7 @@
 
 #pragma pack(push,1)
 
+// @Parseclass
 class MCU_pedal_readings {
 public:
     MCU_pedal_readings() = default;
@@ -26,9 +27,13 @@ public:
     inline void set_brake_transducer_2(uint16_t reading)  { brake_transducer_2  = reading; }
 
 private:
+    // @Parse
     uint16_t accelerator_pedal_1;
+    // @Parse
     uint16_t accelerator_pedal_2;
+    // @Parse
     uint16_t brake_transducer_1;
+    // @Parse
     uint16_t brake_transducer_2;
 };
 

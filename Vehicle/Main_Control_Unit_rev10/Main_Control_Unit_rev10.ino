@@ -187,10 +187,11 @@ void loop() {
         CAN.write(tx_msg);
 
         // write the rpm data
-        mcu_wheel_speed.set_rpm_front_left(rpm_front_left);
-        mcu_wheel_speed.set_rpm_front_right(rpm_front_left);
-        mcu_wheel_speed.set_rpm_back_left(rpm_back_left);
-        mcu_wheel_speed.set_rpm_back_right(rpm_back_right);
+        // scale factor for transmit
+        mcu_wheel_speed.set_rpm_front_left(rpm_front_left*10);
+        mcu_wheel_speed.set_rpm_front_right(rpm_front_left*10);
+        mcu_wheel_speed.set_rpm_back_left(rpm_back_left*10);
+        mcu_wheel_speed.set_rpm_back_right(rpm_back_right*10);
 
         // Send Main Control Unit pedal reading message
         mcu_wheel_speed.write(tx_msg.buf);

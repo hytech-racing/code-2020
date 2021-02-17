@@ -23,6 +23,7 @@ enum class TORQUE_MODE
 
 #pragma pack(push,1)
 
+// @Parseclass @Custom(parse_mcu_enums)
 class MCU_status {
 public:
     MCU_status() = default;
@@ -32,7 +33,6 @@ public:
     inline void write(uint8_t buf[]) const { memcpy(buf, this, sizeof(*this)); }
 
     /* Shutdown system monitoring */
-
     inline uint8_t get_shutdown_inputs()           const { return shutdown_states; }
     inline bool get_imd_ok_high()                  const { return shutdown_states & 0x01; }
     inline bool get_shutdown_b_above_threshold()   const { return shutdown_states & 0x02; }
@@ -98,16 +98,17 @@ public:
     inline void set_distance_travelled(const uint16_t distance) { distance_travelled = distance; }
 
 private:
-    /*
-     * IMD_OK
-     * shutdown b
-     * BMS_OK
-     * shutodwn c
-     * BSPD
-     * shutdown d
-     * software shutdown
-     * shutdown e
-     */
+    // no free bits
+    /* @Parse @Flaglist(
+         imd_ok_high,
+         shutdown_b_above_threshold,
+         bms_ok_high,
+         shutdown_c_above_threshold,
+         bspd_ok_high,
+         shutdown_d_above_threshold,
+         software_ok_high,
+         shutdown_e_above_threshold
+        ) */
     uint8_t shutdown_states;
     /*
      * torque_mode (2 bits)
@@ -118,6 +119,14 @@ private:
      * brake high
      * accel/brake implausability
      */
+    /* @Parse @Flaglist(
+        no_accel_implausability,
+        no_brake_implausability,
+        brake_pedal_active,
+        bspd_current_high,
+        bspd_brake_high,
+        no_accel_brake_implausability
+        ) */
     uint8_t pedal_states;
 
     /**
@@ -128,8 +137,16 @@ private:
      * software_is_ok
      * launch_control_active
      */
+    /* @Parse @Flaglist(
+        inverter_powered,
+        energy_meter_present,
+        activate_buzzer,
+        software_is_ok,
+        launch_ctrl_active
+        )*/
     uint8_t ecu_states;
 
+    // @Parse @Unit(m) @Scale(100)
     uint16_t distance_travelled;
 };
 

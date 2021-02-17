@@ -29,7 +29,7 @@
 #define SUPPLY_READ_CHANNEL 2
 #define COOLING_CURRENT_CHANNEL 3
 #define ADC_CS A1
-#define SCALE_CURRENT_READING(reading) ((reading - 2048) / 151) //self derived
+#define SCALE_CURRENT_READING(reading) ((reading - 2048) / 151.0) //self derived
 #define ALPHA 0.9772                     // parameter for the sowftware filter used on ADC pedal channels
 /*
  * Variables to store filtered values from ADC channels
@@ -119,9 +119,9 @@ void loop() {
     // GLV Current
     static Metro timer_current = Metro(100);
 	if (timer_current.check()) {
-        mcu_analog_readings.set_ecu_current_value(SCALE_CURRENT_READING(filtered_ecu_current_reading)* 100);
-        mcu_analog_readings.set_cooling_current_value(SCALE_CURRENT_READING(filtered_cooling_current_reading) * 100);
-		mcu_analog_readings.set_glv_battery_voltage(filtered_supply_reading /4096 * 55/12 * 1000);
+        mcu_analog_readings.set_ecu_current_value(SCALE_CURRENT_READING(filtered_ecu_current_reading)* 5000);
+        mcu_analog_readings.set_cooling_current_value(SCALE_CURRENT_READING(filtered_cooling_current_reading) * 5000);
+		mcu_analog_readings.set_glv_battery_voltage(filtered_supply_reading /4096 * 5 * 55/12 * 2500);
 		mcu_analog_readings.set_temperature(filtered_temp_reading);
         send_xbee(ID_MCU_ANALOG_READINGS, mcu_analog_readings, xb_msg);
         CAN.write(xb_msg);

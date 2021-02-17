@@ -5,6 +5,7 @@
 
 #pragma pack(push,1)
 
+// @Parseclass
 class MCU_analog_readings {
 public:
     MCU_analog_readings() = default;
@@ -26,9 +27,13 @@ public:
     inline void set_glv_battery_voltage(const uint16_t glv_battery_voltage) { this->glv_battery_voltage = glv_battery_voltage; }
 
 private:
+    // @Parse @Unit(A) @Scale(5000)
     uint16_t ecu_current;
-	uint16_t cooling_current;
+	// @Parse @Unit(A) @Scale(5000)
+    uint16_t cooling_current;
+    // @Parse @Unit(C)
     int16_t temperature;
+    // @Parse @Unit(V) @Scale(2500)
     uint16_t glv_battery_voltage;
 };
 

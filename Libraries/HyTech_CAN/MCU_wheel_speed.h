@@ -5,6 +5,7 @@
 
 #pragma pack(push,1)
 
+// @Parseclass
 class MCU_wheel_speed {
 public:
     MCU_wheel_speed() = default;
@@ -27,9 +28,13 @@ public:
     inline void set_rpm_back_right(uint16_t speed)  { wheel_rpm_back_right = speed; }
 
 private:
+    // @Parse @Unit(rpm) @Scale(10)
     uint16_t wheel_rpm_front_left;
+    // @Parse @Unit(rpm) @Scale(10)
     uint16_t wheel_rpm_front_right;
+    // @Parse @Unit(rpm) @Scale(10)
     uint16_t wheel_rpm_back_left;
+    // @Parse @Unit(rpm) @Scale(10)
     uint16_t wheel_rpm_back_right;   
 };
 
