@@ -78,12 +78,10 @@ MC_command_message mc_command_message;
 MC_read_write_parameter_command mc_read_write_parameter_command;
 MC_read_write_parameter_response mc_read_write_parameter_response;
 
-time_t getTeensy3Clock() { return Teensy3Clock.get(); }
-
 void setup() {
 	// Real-time clock
 	//Teensy3Clock.set(9999999999); // set time (epoch) at powerup (COMMENT OUT THIS LINE AND PUSH ONCE RTC HAS BEEN SET!!!!)
-	setSyncProvider(getTeensy3Clock); // registers Teensy RTC as system time
+	setSyncProvider((getExternalTime) teensy3_clock_class::get); // registers Teensy RTC as system time
 	Serial.println(timeStatus() == timeSet ? "System time set to RTC" : "RTC not set up - uncomment Teensy3Clock.set() to set time");
 
 	// Serial / XBee / CAN 
@@ -113,8 +111,15 @@ void loop() {
 	read_analog_values();
 
     static Metro timer_flush = Metro(1000);
-	if (timer_flush.check()) // Occasionally flush SD buffer (max one second data loss after power-off)
-		logfile.flush();
+    /* Flush data to SD card occasionally */
+    if (timer_flush.check()) {
+        logger.flush(); // Flush data to disk (data is also flushed whenever the 512 Byte buffer fills up, but this call ensures we don't lose more than a second of data when the car turns off)
+    }
+
+    /* Print timestamp to serial occasionally */
+    if (timer_debug_RTC.check()) {
+        Serial.println(Teensy3Clock.get());
+    }
 
     // GLV Current
     static Metro timer_current = Metro(100);
