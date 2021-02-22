@@ -1,5 +1,3 @@
-#if defined(MODE) && MODE == SEND
-
 #include "flexcan_tester_rev2.h"
 #include <Metro.h>
 
@@ -11,8 +9,10 @@ void synchronize() {
 
 	do {
 		CAN.write(message); // send sync message
-		delay(2);
+		delay(2000);
 	} while (!(CAN.read(message) && message.id == SYNC));
+	message.id = ACK;
+	CAN.write(message);
 	timer.reset(); // reset send timer
 }
 
@@ -31,5 +31,3 @@ inline T handle_message(unsigned id, T data) {
 	CAN.write(message);
 	return data;
 }
-
-#endif

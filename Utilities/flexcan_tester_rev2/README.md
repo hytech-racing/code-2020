@@ -1,8 +1,8 @@
 This utility operates on the assumption that you have two Teensy controllers, one running the transmitter code and one running the receiver code.
 
-Switch between send and receive configurations using the `#define MODE` flag in [flexcan_tester_rev2.ino](./flexcan_tester_rev2.ino).
+Switch between send and receive configurations by switching which header is included in [flexcan_tester_rev2.ino](./flexcan_tester_rev2.ino).
 
-[receiver.ino](./receiver.ino) and [transmitter.ino](./transmitter.ino) each defines two functions:
+[receiver.h](./receiver.h) and [transmitter.h](./transmitter.h) each defines two functions:
 
 ```
 void synchronize();
