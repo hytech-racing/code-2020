@@ -1,0 +1,73 @@
+{
+  "name": "hytech-telemetry",
+  "version": "1.0.0",
+  "description": "An Electron application for HyTech's telemetry data",
+  "main": "index.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder",
+    "dist": "electron-builder",
+    "pack": "electron-builder --dir",
+    "dist:32win": "build --win --ia32 ",
+    "dist:64win": "build --win --x64",
+    "dist:32deb": "build --linux --ia32",
+    "dist:64deb": "build --linux --x64",
+    "postinstall": "electron-builder install-app-deps"
+  },
+  "repository": "https://github.com/hytech-racing/code-2020",
+  "keywords": [
+    "Electron",
+    "quick",
+    "combos",
+    "graphs",
+    "telemetry",
+    "spa",
+    "video",
+    "build"
+  ],
+  "author": "Sophia Smith <ssmith41@gatech.edu>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/hytech-racing/code-2020"
+  },
+  "devDependencies": {
+    "electron": "^11.0.1",
+    "electron-builder": "^22.10.5",
+    "electron-reload": "^1.5.0"
+  },
+  "dependencies": {
+    "electron-is-dev": "^1.0.1"
+  },
+  "build": {
+    "productName": "EQS",
+    "appId": "com.electronquickstart.spareloadbuilder",
+    "directories": {
+      "output": "build"
+    },
+    "dmg": {
+      "contents": [
+        {
+          "x": 410,
+          "y": 150,
+          "type": "link",
+          "path": "/Applications"
+        },
+        {
+          "x": 130,
+          "y": 150,
+          "type": "file"
+        }
+      ]
+    },
+    "mac": {
+      "icon": "src/icons/icon.icns"
+    },
+    "win": {
+      "target": "portable",
+      "icon": "src/icons/icon.ico"
+    },
+    "linux": {
+      "icon": "src/icons"
+    }
+  }
+}
