@@ -21,10 +21,15 @@ nav .brand-logo img{
 
 p {
   line-height: 2rem;
+  text-align: justify;
 }
 
 .sidenav-trigger {
   color: #26a69a;
+}
+
+.sidenav li > a {
+	width: 300px;
 }
 
 .parallax-container {
