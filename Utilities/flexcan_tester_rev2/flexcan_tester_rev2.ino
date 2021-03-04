@@ -1,8 +1,8 @@
 // #define HT_DEBUG_EN // only uncomment this line if tcu-refactor merged in
 
 #define HT_CAN_MODE_FLEXCAN
-//#include "receiver.h"
-#include "transmitter.h"
+#include "receiver.h"
+//#include "transmitter.h"
 
 #ifdef HT_CAN_MODE_FLEXCAN
 FlexCAN CAN(500000);
@@ -67,5 +67,5 @@ void loop() {
 
 	BMS_balancing_status bbs = handle_message(ID_BMS_BALANCING_STATUS, BMS_balancing_status(5, 0XDEADBEEF));
 	Serial.println(bbs.get_group_id());
-	Serial.println(bbs.get_balancing());
+	//Serial.println(bbs.get_balancing());
 }

@@ -4,15 +4,15 @@
 Metro timer(3000);
 
 void synchronize() {
-	CAN_message_t message;
-	message.id = SYNC;
-
+	CAN_message_t sent_message;
+	sent_message.id = SYN;
+    CAN_message_t response_message;
 	do {
-		CAN.write(message); // send sync message
+		CAN.write(sent_message); // send sync message
 		delay(2000);
-	} while (!(CAN.read(message) && message.id == SYNC));
-	message.id = ACK;
-	CAN.write(message);
+	} while (!(CAN.read(response_message) && response_message.id == ACK));
+	sent_message.id = SYNACK;
+	CAN.write(sent_message);
 	timer.reset(); // reset send timer
 }
 
