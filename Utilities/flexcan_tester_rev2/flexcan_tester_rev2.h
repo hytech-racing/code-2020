@@ -18,6 +18,7 @@ extern MCP_CAN CAN;
 
 #define SYNC	0x90
 #define ACK		0x91
+#define BEGIN 0x92
 
 template<typename T>
 inline void print(CAN_message_t& message, unsigned id, T& data) {
