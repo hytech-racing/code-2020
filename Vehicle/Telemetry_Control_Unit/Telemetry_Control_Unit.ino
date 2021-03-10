@@ -80,6 +80,17 @@ MC_command_message mc_command_message;
 MC_read_write_parameter_command mc_read_write_parameter_command;
 MC_read_write_parameter_response mc_read_write_parameter_response;
 
+void parse_can_message();
+void write_to_SD(CAN_message_t *msg);
+time_t getTeensy3Time();
+void setup_accelerometer();
+void process_accelerometer();
+void process_current();
+void process_gps();
+int write_xbee_data();
+void send_xbee();
+void sd_date_time(uint16_t* date, uint16_t* time);
+
 void setup() {
 	// Real-time clock
 	//Teensy3Clock.set(9999999999); // set time (epoch) at powerup (COMMENT OUT THIS LINE AND PUSH ONCE RTC HAS BEEN SET!!!!)

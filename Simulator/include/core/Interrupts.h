@@ -7,12 +7,13 @@
 #include "HTException.h"
 
 void interrupts();
+void noInterrupts();
 void NVIC_ENABLE_IRQ(int irq);
 void attachInterruptVector(int irq, void(*interruptVector)());
 
-namespace interrupts {
-	extern std::map<int, void(*)()> interruptMap;
-	inline void runAll() { for (auto &it : interruptMap) it.second(); }
+namespace Interrupts {
+	bool enabled();
+	void runAll();
 }
 
 #endif

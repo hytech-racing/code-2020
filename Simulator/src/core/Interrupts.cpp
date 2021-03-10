@@ -5,22 +5,28 @@
 #include "HTException.h"
 #include "Interrupts.h"
 
-namespace interrupts { std::map<int, void(*)()> interruptMap; }
-bool interruptsEnabled = false;
+static bool interruptsEnabled = false;
+
+namespace Interrupts { 
+	static std::map<int, void(*)()> interruptMap;
+	void runAll() { for (auto &it : interruptMap) it.second(); }
+	bool enabled() { return interruptsEnabled; }
+}
 
 void interrupts() { interruptsEnabled = true; }
+void noInterrupts() { interruptsEnabled = false; }
 
 void NVIC_ENABLE_IRQ(int irq) {
 	if (!interruptsEnabled)
-		throw CustomException("Teensy 3.2 must manually enable interrupts");
-	if (interrupts::interruptMap.find(irq) == interrupts::interruptMap.end())
-		interrupts::interruptMap.insert({ irq, []{} });
+		throw SetupException("Teensy 3.2 must manually enable interrupts");
+	if (Interrupts::interruptMap.find(irq) == Interrupts::interruptMap.end())
+		Interrupts::interruptMap.insert({ irq, []{} });
 }
 
 void attachInterruptVector(int irq, void(*interruptVector)()) {
-	auto iter = interrupts::interruptMap.find(irq);
-	if(iter == interrupts::interruptMap.end())
-		throw InterruptNotEnabledException(irq);
+	auto iter = Interrupts::interruptMap.find(irq);
+	if(iter == Interrupts::interruptMap.end())
+		throw SetupException("Interrupt vector %d not enabled", irq);
 	iter->second = interruptVector;
 }
 

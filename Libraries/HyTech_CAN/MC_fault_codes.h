@@ -100,8 +100,8 @@ public:
 private:
     uint16_t post_fault_lo; // @Parse @Flagset @Hex
     uint16_t post_fault_hi; // @Parse @Flagset @Hex
-    uint16_t run_fault_lo; // @Parse @Flagset @Hex
-    uint16_t run_fault_hi; // @Parse @Flagset @Hex
+    uint16_t run_fault_lo; // @Parse @Flagset @Hex 
+    uint16_t run_fault_hi; // @Parse @Flagset @Hex 
 };
 
 #pragma pack(pop)

@@ -12,33 +12,44 @@
 extern void setup(), loop();
 
 unsigned long long Simulator::sys_time = 0;
-MockPin* Simulator::io = nullptr;
+unsigned long long Simulator::sys_us = 0;
+unsigned long long Simulator::LOOP_PERIOD = 0;
+MockPin Simulator::io [NUM_PINS + 1];
+bool Simulator::running = false;
 
-Simulator::Simulator(unsigned long long period) : LOOP_PERIOD(period) {
-    if (io)
-        throw CustomException("No more than one simulator can be open at any given time");
+void Simulator::begin(unsigned long long period) {
+    if (running)
+        throw SetupException("Failed to properly tear down previous simulator");
 
+    LOOP_PERIOD = period;
+
+    running = true;
     Simulator::sys_time = 0;
-    io = new MockPin [NUM_PINS + 1];
-    for (int i = 0; i <= NUM_PINS; ++i)
-        io[i] = MockPin(i);
+    Simulator::sys_us = 0;
+    for (int i = 1; i <= NUM_PINS; ++i)
+        io[i].fPin = i;
 
     setup();
 }
 
-Simulator::~Simulator() {
-    delete [] io;
+void Simulator::teardown() {
+    if (!running)
+        throw HTException("Invalid Simulator Configuration", "Attempted to tear down inactive simulator");
+    running = false;
+    for (int i = 1; i <= NUM_PINS; ++i)
+        io[i] = MockPin(i);
 
     Simulator::sys_time = 0;
-    Simulator::io = nullptr;
+    Simulator::sys_us = 0;
     Serial.end();
     Serial2.end();
+    running = false;
 }
 
 void Simulator::next() {
     sys_time += LOOP_PERIOD;
     #ifdef HYTECH_ARDUINO_TEENSY_32
-        interrupts::runAll();
+        Interrupts::runAll();
     #endif
 
     loop();

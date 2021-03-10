@@ -1,5 +1,7 @@
-#include "CAN_simulator.h"
 #include "HyTech_FlexCAN.h"
+
+#include "MockCAN.h"
+#include "kinetis_flexcan.h"
 #include "Interrupts.h"
 
 inline void setBase(uint32_t& packed, int tx, int rx) { packed = tx << 16 | rx; }
@@ -9,13 +11,11 @@ inline void getBase(uint32_t packed, int& tx, int& rx) {
 	rx = packed & 0xFFFF;
 }
 
-extern bool interruptsEnabled;
-
 FlexCAN::FlexCAN(uint32_t baud, uint8_t id, uint8_t txAlt, uint8_t rxAlt) {
 	defaultMask = { 0, 0, 0 };
 
 	if (baud != 500000)
-		throw CustomException("CAN bus baud rate must be 500000");
+		throw CANException("CAN bus baud rate must be 500000");
 
 	#ifdef HYTECH_ARDUINO_TEENSY_32
 		int txPin = 3, rxPin = 4;
@@ -35,8 +35,8 @@ void FlexCAN::begin(const CAN_filter_t &mask) {
 	pinMode(rxPin, RESERVED);
 
 	#ifdef HYTECH_ARDUINO_TEENSY_32
-		if (interruptsEnabled && FLEXCAN0_IMASK1 != FLEXCAN_IMASK1_BUF5M && interruptsEnabled)
-			throw CustomException("If interrupts enabled, Teensy 3.2 requires FLEXCAN0_IMASK1 = FLEXCAN_IMASK1_BUF5M");
+		if (Interrupts::enabled() && FLEXCAN0_IMASK1 != FLEXCAN_IMASK1_BUF5M)
+			throw CANException("If interrupts enabled, Teensy 3.2 requires FLEXCAN0_IMASK1 = FLEXCAN_IMASK1_BUF5M");
 	#endif
 }
 
@@ -58,19 +58,25 @@ void FlexCAN::setFilter(const CAN_filter_t &filter, uint8_t n) {
 void FlexCAN::end(void) { 
 	int txPin, rxPin;
 	getBase(flexcanBase, txPin, rxPin);
-	pinMode(txPin, UNUSED); pinMode(rxPin, UNUSED); 
+	pinMode(txPin, UNUSED); pinMode(rxPin, UNUSED);
+
+	#ifdef HYTECH_ARDUINO_TEENSY_32
+		FLEXCAN0_IMASK1 = 0;
+	#elif defined (HYTECH_ARDUINO_TEENSY_35)
+		FLEXCAN0_MCR = 0xFFFFFFFF;
+	#endif
 }
 
 int FlexCAN::available(void) { return true; }
 
 int FlexCAN::write(const CAN_message_t &msg) { 
 	if (defaultMask.id == ~0u) 
-		throw CustomException("CAN configuration not valid");
-	CAN_simulator::vehicle_write(msg);
+		throw CANException("CAN configuration not valid");
+	MockCAN::vehicle_write(msg);
 
 	#ifdef HYTECH_ARDUINO_TEENSY_35
 	    if (FLEXCAN0_MCR == 0xFFFDFFFF)
-			CAN_simulator::vehicle_inbox.write(msg);
+			MockCAN::vehicle_write(msg);
 	#endif
 
 	return true;
@@ -78,9 +84,9 @@ int FlexCAN::write(const CAN_message_t &msg) {
 
 int FlexCAN::read(CAN_message_t &msg) {
 	if (defaultMask.id == ~0u) 
-		throw CustomException("CAN configuration not valid");
+		throw CANException("CAN configuration not valid");
 	do {
-		if (!CAN_simulator::vehicle_read(msg))
+		if (!MockCAN::vehicle_read(msg))
 			return false; 
 	} while (msg.rtr == defaultMask.rtr && msg.id == defaultMask.id && msg.ext == defaultMask.ext);
 	return true;

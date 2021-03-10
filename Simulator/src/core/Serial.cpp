@@ -4,37 +4,59 @@
 #include "HTException.h"
 #include "Serial.h"
 
-MockSerial::MockSerial(int id) { fId = id; }
+void SerialListener::begin() { serial->attachListener(this); serial->enableInternalCommunication(); }
+void SerialListener::teardown() { serial->removeListener(this); }
 
-MockSerial::~MockSerial() {
-    if (fFilepath.size()) {
-        ((std::ofstream*)(fos))->close();
-        delete fos;
+void HardwareSerial::begin(unsigned int baudRate, uint8_t outmode) {
+    if (*this)
+        throw SerialException("Tried to begin Serial %d twice", fId);
+    if (internal_comm_en) {
+        vehicle_in = new std::stringstream;
+        vehicle_out = new std::stringstream;
     }
-    fos = nullptr;
+    else {
+        fin = infilePath.size() ? new std::ifstream(infilePath, std::ios_base::in) : &std::cin;
+        fout = outfilePath.size() ? new std::ofstream(outfilePath, (std::ios_base::openmode) outmode) : &std::cout;
+
+        if (fin->fail()) throw HTException("File Exception", "Unable to open file %s", infilePath.c_str());
+        if (fout->fail()) throw HTException("File Exception", "Unable to open file %s", outfilePath.c_str());
+    }
 }
 
-void MockSerial::setOutputPath(std::string filepath) { fFilepath = filepath; }
-
-void MockSerial::begin(unsigned int baudRate) {
-    if (fos)
-        throw DoublePinModeException(fId, OUTPUT, OUTPUT);
-    if (fFilepath.size()) {
-        std::ofstream* tmpFos = new std::ofstream(fFilepath, std::ios::ios_base::out);
-        if (tmpFos->fail())
-            throw FileNotOpenException(fId, fFilepath);
-        fos = tmpFos;
+void HardwareSerial::teardown() {
+    if (internal_comm_en) {
+        delete vehicle_in;
+        delete vehicle_out;
     }
-    else fos = &std::cout;
+    else {
+        if (infilePath.size()) {
+            ((std::ifstream*)(fin))->close();
+            delete fin;
+        }
+        if (outfilePath.size()) {
+            ((std::ofstream*)(fout))->close();
+            delete fout;
+        }
+    }
+
+    listeners.clear();
+    infilePath.clear();
+    outfilePath.clear();
+    internal_comm_en = false;
+    fin = nullptr;
+    fout = nullptr;
 }
 
-void MockSerial::end() { this->~MockSerial(); }
-
-void MockSerial::write(uint8_t* buf, int size) {
-    validate();
+size_t HardwareSerial::write(uint8_t* buf, int size) {
+    std::ostream& os = ostream();
     for (int i = 0; i < size; ++i)
-        *fos << std::hex << buf[i];
+        os << std::hex << buf[i];
+    return size;
 }
 
-MockSerial Serial(-1);
-MockSerial Serial2(-2);
+HardwareSerial Serial(0);
+
+#ifndef HYTECH_ARDUINO_UNO
+HardwareSerial Serial1(1);
+HardwareSerial Serial2(2);
+#endif
