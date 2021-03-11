@@ -37,7 +37,7 @@
  * Shutdown read thresholds
  */
 
-#define SHUTDOWN_HIGH 350 //5V
+#define SHUTDOWN_HIGH 350 //teensy ADC reading when the shutdown lines are at 5V
 
 
 /*
