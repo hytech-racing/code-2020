@@ -1,20 +1,20 @@
 // Button pin definition
-#define BTN_MARK 23
-#define BTN_MODE 24
-#define BTN_MC_CYCLE 25
-#define BTN_START 26
-#define BTN_LC 27
+#define BTN_MARK A0
+#define BTN_MODE A1
+#define BTN_MC_CYCLE A2
+#define BTN_START A3
+#define BTN_LC A4
 
 // LED and buzzer pin definition
-#define BUZZER 28
-#define LED_AMS 30
-#define LED_IMD 31
-#define LED_MODE 32
-#define LED_MC_ERR 1
-#define LED_START 2
+#define BUZZER A5
+#define LED_AMS 0
+#define LED_IMD 1
+#define LED_MODE 2
+#define LED_MC_ERR 3
+#define LED_START 4
 
 // MCP CAN pin definition
-#define SPI_CS 14
+#define SPI_CS PB2
 
 #define SSOK_READ A6
 #define SHUTDOWN_H_READ A7
