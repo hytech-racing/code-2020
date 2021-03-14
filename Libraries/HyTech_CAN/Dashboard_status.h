@@ -76,7 +76,7 @@ private:
      * start button pressed
      * ssok_high
      * shutdown h high
-     * (4 bits)
+     * (4 bits) unused
      */
     uint8_t dashboard_states;
 
@@ -85,7 +85,7 @@ private:
      * mode
      * mc_cycle
      * launch_ctrl
-     * (4 bits)
+     * (4 bits) unused
      */
     uint8_t button_flags;
 
