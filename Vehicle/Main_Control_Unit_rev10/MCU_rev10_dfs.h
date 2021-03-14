@@ -28,8 +28,8 @@
 /*
  * ADC pin definitions
  */
-#define ADC_BRAKE_1_CHANNEL 0
-#define ADC_BRAKE_2_CHANNEL 1
+#define ADC_BRAKE_1_CHANNEL 1
+#define ADC_BRAKE_2_CHANNEL 0
 #define ADC_ACCEL_1_CHANNEL 2
 #define ADC_ACCEL_2_CHANNEL 3
 
@@ -71,6 +71,7 @@
 #define TORQUE_ADJUSTMENT_VOLTAGE 3.5242 
 
 #define BMS_HEARTBEAT_TIMEOUT 3000
+#define DASH_HEARTBEAT_TIMEOUT 1000
 #define TIMER_SOFTWARE_ENABLE 100
 
 // this is just for reference

@@ -20,3 +20,5 @@
 #define SHUTDOWN_H_READ A7
 
 #define SHUTDOWN_THERSHOLD 223 // 5V on the line
+
+#define MCU_HEARTBEAT_TIMEOUT 1000

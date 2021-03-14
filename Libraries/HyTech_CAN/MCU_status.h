@@ -56,7 +56,6 @@ public:
     /* Pedal system monitoring */
 
     inline uint8_t get_pedal_states()               const { return pedal_states; }
-    inline TORQUE_MODE get_torque_mode()            const { return static_cast<TORQUE_MODE>(pedal_states & 0x03); }
     inline bool get_no_accel_implausability()       const { return pedal_states & 0x04; }
     inline bool get_no_brake_implausability()       const { return pedal_states & 0x08; }
     inline bool get_brake_pedal_active()            const { return pedal_states & 0x10; }
@@ -65,7 +64,6 @@ public:
     inline bool get_no_accel_brake_implausability() const { return pedal_states & 0x80; }
 
     inline void set_pedal_states(const uint8_t states)                 { pedal_states = states; }
-    inline void set_torque_mode(const TORQUE_MODE mode)                   { pedal_states = (pedal_states & 0xFC) | (static_cast<uint8_t>(mode)); }
     inline void set_no_accel_implausability(const bool implausable)       { pedal_states = (pedal_states & 0xFB) | (implausable << 2); }
     inline void set_no_brake_implausability(const bool implausable)       { pedal_states = (pedal_states & 0xF7) | (implausable << 3); }
     inline void set_brake_pedal_active(const bool pressed)                { pedal_states = (pedal_states & 0xEF) | (pressed     << 4); }
@@ -96,6 +94,10 @@ public:
     /* distance travelled */
     inline uint16_t get_distance_travelled() const { return distance_travelled; }
     inline void set_distance_travelled(const uint16_t distance) { distance_travelled = distance; }
+
+
+    inline TORQUE_MODE get_torque_mode()          const { return static_cast<TORQUE_MODE>(torque); }
+    inline void set_torque_mode(const TORQUE_MODE mode) { torque = static_cast<uint8_t>(mode); }
 
 private:
     // no free bits
@@ -145,6 +147,9 @@ private:
         launch_ctrl_active
         )*/
     uint8_t ecu_states;
+
+    // @Parse @Unit(N)
+    uint8_t torque;
 
     // @Parse @Unit(m) @Scale(100)
     uint16_t distance_travelled;
