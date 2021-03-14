@@ -1,4 +1,4 @@
-#include "CAN_simulator.h"
+#include "MockCAN.h"
 #include "Dashboard.h"
 #include "DebouncedButton.h"
 #include "gtest/gtest.h"
@@ -7,12 +7,12 @@
 #include "Simulator.h"
 #include "VariableLED.h"
 
-#define next() simulator->next()
-#define digitalWrite(pin,val) simulator->digitalWrite(pin, val);
+#define next() Simulator::next()
+#define digitalWrite(pin,val) Simulator::digitalWrite(pin, val);
 
 class DashboardTesting : public ::testing::Test {
 protected:
-	DashboardTesting () : simulator(0) {}
+	DashboardTesting () {}
 	void SetUp() {
 		extern bool is_mc_err;
 		extern VariableLED variable_led_start;
@@ -21,20 +21,18 @@ protected:
 		extern Dashboard_status dashboard_status;
 		extern MCU_status mcu_status;
 
-		CAN_simulator::purge();
+		MockCAN::teardown();
 		is_mc_err = false;
 		variable_led_start = VariableLED(LED_START);
 		timer_can_update = Metro(100);
 		CAN = MCP_CAN(SPI_CS);
 		dashboard_status = {};
 		mcu_status = {};
-		simulator = new Simulator;
+		Simulator::begin();
 	}
 
-	Simulator* simulator;
-
 	void TearDown() {
-		delete simulator;
+		Simulator::teardown();
 	}
 };
 
@@ -43,7 +41,7 @@ TEST_F(DashboardTesting, Startup){
 	CAN_message_t msg;
 	delay(100);
 	next();
-	ASSERT_TRUE(CAN_simulator::read(msg));
+	ASSERT_TRUE(MockCAN::read(msg));
 	ASSERT_EQ(msg.id,ID_DASHBOARD_STATUS);
 	Dashboard_status status;
 	status.load(msg.buf);
@@ -65,7 +63,7 @@ TEST_F(DashboardTesting, MarkButton){
 	delay(51);
 	next();
 
-	CAN_simulator::read(msg);
+	MockCAN::read(msg);
 	status.load(msg.buf);
 	EXPECT_EQ(status.get_button_flags(),1);
 	EXPECT_EQ(status.get_led_flags(),3);
@@ -77,7 +75,7 @@ TEST_F(DashboardTesting, MarkButton){
 	delay(50);
 	next();
 
-	CAN_simulator::read(msg);
+	MockCAN::read(msg);
 	status.load(msg.buf);
 	EXPECT_EQ(status.get_button_flags(),0);
 	EXPECT_EQ(status.get_led_flags(),3);
@@ -93,7 +91,7 @@ TEST_F(DashboardTesting, LEDTest){
 
 
 	//Nothing should happen to LEDs on Startup
-	CAN_simulator::read(msg);
+	MockCAN::read(msg);
 	status.load(msg.buf);
 	EXPECT_EQ(status.get_led_flags(),3);
 
@@ -103,7 +101,7 @@ TEST_F(DashboardTesting, LEDTest){
 	msg.id = ID_MCU_STATUS;
 	msg.len = sizeof(mcu_stat);
 
-	//CAN_simulator::push(msg);
+	//MockCAN::push(msg);
 	//how do you send this message?
 
 	next();
@@ -112,7 +110,7 @@ TEST_F(DashboardTesting, LEDTest){
 	delay(50);
 	next();
 
-	CAN_simulator::read(msg);
+	MockCAN::read(msg);
 	status.load(msg.buf);
 	EXPECT_EQ(status.get_button_flags(),0);
 	EXPECT_EQ(status.get_led_flags(),2);
@@ -127,7 +125,7 @@ TEST_F(DashboardTesting, Third){
 	next();
 	delay(100);
 	next();
-	ASSERT_TRUE(CAN_simulator::read(msg));
+	ASSERT_TRUE(MockCAN::read(msg));
 	ASSERT_EQ(msg.id,ID_DASHBOARD_STATUS);
 	Dashboard_status status;
 	status.load(msg.buf);
