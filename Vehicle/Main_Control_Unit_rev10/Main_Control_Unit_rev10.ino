@@ -1,11 +1,3 @@
-/**
- * TODO:
- * check torque calculation
- * check overtravel and safety guidelines
- * check compilation
- * update dashboard code
- */
-
 #include <stdint.h>
 
 #include "ADC_SPI.h"
@@ -271,7 +263,7 @@ inline void state_machine() {
                 if (filtered_accel1_reading < MIN_ACCELERATOR_PEDAL_1 || filtered_accel1_reading > MAX_ACCELERATOR_PEDAL_1) {
                     mcu_status.set_no_accel_implausability(false);
                 }
-                else if (filtered_accel2_reading < MIN_ACCELERATOR_PEDAL_2 ||filtered_accel2_reading > MAX_ACCELERATOR_PEDAL_2) {
+                else if (filtered_accel2_reading < MAX_ACCELERATOR_PEDAL_2 ||filtered_accel2_reading > MIN_ACCELERATOR_PEDAL_2) {
                     mcu_status.set_no_accel_implausability(false);
                 }
                 // check that the pedals are reading within 10% of each other
