@@ -26,20 +26,10 @@ typedef struct VariableLED {
 
     void update() {
         if (mode == BLINK_MODES::OFF)
-        {
-            digitalWrite(pin, LOW);
-            led_value = LOW;
-        }
+            digitalWrite(pin, led_value = LOW);
         else if (mode == BLINK_MODES::ON)
-        {
-            digitalWrite(pin, HIGH);
-            led_value = HIGH;
-        }
+            digitalWrite(pin, led_value = HIGH);
         else if (blinker.check()) // blinker mode
-        {
-            led_value = !led_value;
-            digitalWrite(pin, led_value);
-        }
-            
+            digitalWrite(pin, led_value = !led_value);
     }
 } VariableLED;
