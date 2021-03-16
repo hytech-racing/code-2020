@@ -20,8 +20,8 @@ CUSTOMFUNC(parse_detailed_voltages, BMS_detailed_voltages& data, BMS_detailed_vo
 }
 
 CUSTOMFUNC(parse_mcu_enums, MCU_status& data, MCU_status& prev){
-	if(data.get_torque_mode() != prev.get_torque_mode()){
-		switch(data.get_torque_mode()){
+	if(data.get_max_torque() != prev.get_max_torque()){
+		switch(data.get_max_torque()){
 			case TORQUE_MODE::MAX_0:   show("torque_mode,%s\n", "0"); break;
 			case TORQUE_MODE::MAX_60:  show("torque_mode,%s\n", "60"); break;
 			case TORQUE_MODE::MAX_100: show("torque_mode,%s\n", "100"); break;

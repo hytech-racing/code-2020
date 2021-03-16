@@ -90,7 +90,7 @@ static CAN_message_t tx_msg;
 
 void setup() {
     // no torque can be provided on startup
-    mcu_status.set_torque_mode(TORQUE_MODE::MAX_0);
+    mcu_status.set_max_torque(0);
     mcu_status.set_software_is_ok(false);
 
     pinMode(BRAKE_LIGHT_CTRL,OUTPUT);
@@ -142,7 +142,7 @@ void setup() {
     delay(5000);
 
     set_state(MCU_STATE::TRACTIVE_SYSTEM_NOT_ACTIVE);
-    mcu_status.set_torque_mode(TORQUE_MODE::MAX_60);
+    mcu_status.set_max_torque(60);
 }
 
 void loop() {
@@ -459,13 +459,13 @@ void parse_can_message() {
                 timer_dashboard_heartbeat.interval(DASH_HEARTBEAT_TIMEOUT);
                 /* process dashboard buttons */
                 if (dashboard_status.get_mode_btn()){
-                    switch (mcu_status.get_torque_mode()){
-                        case TORQUE_MODE::MAX_60:
-                            mcu_status.set_torque_mode(TORQUE_MODE::MAX_100); break;
-                        case TORQUE_MODE::MAX_100:
-                            mcu_status.set_torque_mode(TORQUE_MODE::MAX_120); break;
-                        case TORQUE_MODE::MAX_120:
-                            mcu_status.set_torque_mode(TORQUE_MODE::MAX_60); break;
+                    switch (mcu_status.get_max_torque()){
+                        case 60:
+                            mcu_status.set_max_torque(100); break;
+                        case 100:
+                            mcu_status.set_max_torque(120); break;
+                        case 120:
+                            mcu_status.set_max_torque(60); break;
                     }
                 }
                 if (dashboard_status.get_launch_ctrl_btn()){
@@ -559,7 +559,7 @@ void set_state(MCU_STATE new_state) {
 int calculate_torque() {
     int calculated_torque = 0;
 
-    const int max_torque = static_cast<int>(mcu_status.get_torque_mode());
+    const int max_torque = mcu_status.get_max_torque();
 
     int torque1 = map(round(filtered_accel1_reading), START_ACCELERATOR_PEDAL_1, END_ACCELERATOR_PEDAL_1, 0, max_torque);
     int torque2 = map(round(filtered_accel2_reading), START_ACCELERATOR_PEDAL_2, END_ACCELERATOR_PEDAL_2, 0, max_torque);

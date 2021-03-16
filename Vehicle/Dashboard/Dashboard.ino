@@ -178,7 +178,7 @@ inline void mcu_status_received(){
     }
 
     // Mode LED
-    switch(mcu_status.get_torque_mode()){
+    switch(mcu_status.get_max_torque()){
         case TORQUE_MODE::MAX_60:
             variable_led_mode.setMode(BLINK_MODES::OFF);
             dashboard_status.set_mode_led(static_cast<uint8_t>(BLINK_MODES::OFF));

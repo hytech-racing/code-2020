@@ -13,14 +13,6 @@ enum class MCU_STATE
     READY_TO_DRIVE               = 5
 };
 
-enum class TORQUE_MODE
-{
-    MAX_0 = 0,
-    MAX_60 = 60,
-    MAX_100 = 100,
-    MAX_120 = 120
-};
-
 #pragma pack(push,1)
 
 // @Parseclass @Custom(parse_mcu_enums)
@@ -70,9 +62,9 @@ public:
     inline void set_bspd_current_high(const bool high)                    { pedal_states = (pedal_states & 0xDF) | (high        << 5); }
     inline void set_bspd_brake_high(const bool high)                      { pedal_states = (pedal_states & 0xBF) | (high        << 6); }
     inline void set_no_accel_brake_implausability(const bool implausable) { pedal_states = (pedal_states & 0x7F) | (implausable << 7); }
-    
+
     /* ECU state */
-    
+
     inline uint8_t get_ecu_states()        const { return (ecu_states); }
     inline MCU_STATE get_state()           const { return static_cast<MCU_STATE>((ecu_states & 0x07)); }
     inline bool get_inverter_powered()     const { return (ecu_states & 0x08); }
@@ -96,8 +88,8 @@ public:
     inline void set_distance_travelled(const uint16_t distance) { distance_travelled = distance; }
 
 
-    inline TORQUE_MODE get_torque_mode()          const { return static_cast<TORQUE_MODE>(torque); }
-    inline void set_torque_mode(const TORQUE_MODE mode) { torque = static_cast<uint8_t>(mode); }
+    inline uint8_t get_max_torque()          const { return max_torque; }
+    inline void set_max_torque(const uint8_t mode) { max_torque = mode; }
 
 private:
     // no free bits
@@ -149,7 +141,7 @@ private:
     uint8_t ecu_states;
 
     // @Parse @Unit(N)
-    uint8_t torque;
+    uint8_t max_torque;
 
     // @Parse @Unit(m) @Scale(100)
     uint16_t distance_travelled;
