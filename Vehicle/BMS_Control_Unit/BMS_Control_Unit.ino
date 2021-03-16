@@ -29,7 +29,7 @@
  * When sending any other command (such as reading or writing registers), wake up the isoSPI circuit by calling wakeup_idle().
  */
 
-#include <ADC_SPI.h>
+#include <Mcp320x.h>
 #include <Arduino.h>
 // #include <EEPROM.h> TODO add EEPROM functionality so we can configure parameters over CAN
 #include <HyTech_FlexCAN.h>
@@ -109,26 +109,23 @@
 #define CELLS_PER_IC 9                  // Number of cells per IC
 #define THERMISTORS_PER_IC 3            // Number of cell thermistors per IC
 #define PCB_THERM_PER_IC 2              // Number of PCB thermistors per IC
-#define IGNORE_FAULT_THRESHOLD 10       // Number of fault-worthy values to read in succession before faulting
+#define IGNORE_FAULT_THRESHOLD 5       // Number of fault-worthy values to read in succession before faulting
 #define CURRENT_FAULT_THRESHOLD 5       // Number of fault-worthy electrical current values to read in succession before faulting
 #define SHUTDOWN_HIGH_THRESHOLD 1500    // Value returned by ADC above which the shutdown circuit is considered powered (balancing not allowed when AIRs open)
 #define BALANCE_LIMIT_FACTOR 3          // Reciprocal of the cell balancing duty cycle (3 means balancing can happen during 1 out of every 3 loops, etc)
 #define COULOUMB_COUNT_INTERVAL 10000   // Microseconds between current readings
 
 /*
- * Current Sensor ADC Channel definitions
+ * Current Sensor ADC definitions
  */
-#define CH_CUR_SENSE 2
-#define CH_CUR_REF   3
+#define CH_CUR_SENSE MCP3204::Channel::SINGLE_2
+#define CH_CUR_REF   MCP3204::Channel::SINGLE_3
+#define ADC_VREF     5000     // 5.0V Vref
 
 /*
  * Timers
  */
-Metro timer_can_update_fast = Metro(100);
-Metro timer_can_update_slow = Metro(1000);
-Metro timer_process_cells_fast = Metro(100);
-Metro timer_process_cells_slow = Metro(1000);
-Metro timer_watchdog_timer = Metro(250);
+Metro timer_watchdog_timer = Metro(500);
 Metro timer_charge_enable_limit = Metro(30000, 1); // Don't allow charger to re-enable more than once every 30 seconds
 Metro timer_charge_timeout = Metro(1000);
 
@@ -140,17 +137,16 @@ Metro timer_charge_timeout = Metro(1000);
 /*
  * Global variables
  */
-uint16_t voltage_cutoff_low = 29800; // 2.9800V
+uint16_t voltage_cutoff_low = 30000; // 3.0000V
 uint16_t voltage_cutoff_high = 42000; // 4.2000V
 uint16_t total_voltage_cutoff = 30000; // 300.00V
 uint16_t discharge_current_constant_high = 22000; // 220.00A
-int16_t charge_current_constant_high = -11000; // 110.00A
+int16_t  charge_current_constant_high = -11000; // 110.00A
 uint16_t charge_temp_cell_critical_high = 4400; // 44.00C
 uint16_t discharge_temp_cell_critical_high = 6000; // 60.00C
 uint16_t onboard_temp_balance_disable = 6000;  // 60.00C
 uint16_t onboard_temp_balance_reenable = 5000; // 50.00C
-uint16_t onboard_temp_critical_high = 7000; // 70.00C
-uint16_t temp_critical_low = 0; // 0C
+uint16_t onboard_temp_critical_high = 6000; // 60.00C
 uint16_t voltage_difference_threshold = 150; // 0.0150V
 
 uint8_t total_count_cells = CELLS_PER_IC * TOTAL_IC; // Number of non-ignored cells (used for calculating averages)
@@ -209,7 +205,7 @@ static CAN_message_t tx_msg;
 /**
  * ADC Declaration
  */
-ADC_SPI ADC(ADC_CS);
+MCP3204 ADC(ADC_VREF, ADC_CS);
 
 /**
  * BMS State Variables
@@ -229,14 +225,17 @@ uint8_t balance_offcycle = 0; // Tracks which loops balancing will be disabled o
 bool charge_mode_entered = false; // Used to enter charge mode immediately at startup instead of waiting for timer
 
 void setup() {
-    ADC.read_adc(0); // TODO isoSPI doesn't work until some other SPI gets called. This is a placeholder until we fix the problem
     pinMode(BMS_OK, OUTPUT);
     pinMode(LED_STATUS, OUTPUT);
     pinMode(LTC6820_CS, OUTPUT);
     pinMode(WATCHDOG, OUTPUT);
+    pinMode(ADC_CS, OUTPUT);
+    
+    digitalWrite(LTC6820_CS, HIGH);
+    digitalWrite(ADC_CS, HIGH);
     digitalWrite(BMS_OK, HIGH);
     digitalWrite(WATCHDOG, watchdog_high);
-
+    
     Serial.begin(115200); // Init serial for PC communication
     CAN.begin(); // Init CAN for vehicle communication
     for (int i = 0; i < 8; i++) { // Fill all filter slots with Charger Control Unit message filter (CAN controller requires filling all slots)
@@ -348,108 +347,92 @@ void loop() {
         digitalWrite(LED_STATUS, LOW);
     }
 
-    if (timer_process_cells_fast.check()) {}
+    process_voltages(); // Poll controllers, process values, populate bms_voltages
+    balance_cells(); // Check local cell voltage data and balance individual cells as necessary
+    process_temps(); // Poll controllers, process values, populate populate bms_temperatures, bms_detailed_temperatures, bms_onboard_temperatures, and bms_onboard_detailed_temperatures
+    //process_adc(); // Poll ADC, process values, populate bms_status
 
-    if (timer_process_cells_slow.check()) {
-        process_voltages(); // Poll controllers, process values, populate bms_voltages
-        balance_cells(); // Check local cell voltage data and balance individual cells as necessary
-        process_temps(); // Poll controllers, process values, populate populate bms_temperatures, bms_detailed_temperatures, bms_onboard_temperatures, and bms_onboard_detailed_temperatures
-        process_adc(); // Poll ADC, process values, populate bms_status
+    print_temps(); // Print cell and pcb temperatures to serial
+    print_cells(); // Print the cell voltages and balancing status to serial
+    //print_current(); // Print measured current sensor value
+    //process_coulombs(); // Process new coulomb counts, sending over CAN and printing to Serial
+    print_uptime(); // Print the BMS uptime to serial
 
-        print_temps(); // Print cell and pcb temperatures to serial
-        print_cells(); // Print the cell voltages and balancing status to serial
-        print_current(); // Print measured current sensor value
-        //process_coulombs(); // Process new coulomb counts, sending over CAN and printing to Serial
-        print_uptime(); // Print the BMS uptime to serial
+    Serial.print("State: ");
+    if (bms_status.get_state() == BMS_STATE_DISCHARGING) {Serial.println("DISCHARGING");}
+    if (bms_status.get_state() == BMS_STATE_CHARGING) {Serial.println("CHARGING");}
+    if (bms_status.get_state() == BMS_STATE_BALANCING) {Serial.println("BALANCING");}
+    if (bms_status.get_state() == BMS_STATE_BALANCING_OVERHEATED) {Serial.println("BALANCING_OVERHEATED");}
 
-        Serial.print("State: ");
-        if (bms_status.get_state() == BMS_STATE_DISCHARGING) {Serial.println("DISCHARGING");}
-        if (bms_status.get_state() == BMS_STATE_CHARGING) {Serial.println("CHARGING");}
-        if (bms_status.get_state() == BMS_STATE_BALANCING) {Serial.println("BALANCING");}
-        if (bms_status.get_state() == BMS_STATE_BALANCING_OVERHEATED) {Serial.println("BALANCING_OVERHEATED");}
-
-        if (bms_status.get_error_flags()) { // BMS error - drive BMS_OK signal low
-            error_flags_history |= bms_status.get_error_flags();
-            digitalWrite(BMS_OK, LOW);
-            Serial.print("---------- STATUS NOT GOOD * Error Code 0x");
-            Serial.print(bms_status.get_error_flags(), HEX);
-            Serial.println(" ----------");
-        } else {
-            digitalWrite(BMS_OK, HIGH);
-            Serial.println("---------- STATUS GOOD ----------");
-            if (error_flags_history) {
-                Serial.println("An Error Occured But Has Been Cleared");
-                Serial.print("Error code: 0x");
-                Serial.println(error_flags_history, HEX);
-            }
+    if (bms_status.get_error_flags()) { // BMS error - drive BMS_OK signal low
+        error_flags_history |= bms_status.get_error_flags();
+        digitalWrite(BMS_OK, LOW);
+        Serial.print("---------- STATUS NOT GOOD * Error Code 0x");
+        Serial.print(bms_status.get_error_flags(), HEX);
+        Serial.println(" ----------");
+    } else {
+        digitalWrite(BMS_OK, HIGH);
+        Serial.println("---------- STATUS GOOD ----------");
+        if (error_flags_history) {
+            Serial.println("An Error Occured But Has Been Cleared");
+            Serial.print("Error code: 0x");
+            Serial.println(error_flags_history, HEX);
         }
     }
 
-    if (timer_can_update_fast.check()) {
+    tx_msg.timeout = 4; // Use blocking mode, wait up to 4ms to send each message instead of immediately failing (keep in mind this is slower)
 
-        tx_msg.timeout = 4; // Use blocking mode, wait up to 4ms to send each message instead of immediately failing (keep in mind this is slower)
+    bms_status.write(tx_msg.buf);
+    tx_msg.id = ID_BMS_STATUS;
+    tx_msg.len = sizeof(CAN_message_bms_status_t);
+    CAN.write(tx_msg);
 
-        bms_status.write(tx_msg.buf);
-        tx_msg.id = ID_BMS_STATUS;
-        tx_msg.len = sizeof(CAN_message_bms_status_t);
-        CAN.write(tx_msg);
+    bms_voltages.write(tx_msg.buf);
+    tx_msg.id = ID_BMS_VOLTAGES;
+    tx_msg.len = sizeof(CAN_message_bms_voltages_t);
+    CAN.write(tx_msg);
 
-        tx_msg.timeout = 0;
+    bms_temperatures.write(tx_msg.buf);
+    tx_msg.id = ID_BMS_TEMPERATURES;
+    tx_msg.len = sizeof(CAN_message_bms_temperatures_t);
+    CAN.write(tx_msg);
 
+    bms_onboard_temperatures.write(tx_msg.buf);
+    tx_msg.id = ID_BMS_ONBOARD_TEMPERATURES;
+    tx_msg.len = sizeof(CAN_message_bms_onboard_temperatures_t);
+    CAN.write(tx_msg);
+
+    tx_msg.id = ID_BMS_DETAILED_VOLTAGES;
+    tx_msg.len = sizeof(CAN_message_bms_detailed_voltages_t);
+    for (int i = 0; i < TOTAL_IC; i++) {
+        for (int j = 0; j < 3; j++) {
+            bms_detailed_voltages[i][j].write(tx_msg.buf);
+            CAN.write(tx_msg);
+        }
     }
 
-    if (timer_can_update_slow.check()) {
-
-        tx_msg.timeout = 4; // Use blocking mode, wait up to 4ms to send each message instead of immediately failing (keep in mind this is slower)
-
-        bms_voltages.write(tx_msg.buf);
-        tx_msg.id = ID_BMS_VOLTAGES;
-        tx_msg.len = sizeof(CAN_message_bms_voltages_t);
+    tx_msg.id = ID_BMS_DETAILED_TEMPERATURES;
+    tx_msg.len = sizeof(CAN_message_bms_detailed_temperatures_t);
+    for (int i = 0; i < TOTAL_IC; i++) {
+        bms_detailed_temperatures[i].write(tx_msg.buf);
         CAN.write(tx_msg);
-
-        bms_temperatures.write(tx_msg.buf);
-        tx_msg.id = ID_BMS_TEMPERATURES;
-        tx_msg.len = sizeof(CAN_message_bms_temperatures_t);
-        CAN.write(tx_msg);
-
-        bms_onboard_temperatures.write(tx_msg.buf);
-        tx_msg.id = ID_BMS_ONBOARD_TEMPERATURES;
-        tx_msg.len = sizeof(CAN_message_bms_onboard_temperatures_t);
-        CAN.write(tx_msg);
-
-        tx_msg.id = ID_BMS_DETAILED_VOLTAGES;
-        tx_msg.len = sizeof(CAN_message_bms_detailed_voltages_t);
-        for (int i = 0; i < TOTAL_IC; i++) {
-            for (int j = 0; j < 3; j++) {
-                bms_detailed_voltages[i][j].write(tx_msg.buf);
-                CAN.write(tx_msg);
-            }
-        }
-
-        tx_msg.id = ID_BMS_DETAILED_TEMPERATURES;
-        tx_msg.len = sizeof(CAN_message_bms_detailed_temperatures_t);
-        for (int i = 0; i < TOTAL_IC; i++) {
-            bms_detailed_temperatures[i].write(tx_msg.buf);
-            CAN.write(tx_msg);
-        }
-
-        tx_msg.id = ID_BMS_ONBOARD_DETAILED_TEMPERATURES;
-        tx_msg.len = sizeof(CAN_message_bms_onboard_detailed_temperatures_t);
-        for (int i = 0; i < TOTAL_IC; i++) {
-            bms_onboard_detailed_temperatures[i].write(tx_msg.buf);
-            CAN.write(tx_msg);
-        }
-
-        tx_msg.id = ID_BMS_BALANCING_STATUS;
-        tx_msg.len = sizeof(CAN_message_bms_balancing_status_t);
-        for (int i = 0; i < (TOTAL_IC + 3) / 4; i++) {
-            bms_balancing_status[i].write(tx_msg.buf);
-            CAN.write(tx_msg);
-        }
-
-        tx_msg.timeout = 0;
-
     }
+
+    tx_msg.id = ID_BMS_ONBOARD_DETAILED_TEMPERATURES;
+    tx_msg.len = sizeof(CAN_message_bms_onboard_detailed_temperatures_t);
+    for (int i = 0; i < TOTAL_IC; i++) {
+        bms_onboard_detailed_temperatures[i].write(tx_msg.buf);
+        CAN.write(tx_msg);
+    }
+
+    tx_msg.id = ID_BMS_BALANCING_STATUS;
+    tx_msg.len = sizeof(CAN_message_bms_balancing_status_t);
+    for (int i = 0; i < (TOTAL_IC + 3) / 4; i++) {
+        bms_balancing_status[i].write(tx_msg.buf);
+        CAN.write(tx_msg);
+    }
+
+    tx_msg.timeout = 0;
 
     if (timer_watchdog_timer.check() && !fh_watchdog_test) { // Send alternating keepalive signal to watchdog timer
         watchdog_high = !watchdog_high;
@@ -1129,6 +1112,7 @@ int16_t get_current() {
     double voltage = read_adc(CH_CUR_SENSE) / (double) 819;
     double ref_voltage = read_adc(CH_CUR_REF) / (double) 819;
     double current = (voltage - ref_voltage) * (double) 50;
+    
     return (int16_t) (current * 100); // Current in Amps x 100
 }
 
@@ -1159,9 +1143,9 @@ void process_coulombs() {
 /*
  * Helper function reads from ADC then sets SPI settings such that isoSPI will continue to work
  */
-int read_adc(int channel) {
+uint16_t read_adc(MCP3204::Channel channel) {
     noInterrupts(); // Since timer interrupt triggers SPI communication, we don't want it to interrupt other SPI communication
-    int retval = ADC.read_adc(channel);
+    uint16_t retval = ADC.read(channel) / 2;
     interrupts();
     spi_enable(SPI_CLOCK_DIV16); // Reconfigure 1MHz SPI clock speed after ADC reading so LTC communication is successful
     return retval;
