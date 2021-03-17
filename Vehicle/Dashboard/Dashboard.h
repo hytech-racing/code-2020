@@ -14,7 +14,7 @@
 #define LED_START 4
 
 // MCP CAN pin definition
-#define SPI_CS PB2
+#define SPI_CS 10
 
 #define SSOK_READ A6
 #define SHUTDOWN_H_READ A7
