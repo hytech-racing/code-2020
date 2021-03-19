@@ -6,7 +6,7 @@
 #include "kinetis_flexcan.h"
 #include "Metro.h"
 
-#include "Main_Control_Unit_rev10.h"
+#include "MCU_rev10_dfs.h"
 
 // set to true or false for debugging
 #define DEBUG false
@@ -43,7 +43,7 @@ Metro timer_can_update = Metro(100);
 Metro timer_sensor_can_update = Metro(5);
 Metro timer_restart_inverter = Metro(500, 1); // Allow the MCU to restart the inverter
 Metro timer_status_send = Metro(100);
-Metro timer_watchdog_timer = Metro(1000);
+Metro timer_watchdog_timer = Metro(500);
 
 // this abuses Metro timer functionality to stay faulting once a fault has occurred
 // autoreset makes the timer update to the current time and not by the interval
@@ -91,7 +91,7 @@ static CAN_message_t tx_msg;
 void setup() {
     // no torque can be provided on startup
     mcu_status.set_max_torque(0);
-    mcu_status.set_software_is_ok(false);
+    mcu_status.set_software_is_ok(true);
 
     pinMode(BRAKE_LIGHT_CTRL,OUTPUT);
     pinMode(FRONT_LEFT_WHEEL, INPUT_PULLUP);
@@ -109,7 +109,7 @@ void setup() {
     // starting high
     digitalWrite(WATCHDOG_INPUT, HIGH);
     pinMode(TEENSY_OK, OUTPUT);
-    digitalWrite(TEENSY_OK, LOW);
+    digitalWrite(TEENSY_OK, HIGH);
 
     #if DEBUG
     Serial.begin(115200);
@@ -210,7 +210,7 @@ void loop() {
 inline void state_machine() {
     switch (mcu_status.get_state()) {
         case MCU_STATE::TRACTIVE_SYSTEM_NOT_ACTIVE:
-            inverter_heartbeat();
+            inverter_heartbeat(0);
             #if DEBUG
             Serial.println("TS NOT ACTIVE");
             #endif
@@ -225,7 +225,7 @@ inline void state_machine() {
         
         case MCU_STATE::TRACTIVE_SYSTEM_ACTIVE:
             check_TS_active();
-            inverter_heartbeat();
+            inverter_heartbeat(0);
             
             // if start button has been pressed and brake pedal is held down, transition to the next state
             if (dashboard_status.get_start_btn() && mcu_status.get_brake_pedal_active()) {
@@ -238,7 +238,8 @@ inline void state_machine() {
 
         case MCU_STATE::ENABLING_INVERTER:
             check_TS_active();
-            inverter_heartbeat();
+            inverter_heartbeat(1);
+
             // inverter enabling timed out
             if (timer_inverter_enable.check()) {
                 #if DEBUG
@@ -258,7 +259,7 @@ inline void state_machine() {
         case MCU_STATE::WAITING_READY_TO_DRIVE_SOUND:
             check_TS_active();
             check_inverter_disabled();
-            inverter_heartbeat();
+            inverter_heartbeat(1);
 
             // if the ready to drive sound has been playing for long enough, move to ready to drive mode
             if (timer_ready_sound.check()) {
@@ -346,27 +347,36 @@ inline void state_machine() {
                     mcu_status.get_no_brake_implausability() &&
                     mcu_status.get_no_accel_implausability() &&
                     mcu_status.get_no_accel_brake_implausability() &&
-                    mcu_status.get_software_is_ok() &&
+                    //mcu_status.get_software_is_ok() && //why was software not ok?
                     mcu_status.get_bms_ok_high() &&
                     mcu_status.get_imd_ok_high()
                     ) {
                     calculated_torque = calculate_torque();
+                } else {
+                  Serial.println("not calculating torque");
+                  Serial.printf("no brake implausibility: %d\n", mcu_status.get_no_brake_implausability());
+                  Serial.printf("no accel implausibility: %d\n", mcu_status.get_no_accel_implausability());
+                  Serial.printf("no accel brake implausibility: %d\n", mcu_status.get_no_accel_brake_implausability());
+                  Serial.printf("software is ok: %d\n", mcu_status.get_software_is_ok());
+                  Serial.printf("get bms ok high: %d\n", mcu_status.get_bms_ok_high());
+                  Serial.printf("get imd ok high: %d\n", mcu_status.get_imd_ok_high());
+
                 }
                 // Implausibility exists, command 0 torque
 
                 #if DEBUG
                 if (timer_debug_torque.check()) {
-                    Serial.print("MCU REQUESTED TORQUE: ");
+                   /* Serial.print("MCU REQUESTED TORQUE: ");
                     Serial.println(calculated_torque);
                     Serial.print("MCU NO IMPLAUS ACCEL: ");
                     Serial.println(mcu_status.get_no_accel_implausability());
                     Serial.print("MCU NO IMPLAUS BRAKE: ");
                     Serial.println(mcu_status.get_no_brake_implausability());
                     Serial.print("MCU NO IMPLAUS ACCEL BRAKE: ");
-                    Serial.println(mcu_status.get_no_accel_brake_implausability());
-                    Serial.printf("ssok: %d\n", mcu_status.get_software_is_ok());
+                    Serial.println(mcu_status.get_no_accel_brake_implausability());*/
+                   /* Serial.printf("ssok: %d\n", mcu_status.get_software_is_ok());
                     Serial.printf("bms: %d\n", mcu_status.get_bms_ok_high());
-                    Serial.printf("imd: %d\n", mcu_status.get_imd_ok_high());
+                    Serial.printf("imd: %d\n", mcu_status.get_imd_ok_high());*/
                 }
                 #endif
 
@@ -374,7 +384,7 @@ inline void state_machine() {
                 // Serial.println(mc_motor_position_information.get_motor_speed());
                 // Serial.println(calculated_torque);
 
-                mc_command_message.set_torque_command(calculated_torque);
+                mc_command_message.set_torque_command(calculated_torque*10); //what's the correct way to do the multiplying by 10?
 
                 mc_command_message.write(tx_msg.buf);
                 tx_msg.id = ID_MC_COMMAND_MESSAGE;
@@ -406,9 +416,9 @@ inline void check_inverter_disabled() {
     }
 }
 // Send a message to the Motor Controller over CAN when vehicle is not ready to drive
-inline void inverter_heartbeat() {
+inline void inverter_heartbeat(int enable) {
     if (timer_motor_controller_send.check()) {
-        MC_command_message mc_command_message(0, 0, 1, 0, 0, 0);
+        MC_command_message mc_command_message(0, 0, 1, enable, 0, 0);
 
         mc_command_message.write(tx_msg.buf);
         tx_msg.id = ID_MC_COMMAND_MESSAGE;
@@ -447,19 +457,26 @@ inline void software_shutdown() {
     // BMS heartbeat has not arrived within time interval
     if (timer_bms_heartbeat.check()){
         timer_bms_heartbeat.interval(0);
+        #if DEBUG
+          Serial.println("no bms heartbeat");
+        #endif
         mcu_status.set_software_is_ok(false);
     }
     if (timer_dashboard_heartbeat.check()){
         timer_dashboard_heartbeat.interval(0);
+        #if DEBUG
+           Serial.println("no dashboard");
+        #endif
         mcu_status.set_software_is_ok(false);
     }
     // check if any shutdown circuit inputs are low except software shutdown ones
     else if ((mcu_status.get_shutdown_inputs() & 0x3F) != 0x3F){
+       // Serial.println("not 3F");
         mcu_status.set_software_is_ok(false);
     }
     // add BMS software checks
     // software ok/not ok action
-    if (mcu_status.get_software_is_ok()){
+    //if (mcu_status.get_software_is_ok()){
         digitalWrite(TEENSY_OK, HIGH);
         /* Watchdog timer */
         if (timer_watchdog_timer.check()){
@@ -467,12 +484,12 @@ inline void software_shutdown() {
             watchdog_state = !watchdog_state;
             digitalWrite(WATCHDOG_INPUT, watchdog_state);
         }
-    }
-    else {
+   // }
+    /*else {
         digitalWrite(TEENSY_OK, LOW);
         timer_software_enable_interval.interval(TIMER_SOFTWARE_ENABLE);
         timer_software_enable_interval.reset();
-    }
+    }*/
 }
 
 /* Parse incoming CAN messages */
@@ -564,7 +581,7 @@ void set_state(MCU_STATE new_state) {
             for(int i = 0; i < 10; i++) {
                 CAN.write(tx_msg);
             }
-
+            /* We should test with this code uncommented. Wheels spun with it commented. 
             // look this up in datasheet
             mc_command_message.set_inverter_enable(false);
             mc_command_message.write(tx_msg.buf); // disable command
@@ -576,7 +593,7 @@ void set_state(MCU_STATE new_state) {
                 CAN.write(tx_msg);
             }
 
-            Serial.println("MCU Sent enable command");
+            Serial.println("MCU Sent enable command");*/
             timer_inverter_enable.reset();
             break;
         }
@@ -601,9 +618,17 @@ int calculate_torque() {
     int calculated_torque = 0;
 
     const int max_torque = mcu_status.get_max_torque();
-
+    
     int torque1 = map(round(filtered_accel1_reading), START_ACCELERATOR_PEDAL_1, END_ACCELERATOR_PEDAL_1, 0, max_torque);
     int torque2 = map(round(filtered_accel2_reading), START_ACCELERATOR_PEDAL_2, END_ACCELERATOR_PEDAL_2, 0, max_torque);
+    #if DEBUG
+      Serial.print("max torque: ");
+      Serial.println(max_torque);
+      Serial.print("torque1: ");
+      Serial.println(torque1);
+      Serial.print("torque2: ");
+      Serial.println(torque2);
+    #endif
 
     // torque values are greater than the max possible value, set them to max
     if (torque1 > max_torque) {
@@ -670,13 +695,13 @@ inline void read_pedal_values() {
     #if DEBUG
     if (timer_debug.check()) {
         Serial.print("MCU PEDAL ACCEL 1: ");
-        Serial.println(mcu_pedal_readings.get_accelerator_pedal_raw_1());
+        Serial.println(mcu_pedal_readings.get_accelerator_pedal_1());
         Serial.print("MCU PEDAL ACCEL 2: ");
-        Serial.println(mcu_pedal_readings.get_accelerator_pedal_raw_2());
+        Serial.println(mcu_pedal_readings.get_accelerator_pedal_2());
         Serial.print("MCU PEDAL BRAKE: ");
-        Serial.println(mcu_pedal_readings.get_brake_pedal_raw());
+        Serial.println(mcu_pedal_readings.get_brake_transducer_1());
         Serial.print("MCU BRAKE ACT: ");
-        Serial.println(mcu_pedal_readings.get_brake_pedal_active());
+        Serial.println(mcu_status.get_brake_pedal_active());
         Serial.print("MCU STATE: ");
         Serial.println(mcu_status.get_state());
     }
