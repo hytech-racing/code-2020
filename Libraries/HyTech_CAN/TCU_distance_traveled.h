@@ -1,6 +1,9 @@
 #pragma once
 #include <string.h>
 #include <stdint.h>
+#ifdef HT_DEBUG_EN
+    #include "Arduino.h"
+#endif
 
 #pragma pack(push,1)
 
@@ -16,6 +19,15 @@ public:
     inline int16_t get_distance_traveled()  const { return distance_traveled; }
 
     inline void set_distance_traveled(uint16_t value) { this->distance_traveled = distance_traveled; }
+
+#ifdef HT_DEBUG_EN
+    void print() {
+        Serial.println("\n\nTCU DISTANCE TRAVELED");
+        Serial.println(    "---------------------");
+        Serial.print("DISTANCE TRAVELED:   ");  Serial.println(distance_traveled);
+    }
+#endif
+
 private:
     int16_t distance_traveled; // @Parse @Scale(100) @Unit(m)
 };

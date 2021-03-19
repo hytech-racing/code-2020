@@ -1,6 +1,9 @@
 #pragma once
 #include <string.h>
 #include <stdint.h>
+#ifdef HT_DEBUG_EN
+    #include "Arduino.h"
+#endif
 
 #pragma pack(push,1)
 
@@ -46,6 +49,18 @@ public:
             case 2: voltage_2 = voltage; return;
         }
     }
+
+#ifdef HT_DEBUG_EN
+    void print() {
+        Serial.println("\n\nBMS DETAILED VOLTAGES");
+        Serial.println(    "---------------------");
+        Serial.print("IC:        ");    Serial.println((uint32_t) get_ic_id());
+        Serial.print("GROUP:     ");    Serial.println((uint32_t) get_group_id());
+        Serial.print("VOLTAGE 0: ");    Serial.println(voltage_0 / 10000., 4);
+        Serial.print("VOLTAGE 1: ");    Serial.println(voltage_1 / 10000., 4);
+        Serial.print("VOLTAGE 2: ");    Serial.println(voltage_2 / 10000., 4);
+    }
+#endif
 
 private:
 	uint8_t ic_id_group_id;

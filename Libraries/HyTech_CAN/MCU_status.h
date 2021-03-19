@@ -1,6 +1,9 @@
 #pragma once
 #include <string.h>
 #include <stdint.h>
+#ifdef HT_DEBUG_EN
+    #include "Arduino.h"
+#endif
 
 #pragma pack(push,1)
 
@@ -44,11 +47,33 @@ public:
     inline void set_shutdown_f_above_threshold(bool shutdown_f_above_threshold) { flags = (flags & 0x7F) | (shutdown_f_above_threshold << 7); }
     inline void set_temperature(int16_t temperature)                            { this->temperature = temperature; }
     inline void set_glv_battery_voltage(uint16_t glv_battery_voltage)           { this->glv_battery_voltage = glv_battery_voltage; }
+
+#ifdef HT_DEBUG_EN
+    void print() {
+        char shutdown [8];
+        int idx = 0;
+        if (get_shutdown_b_above_threshold()) shutdown[idx++] = 'B';
+        if (get_shutdown_c_above_threshold()) shutdown[idx++] = 'C';
+        if (get_shutdown_d_above_threshold()) shutdown[idx++] = 'D';
+        if (get_shutdown_e_above_threshold()) shutdown[idx++] = 'E';
+        if (get_shutdown_f_above_threshold()) shutdown[idx++] = 'F';
+
+        shutdown[idx++] = '\0';
+        Serial.println("\n\nMCU STATUS");
+        Serial.println(    "----------");
+        Serial.print("STATE:       ");  Serial.println(state, HEX);
+        Serial.print("FLAGS:       ");  Serial.println(shutdown);
+        Serial.print("TEMPERATURE: ");  Serial.println(temperature / 100.);
+        Serial.print("GLV VOLTAGE: ");  Serial.println(glv_battery_voltage, HEX);
+    }
+#endif
+
+
 private:
-    uint8_t state; // @Parse
+    uint8_t state;                  // @Parse
     uint8_t flags;
-    int16_t temperature; // @Parse @Scale(100) @Unit(C)
-    uint16_t glv_battery_voltage; // @Parse @Name(glv_voltage) @Scale(100) @Unit(V)
+    int16_t temperature;            // @Parse @Scale(100) @Unit(C)
+    uint16_t glv_battery_voltage;   // @Parse @Scale(100) @Unit(V) @Name(glv_voltage) 
 };
 
 #pragma pack(pop)

@@ -1,6 +1,9 @@
 #pragma once
 #include <string.h>
 #include <stdint.h>
+#ifdef HT_DEBUG_EN
+    #include "Arduino.h"
+#endif
 
 #pragma pack(push,1)
 
@@ -18,9 +21,19 @@ public:
 
     inline void set_latitude(int32_t latitude)      { this->latitude = latitude; }
     inline void set_longitude(int32_t longitude)    { this->longitude = longitude; }
+
+#ifdef HT_DEBUG_EN
+    void print() {
+        Serial.println("\n\nGPS Readings");
+        Serial.println(    "-----------");
+        Serial.print("Latitude:  ");  Serial.println(latitude / 1000000.);
+        Serial.print("Longitude: ");  Serial.println(longitude / 1000000.);
+    }
+#endif
+
 private:
-    int32_t latitude; // @Parse @Scale(100000)
-    int32_t longitude; // @Parse @Scale(100000)
+    int32_t latitude;   // @Parse @Scale(100000)
+    int32_t longitude;  // @Parse @Scale(100000)
 };
 
 #pragma pack(pop)

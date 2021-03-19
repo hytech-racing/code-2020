@@ -1,6 +1,9 @@
 #pragma once
 #include <string.h>
 #include <stdint.h>
+#ifdef HT_DEBUG_EN
+    #include "Arduino.h"
+#endif
 
 #pragma pack(push,1)
 
@@ -22,6 +25,15 @@ public:
 
     inline void set_wheel_rpm_left(uint16_t value)  { this->wheel_rpm_left = value; }
     inline void set_wheel_rpm_right(uint16_t value) { this->wheel_rpm_right = value; }
+
+#ifdef HT_DEBUG_EN
+    void print() {
+        Serial.println("\n\nTCU WHEEL RPM");
+        Serial.println(    "-------------");
+        Serial.print("RPM LEFT:  ");  Serial.println(wheel_rpm_left  / 100.);
+        Serial.print("RPM RIGHT: ");  Serial.println(wheel_rpm_right / 100.);
+    }
+#endif
 
 private:
     int16_t wheel_rpm_left; // @Parse @Scale(100) @Unit(RPM)

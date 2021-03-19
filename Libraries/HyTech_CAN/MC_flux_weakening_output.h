@@ -1,6 +1,9 @@
 #pragma once
 #include <string.h>
 #include <stdint.h>
+#ifdef HT_DEBUG_EN
+    #include "Arduino.h"
+#endif
 
 #pragma pack(push,1)
 
@@ -17,11 +20,23 @@ public:
     inline int16_t get_flux_weakening_output() const { return flux_weakening_output; }
     inline int16_t get_id_command()            const { return id_command; }
     inline int16_t get_iq_command()            const { return iq_command; }
+
+#ifdef HT_DEBUG_EN
+    void print() {
+        Serial.println("\n\nMC FLUX WEAKENING OUTPUT");
+        Serial.println    ("------------------------");
+        Serial.print("MODULATION INDEX:      0x");    Serial.println(modulation_index);
+        Serial.print("FLUX WEAKENING OUTPUT: ");      Serial.println(flux_weakening_output);
+        Serial.print("ID COMMAND:            ");      Serial.println(id_command);
+        Serial.print("IQ COMMAND:            ");      Serial.println(iq_command);
+    }
+#endif
+
 private:
-    uint16_t modulation_index; // @Parse @Hex TODO Signed or Unsigned?
-    int16_t flux_weakening_output; // @Parse @Hex
-    int16_t id_command; // @Parse @Hex
-    int16_t iq_command; // @Parse @Hex
+    uint16_t modulation_index;      // @Parse @Hex TODO Signed or Unsigned?
+    int16_t flux_weakening_output;  // @Parse @Hex
+    int16_t id_command;             // @Parse @Hex
+    int16_t iq_command;             // @Parse @Hex
 };
 
 #pragma pack(pop)
