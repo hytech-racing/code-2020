@@ -384,7 +384,7 @@ inline void state_machine() {
                 // Serial.println(mc_motor_position_information.get_motor_speed());
                 // Serial.println(calculated_torque);
 
-                mc_command_message.set_torque_command(calculated_torque*10); //what's the correct way to do the multiplying by 10?
+                mc_command_message.set_torque_command(calculated_torque); 
 
                 mc_command_message.write(tx_msg.buf);
                 tx_msg.id = ID_MC_COMMAND_MESSAGE;
@@ -437,21 +437,23 @@ inline void software_shutdown() {
             timer_software_enable_interval.interval(0);
             // if software ok based signals are low 100 ms after software ok has been turned on, fault software ok
             if ((mcu_status.get_shutdown_inputs() & 0xC0) != 0xC0){
-                mcu_status.set_software_is_ok(false);
+                mcu_status.set_software_is_ok(false); 
             }
         }
     }
     else {
+      /*
         // if the software ok based signals are high, software ok is false
-        if ((mcu_status.get_shutdown_inputs() & 0xC0) != 0) {
+        if ((mcu_status.get_shutdown_inputs() & 0xC0) != 0) { //need to do testing with this line
             mcu_status.set_software_is_ok(false);
         }
         // assume software is ok because any subsequent check will fail it
-        // because all software ok based checks have been preforned
-        else {
+        // because all software ok based checks have been preforned 
+        else { */
             mcu_status.set_software_is_ok(true);
-        }
+       // }
     }
+
 
     // check inputs
     // BMS heartbeat has not arrived within time interval
@@ -470,14 +472,14 @@ inline void software_shutdown() {
         mcu_status.set_software_is_ok(false);
     }
     // check if any shutdown circuit inputs are low except software shutdown ones
-    else if ((mcu_status.get_shutdown_inputs() & 0x3F) != 0x3F){
+    /*if ((mcu_status.get_shutdown_inputs() & 0x3F) != 0x3F){
        // Serial.println("not 3F");
         mcu_status.set_software_is_ok(false);
-    }
+    }*/
     // add BMS software checks
     // software ok/not ok action
     //if (mcu_status.get_software_is_ok()){
-        digitalWrite(TEENSY_OK, HIGH);
+        digitalWrite(TEENSY_OK, HIGH); //eventually make this HIGH only if software is ok
         /* Watchdog timer */
         if (timer_watchdog_timer.check()){
             static bool watchdog_state = HIGH;
@@ -617,7 +619,7 @@ void set_state(MCU_STATE new_state) {
 int calculate_torque() {
     int calculated_torque = 0;
 
-    const int max_torque = mcu_status.get_max_torque();
+    const int max_torque = mcu_status.get_max_torque() * 10;
     
     int torque1 = map(round(filtered_accel1_reading), START_ACCELERATOR_PEDAL_1, END_ACCELERATOR_PEDAL_1, 0, max_torque);
     int torque2 = map(round(filtered_accel2_reading), START_ACCELERATOR_PEDAL_2, END_ACCELERATOR_PEDAL_2, 0, max_torque);
