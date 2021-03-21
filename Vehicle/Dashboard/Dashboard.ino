@@ -163,6 +163,7 @@ inline void mcu_status_received(){
 
     //Start LED
     switch(mcu_status.get_state()){
+        case MCU_STATE::STARTUP:
         case MCU_STATE::TRACTIVE_SYSTEM_NOT_ACTIVE:
             variable_led_start.setMode(BLINK_MODES::OFF);
             dashboard_status.set_start_led(static_cast<uint8_t>(BLINK_MODES::OFF));
@@ -172,6 +173,8 @@ inline void mcu_status_received(){
             dashboard_status.set_start_led(static_cast<uint8_t>(BLINK_MODES::FAST));
             break;
         case MCU_STATE::ENABLING_INVERTER:
+        case MCU_STATE::WAITING_READY_TO_DRIVE_SOUND:
+        case MCU_STATE::READY_TO_DRIVE:
             variable_led_start.setMode(BLINK_MODES::ON);
             dashboard_status.set_start_led(static_cast<uint8_t>(BLINK_MODES::ON));
             break;
