@@ -13,8 +13,8 @@ public:
     MC_flux_weakening_output() = default;
     MC_flux_weakening_output(uint8_t buf[8]) { load(buf); }
 
-    inline void load(uint8_t buf[])     { memcpy(this, buf, sizeof(*this)); }
-    inline void write(uint8_t buf[])    { memcpy(buf, this, sizeof(*this)); }
+    inline void load(uint8_t buf[])         { memcpy(this, buf, sizeof(*this)); }
+    inline void write(uint8_t buf[])  const { memcpy(buf, this, sizeof(*this)); }
 
     inline uint16_t get_modulation_index()     const { return modulation_index; }
     inline int16_t get_flux_weakening_output() const { return flux_weakening_output; }

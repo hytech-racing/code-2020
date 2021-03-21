@@ -13,8 +13,8 @@ public:
     BMS_status() = default;
     BMS_status(uint8_t buf[]) { load(buf); }
 
-    inline void load(uint8_t buf[])     { memcpy(this, buf, sizeof(*this)); }
-    inline void write(uint8_t buf[])    { memcpy(buf, this, sizeof(*this)); }
+    inline void load(uint8_t buf[])         { memcpy(this, buf, sizeof(*this)); }
+    inline void write(uint8_t buf[])  const { memcpy(buf, this, sizeof(*this)); }
 
     inline uint8_t get_state()                   const { return state; }
     inline uint16_t get_error_flags()            const { return error_flags; }

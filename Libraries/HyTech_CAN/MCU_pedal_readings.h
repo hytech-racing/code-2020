@@ -20,8 +20,8 @@ public:
         set_torque_map_mode(torque_map_mode);
     }
 
-    inline void load(uint8_t buf[])     { memcpy(this, buf, sizeof(*this)); }
-    inline void write(uint8_t buf[])    { memcpy(buf, this, sizeof(*this)); }
+    inline void load(uint8_t buf[])         { memcpy(this, buf, sizeof(*this)); }
+    inline void write(uint8_t buf[])  const { memcpy(buf, this, sizeof(*this)); }
 
     inline uint16_t get_accelerator_pedal_raw_1()   const { return accelerator_pedal_raw_1; }
     inline uint16_t get_accelerator_pedal_raw_2()   const { return accelerator_pedal_raw_2; }

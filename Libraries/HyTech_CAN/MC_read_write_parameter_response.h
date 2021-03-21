@@ -13,8 +13,8 @@ public:
     MC_read_write_parameter_response() = default;
     MC_read_write_parameter_response(uint8_t buf[8]) { load(buf); }
 
-    inline void load(uint8_t buf[])     { memcpy(this, buf, sizeof(*this)); }
-    inline void write(uint8_t buf[])    { memcpy(buf, this, sizeof(*this)); }
+    inline void load(uint8_t buf[])         { memcpy(this, buf, sizeof(*this)); }
+    inline void write(uint8_t buf[])  const { memcpy(buf, this, sizeof(*this)); }
 
     inline uint16_t get_parameter_address() const { return parameter_address; }
     inline bool get_write_success()         const { return write_success; }

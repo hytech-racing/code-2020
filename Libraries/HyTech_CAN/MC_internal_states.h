@@ -13,8 +13,8 @@ public:
     MC_internal_states() = default;
     MC_internal_states(uint8_t buf[8]) { load(buf); }
 
-    inline void load(uint8_t buf[])     { memcpy(this, buf, sizeof(*this)); }
-    inline void write(uint8_t buf[])    { memcpy(buf, this, sizeof(*this)); }
+    inline void load(uint8_t buf[])         { memcpy(this, buf, sizeof(*this)); }
+    inline void write(uint8_t buf[])  const { memcpy(buf, this, sizeof(*this)); }
 
     inline uint8_t get_vsm_state()                          const { return vsm_state; }
     inline uint8_t get_inverter_state()                     const { return inverter_state; }

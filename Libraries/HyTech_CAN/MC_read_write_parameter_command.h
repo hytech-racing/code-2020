@@ -18,8 +18,8 @@ public:
         set_data(data);
     }
 
-    inline void load(uint8_t buf[])     { memcpy(this, buf, sizeof(*this)); }
-    inline void write(uint8_t buf[])    { memcpy(buf, this, sizeof(*this)); }
+    inline void load(uint8_t buf[])         { memcpy(this, buf, sizeof(*this)); }
+    inline void write(uint8_t buf[])  const { memcpy(buf, this, sizeof(*this)); }
 
     inline uint16_t get_parameter_address() const { return parameter_address; }
     inline bool get_rw_command()            const { return rw_command; }

@@ -21,8 +21,8 @@ public:
         set_commanded_torque_limit(commanded_torque_limit);
     }
 
-    inline void load(uint8_t buf[])     { memcpy(this, buf, sizeof(*this)); }
-    inline void write(uint8_t buf[])    { memcpy(buf, this, sizeof(*this)); }
+    inline void load(uint8_t buf[])         { memcpy(this, buf, sizeof(*this)); }
+    inline void write(uint8_t buf[])  const { memcpy(buf, this, sizeof(*this)); }
 
     inline int16_t get_torque_command()         const { return torque_command; }
     inline int16_t get_angular_velocity()       const { return angular_velocity; }

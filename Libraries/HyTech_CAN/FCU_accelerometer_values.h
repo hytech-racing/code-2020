@@ -13,8 +13,8 @@ public:
 	FCU_accelerometer_values() = default;
 	FCU_accelerometer_values(uint8_t buf[8]) { load(buf); }
 
-	inline void load(uint8_t buf[]) 	{ memcpy(this, buf, sizeof(*this)); }
-	inline void write(uint8_t buf[])	{ memcpy(buf, this, sizeof(*this)); }
+    inline void load(uint8_t buf[])         { memcpy(this, buf, sizeof(*this)); }
+    inline void write(uint8_t buf[])  const { memcpy(buf, this, sizeof(*this)); }
 
 	inline uint8_t get_x() const { return XValue_x100; }
 	inline uint8_t get_y() const { return YValue_x100; }

@@ -13,8 +13,8 @@ public:
     MC_fault_codes() = default;
     MC_fault_codes(uint8_t buf[8]) { load(buf); }
 
-    inline void load(uint8_t buf[])     { memcpy(this, buf, sizeof(*this)); }
-    inline void write(uint8_t buf[])    { memcpy(buf, this, sizeof(*this)); }
+    inline void load(uint8_t buf[])         { memcpy(this, buf, sizeof(*this)); }
+    inline void write(uint8_t buf[])  const { memcpy(buf, this, sizeof(*this)); }
 
     uint16_t get_post_fault_lo() { return post_fault_lo; }
     uint16_t get_post_fault_hi() { return post_fault_hi; }

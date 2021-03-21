@@ -13,8 +13,8 @@ public:
     MC_firmware_information() = default;
     MC_firmware_information(uint8_t buf[8]) { load(buf); }
 
-    inline void load(uint8_t buf[])     { memcpy(this, buf, sizeof(*this)); }
-    inline void write(uint8_t buf[])    { memcpy(buf, this, sizeof(*this)); }
+    inline void load(uint8_t buf[])         { memcpy(this, buf, sizeof(*this)); }
+    inline void write(uint8_t buf[])  const { memcpy(buf, this, sizeof(*this)); }
 
     inline uint16_t get_eeprom_version_project_code()   const { return eeprom_version_project_code; }
     inline uint16_t get_software_version()              const { return software_version; }

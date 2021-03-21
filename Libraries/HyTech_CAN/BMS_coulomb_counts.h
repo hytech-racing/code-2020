@@ -18,8 +18,8 @@ public:
         set_total_discharge(total_discharge);
     }
 
-    inline void load(uint8_t buf[])     { memcpy(this, buf, sizeof(*this)); }
-    inline void write(uint8_t buf[])    { memcpy(buf, this, sizeof(*this)); }
+    inline void load(uint8_t buf[])         { memcpy(this, buf, sizeof(*this)); }
+    inline void write(uint8_t buf[])  const { memcpy(buf, this, sizeof(*this)); }
 
     inline uint32_t get_total_charge()      const { return total_charge; }
     inline uint32_t get_total_discharge()   const { return total_discharge; }

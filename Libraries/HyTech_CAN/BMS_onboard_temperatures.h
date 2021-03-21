@@ -18,8 +18,8 @@ public:
         set_high_temperature(high_temperature);
     }
 
-    inline void load(uint8_t buf[])     { memcpy(this, buf, sizeof(*this)); }
-    inline void write(uint8_t buf[])    { memcpy(buf, this, sizeof(*this)); }
+    inline void load(uint8_t buf[])         { memcpy(this, buf, sizeof(*this)); }
+    inline void write(uint8_t buf[])  const { memcpy(buf, this, sizeof(*this)); }
 
     inline int16_t get_average_temperature()    const { return average_temperature; }
     inline int16_t get_low_temperature()        const { return low_temperature; }

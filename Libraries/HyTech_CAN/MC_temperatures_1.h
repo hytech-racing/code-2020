@@ -13,8 +13,8 @@ public:
     MC_temperatures_1() = default;
     MC_temperatures_1(uint8_t buf[8]) { load(buf); }
 
-    inline void load(uint8_t buf[])     { memcpy(this, buf, sizeof(*this)); }
-    inline void write(uint8_t buf[])    { memcpy(buf, this, sizeof(*this)); }
+    inline void load(uint8_t buf[])         { memcpy(this, buf, sizeof(*this)); }
+    inline void write(uint8_t buf[])  const { memcpy(buf, this, sizeof(*this)); }
 
     inline int16_t get_module_a_temperature()           const { return module_a_temperature; }
     inline int16_t get_module_b_temperature()           const { return module_b_temperature; }

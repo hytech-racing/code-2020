@@ -18,8 +18,8 @@ public:
         set_temperature_1(temperature_1);
     }
 
-    inline void load(uint8_t buf[])     { memcpy(this, buf, sizeof(*this)); }
-    inline void write(uint8_t buf[])    { memcpy(buf, this, sizeof(*this)); }
+    inline void load(uint8_t buf[])         { memcpy(this, buf, sizeof(*this)); }
+    inline void write(uint8_t buf[])  const { memcpy(buf, this, sizeof(*this)); }
 
     inline uint8_t get_ic_id()          const { return ic_id; }
     inline int16_t get_temperature_0()  const { return temperature_0; }
