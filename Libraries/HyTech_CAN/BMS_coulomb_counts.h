@@ -2,9 +2,7 @@
 
 #include <string.h>
 #include <stdint.h>
-#ifdef HT_DEBUG_EN
-    #include "Arduino.h"
-#endif
+#include "Arduino.h"
 
 #pragma pack(push,1)
 
@@ -27,14 +25,12 @@ public:
     inline void set_total_charge(uint32_t total_charge)         { this->total_charge = total_charge; }
     inline void set_total_discharge(uint32_t total_discharge)   { this->total_discharge = total_discharge; }
 
-#ifdef HT_DEBUG_EN
     void print() {
         Serial.println("\n\nBMS COULOMB COUNTS");
         Serial.println(    "------------------");
         Serial.print("TOTAL CHARGE:    ");  Serial.println(total_charge / 10000., 4);
         Serial.print("TOTAL DISCHARGE: ");  Serial.println(total_discharge / 10000., 4);
     }
-#endif
 
 private:
     uint32_t total_charge;      // @Parse @Scale(10000) @Unit(C)

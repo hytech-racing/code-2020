@@ -1,9 +1,7 @@
 #pragma once
 #include <string.h>
 #include <stdint.h>
-#ifdef HT_DEBUG_EN
-    #include "Arduino.h"
-#endif
+#include "Arduino.h"
 
 #pragma pack(push,1)
 
@@ -21,7 +19,6 @@ public:
     inline int16_t get_electrical_output_frequency()    const { return electrical_output_frequency; }
     inline int16_t get_delta_resolver_filtered()        const { return delta_resolver_filtered; }
 
-#ifdef HT_DEBUG_EN
     void print() {
         Serial.println("\n\nMC Motor Position Information");
         Serial.println(    "-----------------------------");
@@ -30,7 +27,6 @@ public:
         Serial.print("ELEC OUTPUT FREQ:    ");  Serial.println(electrical_output_frequency);
         Serial.print("DELTA RESOLVER FILT: ");  Serial.println(delta_resolver_filtered);
     }
-#endif
 
 private:
     int16_t motor_angle;                    // @Parse @Scale(10)

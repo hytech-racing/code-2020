@@ -1,9 +1,7 @@
 #pragma once
 #include <string.h>
 #include <stdint.h>
-#ifdef HT_DEBUG_EN
-    #include "Arduino.h"
-#endif
+#include "Arduino.h"
 
 #pragma pack(push,1)
 
@@ -21,7 +19,6 @@ public:
     inline int16_t get_phase_c_current()    const { return phase_c_current; }
     inline int16_t get_dc_bus_current()     const { return dc_bus_current; }
 
-#ifdef HT_DEBUG_EN
     void print() {
         Serial.println("\n\nMC CURRENT INFORMATION");
         Serial.println(    "----------------------");
@@ -30,7 +27,6 @@ public:
         Serial.print("PHASE C CURRENT: ");  Serial.println(phase_c_current / 10.0, 1);
         Serial.print("DC BUS CURRENT:  ");  Serial.println(dc_bus_current / 10.0, 1);
     }
-#endif
 
 private:
     int16_t phase_a_current; // @Parse @Scale(10) @Unit(A)

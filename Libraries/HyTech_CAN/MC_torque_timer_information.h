@@ -1,9 +1,7 @@
 #pragma once
 #include <string.h>
 #include <stdint.h>
-#ifdef HT_DEBUG_EN
-    #include "Arduino.h"
-#endif
+#include "Arduino.h"
 
 #pragma pack(push,1)
 
@@ -20,7 +18,6 @@ public:
     inline int16_t get_torque_feedback()    const { return torque_feedback; }
     inline uint32_t get_power_on_timer()    const { return power_on_timer; }
 
-#ifdef HT_DEBUG_EN
     void print() {
         Serial.println("\n\nMC TORQUE TIMER INFORMATION");
         Serial.println(    "---------------------------");
@@ -28,7 +25,6 @@ public:
         Serial.print("TORQUE FEEDBACK:  "); Serial.println(torque_feedback);
         Serial.print("RMS UPTIME:       "); Serial.println(power_on_timer * .003, 0);
     }
-#endif
 
 private:
     int16_t commanded_torque; // @Parse @Scale(10) @Unit(C)

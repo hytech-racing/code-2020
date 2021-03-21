@@ -2,9 +2,7 @@
 #pragma once
 #include <string.h>
 #include <stdint.h>
-#ifdef HT_DEBUG_EN
-    #include "Arduino.h"
-#endif
+#include "Arduino.h"
 
 #pragma pack(push,1)
 
@@ -22,7 +20,6 @@ public:
     inline int16_t get_analog_input_3() const { return analog_input_3; }
     inline int16_t get_analog_input_4() const { return analog_input_4; }
 
-#ifdef HT_DEBUG_EN
     void print() {
         Serial.println("\n\nMC ANALOG INPUT VOLTAGES");
         Serial.println(    "------------------------");
@@ -31,7 +28,6 @@ public:
         Serial.print("ANALOG INPUT 3: ");  Serial.println(analog_input_3);
         Serial.print("ANALOG INPUT 4: ");  Serial.println(analog_input_4);
     }
-#endif
 
 private:
     int16_t analog_input_1; // @Parse

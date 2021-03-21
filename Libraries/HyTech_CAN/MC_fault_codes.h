@@ -1,9 +1,7 @@
 #pragma once
 #include <string.h>
 #include <stdint.h>
-#ifdef HT_DEBUG_EN
-    #include "Arduino.h"
-#endif
+#include "Arduino.h"
 
 #pragma pack(push,1)
 
@@ -89,7 +87,6 @@ public:
     inline bool get_run_hi_resolver_not_connected()                     const { return run_fault_hi & 0x4000; } // @Parseflag(run_fault_hi)
     inline bool get_run_hi_inverter_discharge_active()                  const { return run_fault_hi & 0x8000; } // @Parseflag(run_fault_hi)
 
-#ifdef HT_DEBUG_EN
     void print() {
         Serial.println("\n\nMC FAULT CODES");
         Serial.println    ("--------------");
@@ -98,7 +95,6 @@ public:
         Serial.print("RUN FAULT LO:  0x");  Serial.println(run_fault_lo, HEX);
         Serial.print("RUN FAULT HI:  0x");  Serial.println(run_fault_hi, HEX);
     }
-#endif
 
 private:
     uint16_t post_fault_lo; // @Parse @Flagset @Hex @Sparse

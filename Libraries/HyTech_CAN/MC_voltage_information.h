@@ -1,9 +1,7 @@
 #pragma once
 #include <string.h>
 #include <stdint.h>
-#ifdef HT_DEBUG_EN
-    #include "Arduino.h"
-#endif
+#include "Arduino.h"
 
 #pragma pack(push,1)
 
@@ -21,7 +19,6 @@ public:
     inline int16_t get_phase_ab_voltage() const { return phase_ab_voltage; }
     inline int16_t get_phase_bc_voltage() const { return phase_bc_voltage; }
 
-#ifdef HT_DEBUG_EN
     void print() {
         Serial.println("\n\nMC VOLTAGE INFORMATION");
         Serial.println(    "----------------------");
@@ -30,7 +27,6 @@ public:
         Serial.print("PHASE AB VOLTAGE: "); Serial.println(phase_ab_voltage / 10.0, 1);
         Serial.print("PHASE BC VOLTAGE: "); Serial.println(phase_bc_voltage / 10.0, 1);
     }
-#endif
 
 private:
     int16_t dc_bus_voltage;     // @Parse @Scale(10) @Unit(V)

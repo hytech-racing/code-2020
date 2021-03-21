@@ -1,9 +1,7 @@
 #pragma once
 #include <string.h>
 #include <stdint.h>
-#ifdef HT_DEBUG_EN
-    #include "Arduino.h"
-#endif
+#include "Arduino.h"
 
 #pragma pack(push,1)
 
@@ -21,7 +19,6 @@ public:
     inline int16_t get_motor_temperature()  const { return motor_temperature; }
     inline int16_t get_torque_shudder()     const { return torque_shudder; }
 
-#ifdef HT_DEBUG_EN
     void print() {
         Serial.println("\n\nMC TEMPERATURES 3");
         Serial.println(    "-----------------");
@@ -30,7 +27,6 @@ public:
         Serial.print("MOTOR TEMP:     ");   Serial.println(motor_temperature / 10.0, 1);
         Serial.print("TORQUE SHUDDER: ");   Serial.println(torque_shudder / 10.0, 1);
     }
-#endif
 
 private:
     int16_t rtd_4_temperature;  // @Parse @Scale(10) @Unit(C)

@@ -1,9 +1,7 @@
 #pragma once
 #include <string.h>
 #include <stdint.h>
-#ifdef HT_DEBUG_EN
-    #include "Arduino.h"
-#endif
+#include "Arduino.h"
 
 #pragma pack(push,1)
 
@@ -25,7 +23,6 @@ public:
     inline bool get_digital_input_7() const { return digital_input_7; }
     inline bool get_digital_input_8() const { return digital_input_8; }
 
-#ifdef HT_DEBUG_EN
     void print() {
         Serial.println("\n\nMC DIGITAL INPUT STATUS");
         Serial.println(    "-----------------------");
@@ -38,7 +35,6 @@ public:
         Serial.print("DIGITAL INPUT 7: ");  Serial.println(digital_input_7);
         Serial.print("DIGITAL INPUT 8: ");  Serial.println(digital_input_8);
     }
-#endif
 
 private:
     bool digital_input_1; // @Parse

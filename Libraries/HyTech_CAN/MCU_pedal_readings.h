@@ -1,9 +1,7 @@
 #pragma once
 #include <string.h>
 #include <stdint.h>
-#ifdef HT_DEBUG_EN
-    #include "Arduino.h"
-#endif
+#include "Arduino.h"
 
 #pragma pack(push,1)
 
@@ -42,7 +40,6 @@ public:
     inline void set_brake_pedal_active(bool brake_pedal_active)                 { pedal_flags = (pedal_flags & 0xFB) | (brake_pedal_active << 2); }
     inline void set_torque_map_mode(uint8_t torque_map_mode)                    { this->torque_map_mode = torque_map_mode; }
 
-#ifdef HT_DEBUG_EN
     void print() {
         Serial.println("\n\nMCU PEDAL READINGS");
         Serial.println(    "------------------");
@@ -52,7 +49,6 @@ public:
         Serial.print("PEDAL FLAGS:     ");  Serial.println(pedal_flags, HEX);
         Serial.print("TORQUE MAP MODE: ");  Serial.println(torque_map_mode, HEX);
     }
-#endif
 
 private:
     uint16_t accelerator_pedal_raw_1;   // @Parse @Name(pedal_accel_1)

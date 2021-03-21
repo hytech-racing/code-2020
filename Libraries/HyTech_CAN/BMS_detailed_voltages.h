@@ -1,9 +1,7 @@
 #pragma once
 #include <string.h>
 #include <stdint.h>
-#ifdef HT_DEBUG_EN
-    #include "Arduino.h"
-#endif
+#include "Arduino.h"
 
 #pragma pack(push,1)
 
@@ -50,7 +48,6 @@ public:
         }
     }
 
-#ifdef HT_DEBUG_EN
     void print() {
         Serial.println("\n\nBMS DETAILED VOLTAGES");
         Serial.println(    "---------------------");
@@ -60,7 +57,6 @@ public:
         Serial.print("VOLTAGE 1: ");    Serial.println(voltage_1 / 10000., 4);
         Serial.print("VOLTAGE 2: ");    Serial.println(voltage_2 / 10000., 4);
     }
-#endif
 
 private:
 	uint8_t ic_id_group_id;

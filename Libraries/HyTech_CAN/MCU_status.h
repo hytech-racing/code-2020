@@ -1,9 +1,7 @@
 #pragma once
 #include <string.h>
 #include <stdint.h>
-#ifdef HT_DEBUG_EN
-    #include "Arduino.h"
-#endif
+#include "Arduino.h"
 
 #pragma pack(push,1)
 
@@ -48,7 +46,6 @@ public:
     inline void set_temperature(int16_t temperature)                            { this->temperature = temperature; }
     inline void set_glv_battery_voltage(uint16_t glv_battery_voltage)           { this->glv_battery_voltage = glv_battery_voltage; }
 
-#ifdef HT_DEBUG_EN
     void print() {
         char shutdown [8];
         int idx = 0;
@@ -66,7 +63,6 @@ public:
         Serial.print("TEMPERATURE: ");  Serial.println(temperature / 100.);
         Serial.print("GLV VOLTAGE: ");  Serial.println(glv_battery_voltage, HEX);
     }
-#endif
 
 
 private:

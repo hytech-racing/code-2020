@@ -1,9 +1,7 @@
 #pragma once
 #include <string.h>
 #include <stdint.h>
-#ifdef HT_DEBUG_EN
-    #include "Arduino.h"
-#endif
+#include "Arduino.h"
 
 #pragma pack(push,1)
 
@@ -20,7 +18,6 @@ public:
     inline bool get_write_success()         const { return write_success; }
     inline uint32_t get_data()              const { return data; }
 
-#ifdef HT_DEBUG_EN
     void print() {
         Serial.println("\n\nMC READ WRITE PARAMETER RESPONSE");
         Serial.println(    "--------------------------------");
@@ -28,7 +25,6 @@ public:
         Serial.print("WRITE SUCCESS:     ");  Serial.println(write_success, HEX);
         Serial.print("DATA:              ");  Serial.println(data, HEX);
     }
-#endif
 
 private:
     uint16_t parameter_address; // @Parse @Hex

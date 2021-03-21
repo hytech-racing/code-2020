@@ -1,9 +1,7 @@
 #pragma once
 #include <string.h>
 #include <stdint.h>
-#ifdef HT_DEBUG_EN
-    #include "Arduino.h"
-#endif
+#include "Arduino.h"
 
 #pragma pack(push,1)
 
@@ -21,7 +19,6 @@ public:
     inline uint16_t get_date_code_mmdd()                const { return date_code_mmdd; }
     inline uint16_t get_date_code_yyyy()                const { return date_code_yyyy; }
 
-#ifdef HT_DEBUG_EN
     void print() {
         Serial.println("\n\nMC FIRMWARE INFORMATION");
         Serial.println    ("-----------------------");
@@ -30,7 +27,6 @@ public:
         Serial.print("DATE CODE MM/DD:             ");      Serial.println(date_code_mmdd);
         Serial.print("DATE CODE YYYY:              ");      Serial.println(date_code_yyyy);
     }
-#endif
 
 private:
     uint16_t eeprom_version_project_code;   // @Parse

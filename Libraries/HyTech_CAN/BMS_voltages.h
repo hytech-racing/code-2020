@@ -1,9 +1,7 @@
 #pragma once
 #include <string.h>
 #include <stdint.h>
-#ifdef HT_DEBUG_EN
-    #include "Arduino.h"
-#endif
+#include "Arduino.h"
 
 #pragma pack(push,1)
 
@@ -32,7 +30,6 @@ public:
     inline void set_high(uint16_t high_voltage)       { this->high_voltage    = high_voltage; }
     inline void set_total(uint16_t total_voltage)     { this->total_voltage   = total_voltage; }
 
-#ifdef HT_DEBUG_EN
     void print() {
 		Serial.println("\n\nBMS VOLTAGES");
 		Serial.println(    "------------");
@@ -41,7 +38,6 @@ public:
 		Serial.print("HIGH VOLTAGE:    ");  Serial.println(high_voltage / 10000.0, 4);
 		Serial.print("TOTAL VOLTAGE:   ");  Serial.println(total_voltage / 100.0, 2);
     }
-#endif
 
 private:
     uint16_t average_voltage;   // @Parse @Scale(10000) @Unit(V) @Name(average) Getter(get_average)

@@ -1,9 +1,7 @@
 #pragma once
 #include <string.h>
 #include <stdint.h>
-#ifdef HT_DEBUG_EN
-    #include "Arduino.h"
-#endif
+#include "Arduino.h"
 
 #pragma pack(push,1)
 
@@ -31,7 +29,6 @@ public:
     inline bool get_inverter_enable_lockout()               const { return inverter_enable & 0x80; }
     inline bool get_direction_command()                     const { return direction_command; }
 
-#ifdef HT_DEBUG_EN
     void print() {
         Serial.println("\n\nMC INTERNAL STATES");
         Serial.println(    "------------------");
@@ -44,7 +41,6 @@ public:
         Serial.print("INVERTER LOCKOUT:                ");  Serial.println((uint32_t) get_inverter_enable_lockout());
         Serial.print("DIRECTION COMMAND:               ");  Serial.println(direction_command);
     }
-#endif
 
 private:
     uint16_t vsm_state;                         // @Parse @Hex

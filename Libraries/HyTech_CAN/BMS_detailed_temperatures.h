@@ -1,9 +1,7 @@
 #pragma once
 #include <string.h>
 #include <stdint.h>
-#ifdef HT_DEBUG_EN
-    #include "Arduino.h"
-#endif
+#include "Arduino.h"
 
 #pragma pack(push,1)
 
@@ -47,7 +45,6 @@ public:
         }
     }
 
-#ifdef HT_DEBUG_EN
     void print() {
         Serial.println("\n\nBMS DETAILED TEMPERATURES");
         Serial.println    ("-------------------------");
@@ -56,7 +53,6 @@ public:
         Serial.print("TEMPERATURE 1: ");    Serial.println(temperature_1 / 100., 2);
         Serial.print("TEMPERATURE 2: ");    Serial.println(temperature_2 / 100., 2);
     }
-#endif
 
 private:
     uint8_t ic_id;

@@ -10,9 +10,7 @@
 
 #include <string.h>
 #include <stdint.h>
-#ifdef HT_DEBUG_EN
-    #include "Arduino.h"
-#endif
+#include "Arduino.h"
 
 #pragma pack(push,1)
 
@@ -47,7 +45,6 @@ public:
         message |= balancing_status << shift;
     }
 
-#ifdef HT_DEBUG_EN
     void print() {
         Serial.println("\n\nBMS BALANCING STATUS");
         Serial.println(    "--------------------");
@@ -55,7 +52,6 @@ public:
         Serial.print("STATUS:      ");  Serial.print((uint32_t)(get_balancing() >> 32), HEX);
                                         Serial.println((uint32_t)(get_balancing() & 0xFFFFFFFF), HEX);
     }
-#endif
 
 private:
     uint64_t message;

@@ -1,9 +1,7 @@
 #pragma once
 #include <string.h>
 #include <stdint.h>
-#ifdef HT_DEBUG_EN
-    #include "Arduino.h"
-#endif
+#include "Arduino.h"
 
 #pragma pack(push,1)
 
@@ -26,7 +24,6 @@ public:
 		ZValue_x100 = z;
 	}
 
-#ifdef HT_DEBUG_EN
     void print() {
 		Serial.println("\n\nACCELEROMETER DATA");
 		Serial.println(    "------------------");
@@ -34,7 +31,6 @@ public:
 		Serial.print("Y:"); Serial.println(YValue_x100 / 100.0, 2);
 		Serial.print("Z:"); Serial.println(ZValue_x100 / 100.0, 2);
 	}
-#endif
 
 private:
    	uint8_t XValue_x100; // @Parse @Name(accel_x) @Getter(get_x) @Scale(100) @Unit(m/s^2)

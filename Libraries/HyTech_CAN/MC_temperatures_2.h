@@ -1,9 +1,7 @@
 #pragma once
 #include <string.h>
 #include <stdint.h>
-#ifdef HT_DEBUG_EN
-    #include "Arduino.h"
-#endif
+#include "Arduino.h"
 
 #pragma pack(push,1)
 
@@ -21,7 +19,6 @@ public:
     inline int16_t get_rtd_2_temperature()          const { return rtd_2_temperature; }
     inline int16_t get_rtd_3_temperature()          const { return rtd_3_temperature; }
 
-#ifdef HT_DEBUG_EN
     void print() {
         Serial.println("\n\nMC TEMPERATURES 2");
         Serial.println(    "-----------------");
@@ -30,7 +27,6 @@ public:
         Serial.print("RTD 2 TEMP:         ");   Serial.println(rtd_2_temperature / 10.0, 1);
         Serial.print("RTD 3 TEMP:         ");   Serial.println(rtd_3_temperature / 10.0, 1);
     }
-#endif
 
 private:
     int16_t control_board_temperature;  // @Parse @Scale(10) @Unit(C)
