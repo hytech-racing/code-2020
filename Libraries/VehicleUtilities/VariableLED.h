@@ -2,14 +2,15 @@
 #include <Metro.h>
 
 enum class BLINK_MODES { OFF = 0, ON = 1, FAST = 2, SLOW = 3 };
-const int BLINK_RATES[4] = { 0, 0, 150, 400 }; // OFF, ON, FAST, SLOW
 
-typedef struct VariableLED {
+class VariableLED {
+private:
     Metro blinker;
     int pin;
     BLINK_MODES mode;
     bool led_value = false;
-
+    const int BLINK_RATES[4] = { 0, 0, 150, 400 }; // OFF, ON, FAST, SLOW
+public:
     VariableLED(int p, bool metro_should_autoreset = true) : 
         blinker(0, metro_should_autoreset),
         pin(p) {};
@@ -32,4 +33,6 @@ typedef struct VariableLED {
         else if (blinker.check()) // blinker mode
             digitalWrite(pin, led_value = !led_value);
     }
-} VariableLED;
+
+    BLINK_MODES getMode() { return mode; }
+};
