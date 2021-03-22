@@ -14,7 +14,9 @@ typedef struct VariableLED {
 
     VariableLED(int p, bool metro_should_autoreset = true, bool pwm = false, uint8_t pwm_speed = 0) : 
         blinker(0, metro_should_autoreset),
-        pin(p) {};
+        pin(p),
+        pwm(pwm),
+        pwm_speed(pwm_speed) {};
 
     void setMode(BLINK_MODES m) {
         if (mode == m)
