@@ -11,8 +11,17 @@
 bool is_mc_err = false;
 
 // LED Variables
-VariableLED variable_led_start(LED_START);
-VariableLED variable_led_mode (LED_MODE);
+VariableLED led_ams  (LED_AMS);
+VariableLED led_imd  (LED_IMD);
+VariableLED led_mc_err(LED_MC_ERR);
+VariableLED led_start(LED_START);
+VariableLED led_mode (LED_MODE);
+
+Metro timer_led_ams(1000);
+Metro timer_led_imd(1000);
+Metro timer_led_mc_err(1000);
+
+bool init_ams = true, init_imd = true;
 
 // Button debouncing variables
 DebouncedButton debounced_btn_mark;
@@ -101,8 +110,8 @@ void loop() {
 }
 
 inline void led_update(){
-    variable_led_start.update();
-    variable_led_mode.update();
+    led_start.update();
+    led_mode.update();
 }
 
 inline void btn_update(){
@@ -142,8 +151,14 @@ inline void read_can(){
                     }
                 }
                 //MC Error LED
-                digitalWrite(LED_MC_ERR, is_mc_err);
                 dashboard_status.set_mc_error_led(is_mc_err);
+                if (is_mc_err){
+                    led_mc_err.setMode(BLINK_MODES::ON);
+                    timer_led_mc_err.reset();
+                }
+                else if (led_mc_err.getMode() != BLINK_MODES::OFF && timer_led_mc_err.check()){
+                    led_mc_err.setMode(BLINK_MODES::SLOW);
+                }
                 break;
         }
     }
@@ -154,28 +169,48 @@ inline void mcu_status_received(){
     digitalWrite(BUZZER, mcu_status.get_activate_buzzer());
 
     //BMS/AMS LED (bms and ams are the same thing)
-    digitalWrite(LED_AMS, !mcu_status.get_bms_ok_high()); //get_bms_ok_high outputs 1 if things are good.  We want light on when things are bad so negate 
     dashboard_status.set_ams_led(!mcu_status.get_bms_ok_high());
+    if (dashboard_status.get_ams_led()){
+        led_ams.setMode(BLINK_MODES::ON);
+        timer_led_ams.reset();
+    }
+    else if (init_ams){
+        led_ams.setMode(BLINK_MODES::OFF);
+        init_ams = false;
+    }
+    else if (led_ams.getMode() != BLINK_MODES::OFF && timer_led_ams.check()){
+        led_ams.setMode(BLINK_MODES::SLOW);
+    }
     
     //IMD LED
-    digitalWrite(LED_IMD, !mcu_status.get_imd_ok_high());//get_imd_okhs_high outputs 1 if things are good.  We want light on when things are bad so negate
     dashboard_status.set_imd_led(!mcu_status.get_imd_ok_high());
+    if (dashboard_status.get_imd_led()){
+        led_imd.setMode(BLINK_MODES::ON);
+        timer_led_imd.reset();
+    }
+    else if (init_imd){
+        led_imd.setMode(BLINK_MODES::OFF);
+        init_imd = false;
+    }
+    else if (led_imd.getMode() != BLINK_MODES::OFF && timer_led_imd.check()){
+        led_imd.setMode(BLINK_MODES::SLOW);
+    }
 
     //Start LED
     switch(mcu_status.get_state()){
         case MCU_STATE::STARTUP:
         case MCU_STATE::TRACTIVE_SYSTEM_NOT_ACTIVE:
-            variable_led_start.setMode(BLINK_MODES::OFF);
+            led_start.setMode(BLINK_MODES::OFF);
             dashboard_status.set_start_led(static_cast<uint8_t>(BLINK_MODES::OFF));
             break;
         case MCU_STATE::TRACTIVE_SYSTEM_ACTIVE:
-            variable_led_start.setMode(BLINK_MODES::FAST);
+            led_start.setMode(BLINK_MODES::FAST);
             dashboard_status.set_start_led(static_cast<uint8_t>(BLINK_MODES::FAST));
             break;
         case MCU_STATE::ENABLING_INVERTER:
         case MCU_STATE::WAITING_READY_TO_DRIVE_SOUND:
         case MCU_STATE::READY_TO_DRIVE:
-            variable_led_start.setMode(BLINK_MODES::ON);
+            led_start.setMode(BLINK_MODES::ON);
             dashboard_status.set_start_led(static_cast<uint8_t>(BLINK_MODES::ON));
             break;
     }
@@ -183,17 +218,18 @@ inline void mcu_status_received(){
     // Mode LED
     switch(mcu_status.get_max_torque()){
         case 100:
-            variable_led_mode.setMode(BLINK_MODES::FAST);
+            led_mode.setMode(BLINK_MODES::FAST);
             dashboard_status.set_mode_led(static_cast<uint8_t>(BLINK_MODES::FAST));
             break;
 
         case 120:
-            variable_led_mode.setMode(BLINK_MODES::ON);
+            led_mode.setMode(BLINK_MODES::ON);
             dashboard_status.set_mode_led(static_cast<uint8_t>(BLINK_MODES::ON));
             break;
+        
         case 60:
         default:
-            variable_led_mode.setMode(BLINK_MODES::OFF);
+            led_mode.setMode(BLINK_MODES::OFF);
             dashboard_status.set_mode_led(static_cast<uint8_t>(BLINK_MODES::OFF));
             break;
     }
