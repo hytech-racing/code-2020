@@ -7,9 +7,6 @@
 
 // only send if receiving mcu status messages
 
-// LED and buzzer values
-bool is_mc_err = false;
-
 // LED Variables
 VariableLED led_ams  (LED_AMS);
 VariableLED led_imd  (LED_IMD);
@@ -36,6 +33,7 @@ MCP_CAN CAN(SPI_CS);
 
 // CAN Messages
 Dashboard_status dashboard_status{};
+MC_fault_codes mc_fault_codes{};
 MCU_status mcu_status{};
 
 Metro timer_mcu_heartbeat(0, 1);
@@ -143,23 +141,8 @@ inline void read_can(){
                 break;
 
             case ID_MC_FAULT_CODES:
-                is_mc_err = false;
-                for(int i = 0; i < 8; i++){
-                    if(buf[i] != 0){
-                        is_mc_err = true;
-                        break;
-                    }
-                }
-                //MC Error LED
-                dashboard_status.set_mc_error_led(is_mc_err);
-                if (is_mc_err){
-                    led_mc_err.setMode(BLINK_MODES::ON);
-                    timer_led_mc_err.reset();
-                }
-                else if (led_mc_err.getMode() != BLINK_MODES::OFF && timer_led_mc_err.check()){
-                    led_mc_err.setMode(BLINK_MODES::SLOW);
-                }
-                break;
+                mc_fault_codes.load(buf);
+                mc_fault_codes_received();
         }
     }
 }
@@ -232,5 +215,26 @@ inline void mcu_status_received(){
             led_mode.setMode(BLINK_MODES::OFF);
             dashboard_status.set_mode_led(static_cast<uint8_t>(BLINK_MODES::OFF));
             break;
+    }
+}
+
+inline void mc_fault_codes_received(){
+    bool is_mc_err = false;
+
+    if (mc_fault_codes.get_post_fault_hi() ||
+        mc_fault_codes.get_post_fault_lo() ||
+        mc_fault_codes.get_run_fault_hi() ||
+        mc_fault_codes.get_run_fault_lo())
+    {
+        is_mc_err = true;
+    }
+    //MC Error LED
+    dashboard_status.set_mc_error_led(is_mc_err);
+    if (is_mc_err){
+        led_mc_err.setMode(BLINK_MODES::ON);
+        timer_led_mc_err.reset();
+    }
+    else if (led_mc_err.getMode() != BLINK_MODES::OFF && timer_led_mc_err.check()){
+        led_mc_err.setMode(BLINK_MODES::SLOW);
     }
 }
