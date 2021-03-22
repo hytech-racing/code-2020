@@ -22,3 +22,5 @@
 #define SHUTDOWN_THERSHOLD 223 // 5V on the line
 
 #define MCU_HEARTBEAT_TIMEOUT 1000
+
+#define LED_MIN_FAULT 1000

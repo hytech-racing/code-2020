@@ -8,24 +8,24 @@
 // only send if receiving mcu status messages
 
 // LED Variables
-VariableLED led_ams  (LED_AMS);
-VariableLED led_imd  (LED_IMD);
+VariableLED led_ams   (LED_AMS);
+VariableLED led_imd   (LED_IMD);
 VariableLED led_mc_err(LED_MC_ERR);
-VariableLED led_start(LED_START);
-VariableLED led_mode (LED_MODE);
+VariableLED led_start (LED_START);
+VariableLED led_mode  (LED_MODE);
 
-Metro timer_led_ams(1000);
-Metro timer_led_imd(1000);
-Metro timer_led_mc_err(1000);
+Metro timer_led_ams   (LED_MIN_FAULT);
+Metro timer_led_imd   (LED_MIN_FAULT);
+Metro timer_led_mc_err(LED_MIN_FAULT);
 
 bool init_ams = true, init_imd = true;
 
 // Button debouncing variables
-DebouncedButton debounced_btn_mark;
-DebouncedButton debounced_btn_mode;
-DebouncedButton debounced_btn_mc_cycle;
-DebouncedButton debounced_btn_start;
-DebouncedButton debounced_btn_lc;
+DebouncedButton btn_mark;
+DebouncedButton btn_mode;
+DebouncedButton btn_mc_cycle;
+DebouncedButton btn_start;
+DebouncedButton btn_lc;
 
 // CAN Variables
 Metro timer_can_update = Metro(100);
@@ -44,11 +44,11 @@ inline void btn_update();
 inline void mcu_status_received();
 
 void setup() {
-    debounced_btn_mark.begin(BTN_MARK, 100);
-    debounced_btn_mode.begin(BTN_MODE, 100);
-    debounced_btn_mc_cycle.begin(BTN_MC_CYCLE, 100);
-    debounced_btn_start.begin(BTN_START, 100);
-    debounced_btn_lc.begin(BTN_LC, 100);
+    btn_mark.begin(BTN_MARK, 100);
+    btn_mode.begin(BTN_MODE, 100);
+    btn_mc_cycle.begin(BTN_MC_CYCLE, 100);
+    btn_start.begin(BTN_START, 100);
+    btn_lc.begin(BTN_LC, 100);
 
     pinMode(BUZZER,     OUTPUT);
     pinMode(LED_AMS,    OUTPUT);
@@ -117,12 +117,12 @@ inline void led_update(){
 
 inline void btn_update(){
     // this sets the button to be high: it is set low in send can
-    if (debounced_btn_mark.isPressed())     { dashboard_status.toggle_mark_btn();     }
-    if (debounced_btn_mode.isPressed())     { dashboard_status.toggle_mode_btn();     }
-    if (debounced_btn_mc_cycle.isPressed()) { dashboard_status.toggle_mc_cycle_btn(); }
-    if (debounced_btn_lc.isPressed())       { dashboard_status.toggle_launch_ctrl_btn();    }
+    if (btn_mark.isPressed())     { dashboard_status.toggle_mark_btn();     }
+    if (btn_mode.isPressed())     { dashboard_status.toggle_mode_btn();     }
+    if (btn_mc_cycle.isPressed()) { dashboard_status.toggle_mc_cycle_btn(); }
+    if (btn_lc.isPressed())       { dashboard_status.toggle_launch_ctrl_btn();    }
 
-    dashboard_status.set_start_btn(debounced_btn_start.isPressed());
+    dashboard_status.set_start_btn(btn_start.isPressed());
 }
 
 inline void read_can(){
