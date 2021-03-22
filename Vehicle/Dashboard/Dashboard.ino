@@ -108,6 +108,9 @@ void loop() {
 }
 
 inline void led_update(){
+    led_ams.update();
+    led_imd.update();
+    led_mc_err.update();
     led_start.update();
     led_mode.update();
 }
