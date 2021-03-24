@@ -146,6 +146,8 @@ inline void read_can(){
             case ID_MC_FAULT_CODES:
                 mc_fault_codes.load(buf);
                 mc_fault_codes_received();
+            default:
+                break;
         }
     }
 }
@@ -203,6 +205,8 @@ inline void mcu_status_received(){
         case MCU_STATE::READY_TO_DRIVE:
             led_start.setMode(BLINK_MODES::ON);
             dashboard_status.set_start_led(static_cast<uint8_t>(BLINK_MODES::ON));
+            break;
+        default:
             break;
     }
 
