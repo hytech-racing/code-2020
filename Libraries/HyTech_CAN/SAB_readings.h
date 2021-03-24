@@ -4,7 +4,7 @@
 
 #pragma pack(push,1)
 
-// @Parseclass
+// @Parseclass @ID(ID_SAB_REAR, SAB_REAR) @ID(ID_SAB_FRONT, SAB_FRONT)
 class SAB_readings {
 public:
     SAB_readings() = default;

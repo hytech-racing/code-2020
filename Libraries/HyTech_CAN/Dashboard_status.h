@@ -20,7 +20,7 @@ public:
     inline bool get_start_btn()                  const { return (dashboard_states & 0x01); }
     inline bool get_buzzer_active()              const { return (dashboard_states & 0x02); }
     inline bool get_ssok_above_threshold()       const { return (dashboard_states & 0x04); }
-    inline bool get_shutdown_h_above_thershold() const { return (dashboard_states & 0x08); }
+    inline bool get_shutdown_h_above_threshold() const { return (dashboard_states & 0x08); }
 
     inline void set_dashboard_states(uint8_t states)       { dashboard_states = states; }
     inline void set_start_btn(bool pressed)                { dashboard_states = (dashboard_states & 0xFE) | (pressed); }
@@ -76,16 +76,16 @@ private:
     /* @Parse @Flaglist(
          start_btn,
          buzzer_active,
-         ssok_above_threshold
-         shutdown_h_above_thershold
+         ssok_above_threshold,
+         shutdown_h_above_threshold
         ) */
     uint8_t dashboard_states;
 
     // (4 bits) unused
     /* @Parse @Flaglist(
-         mark_btn
-         mode_btn
-         mc_cycle_btn
+         mark_btn,
+         mode_btn,
+         mc_cycle_btn,
          launch_ctrl_btn
         ) */
     uint8_t button_flags;
