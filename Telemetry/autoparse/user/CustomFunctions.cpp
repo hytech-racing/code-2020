@@ -20,14 +20,6 @@ CUSTOMFUNC(parse_detailed_voltages, BMS_detailed_voltages& data, BMS_detailed_vo
 }
 
 CUSTOMFUNC(parse_mcu_enums, MCU_status& data, MCU_status& prev){
-	if(data.get_max_torque() != prev.get_max_torque()){
-		switch(data.get_max_torque()){
-			case TORQUE_MODE::MAX_0:   show("torque_mode,%s\n", "0"); break;
-			case TORQUE_MODE::MAX_60:  show("torque_mode,%s\n", "60"); break;
-			case TORQUE_MODE::MAX_100: show("torque_mode,%s\n", "100"); break;
-			case TORQUE_MODE::MAX_120: show("torque_mode,%s\n", "120"); break;
-		}
-	}
 	if(data.get_state() != prev.get_state()){
 		switch(data.get_state()){
 			case MCU_STATE::STARTUP: 
@@ -42,6 +34,83 @@ CUSTOMFUNC(parse_mcu_enums, MCU_status& data, MCU_status& prev){
 				show("mcu_state,%s\n", "waiting_ready_to_drive_sound"); break;
 			case MCU_STATE::READY_TO_DRIVE: 
 				show("mcu_state,%s\n", "ready_to_drive"); break;
+		}
+	}
+}
+
+CUSTOMFUNC(parse_dashboard_leds, Dashboard_status& data, Dashboard_status& prev){
+	// see VariableLed.h for enum definitions
+	enum class BLINK_MODES { OFF = 0, ON = 1, FAST = 2, SLOW = 3 };
+	if (data.get_ams_led() != prev.get_ams_led()){
+		switch (static_cast<BLINK_MODES>(data.get_ams_led())){
+			case BLINK_MODES::OFF:
+				show("ams_led,%s\n", "off"); break;
+			case BLINK_MODES::ON:
+				show("ams_led,%s\n", "on"); break;
+			case BLINK_MODES::FAST:
+				show("ams_led,%s\n", "fast"); break;
+			case BLINK_MODES::SLOW:
+				show("ams_led,%s\n", "slow"); break;
+		}
+	}
+	if (data.get_imd_led() != prev.get_imd_led()){
+		switch (static_cast<BLINK_MODES>(data.get_imd_led())){
+			case BLINK_MODES::OFF:
+				show("imd_led,%s\n", "off"); break;
+			case BLINK_MODES::ON:
+				show("imd_led,%s\n", "on"); break;
+			case BLINK_MODES::FAST:
+				show("imd_led,%s\n", "fast"); break;
+			case BLINK_MODES::SLOW:
+				show("imd_led,%s\n", "slow"); break;
+		}
+	}
+	if (data.get_mode_led() != prev.get_mode_led()){
+		switch (static_cast<BLINK_MODES>(data.get_mode_led())){
+			case BLINK_MODES::OFF:
+				show("mode_led,%s\n", "off"); break;
+			case BLINK_MODES::ON:
+				show("mode_led,%s\n", "on"); break;
+			case BLINK_MODES::FAST:
+				show("mode_led,%s\n", "fast"); break;
+			case BLINK_MODES::SLOW:
+				show("mode_led,%s\n", "slow"); break;
+		}
+	}
+	if (data.get_mc_error_led() != prev.get_mc_error_led()){
+		switch (static_cast<BLINK_MODES>(data.get_mc_error_led())){
+			case BLINK_MODES::OFF:
+				show("mc_error_led,%s\n", "off"); break;
+			case BLINK_MODES::ON:
+				show("mc_error_led,%s\n", "on"); break;
+			case BLINK_MODES::FAST:
+				show("mc_error_led,%s\n", "fast"); break;
+			case BLINK_MODES::SLOW:
+				show("mc_error_led,%s\n", "slow"); break;
+		}
+	}
+	if (data.get_start_led() != prev.get_start_led()){
+		switch (static_cast<BLINK_MODES>(data.get_start_led())){
+			case BLINK_MODES::OFF:
+				show("start_led,%s\n", "off"); break;
+			case BLINK_MODES::ON:
+				show("start_led,%s\n", "on"); break;
+			case BLINK_MODES::FAST:
+				show("start_led,%s\n", "fast"); break;
+			case BLINK_MODES::SLOW:
+				show("start_led,%s\n", "slow"); break;
+		}
+	}
+	if (data.get_launch_ctrl_led() != prev.get_launch_ctrl_led()){
+		switch (static_cast<BLINK_MODES>(data.get_launch_ctrl_led())){
+			case BLINK_MODES::OFF:
+				show("launch_ctrl_led,%s\n", "off"); break;
+			case BLINK_MODES::ON:
+				show("launch_ctrl_led,%s\n", "on"); break;
+			case BLINK_MODES::FAST:
+				show("launch_ctrl_led,%s\n", "fast"); break;
+			case BLINK_MODES::SLOW:
+				show("launch_ctrl_led,%s\n", "slow"); break;
 		}
 	}
 }

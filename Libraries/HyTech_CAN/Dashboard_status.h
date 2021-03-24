@@ -5,6 +5,7 @@
 
 #pragma pack(push,1)
 
+// @Parseclass @Custom(parse_dashboard_leds)
 class Dashboard_status {
 public:
     Dashboard_status() = default;
@@ -55,49 +56,50 @@ public:
 
     /* Dashboard leds */
 
-    inline uint8_t get_led_flags()    const { return (led_flags); }
-    inline bool get_ams_led()         const { return (led_flags & 0x01); }
-    inline bool get_imd_led()         const { return (led_flags & 0x02); }
-    inline uint8_t get_mode_led()     const { return (led_flags & 0x0C) >> 2; }//2 bits required to store mode 
-    inline bool get_mc_error_led()    const { return (led_flags & 0x10); }
-    inline uint8_t get_start_led()    const { return (led_flags & 0x60) >> 5; } //2 bits required to store start 
-    inline bool get_launch_ctrl_led() const { return (led_flags & 0x80); }
+    inline uint16_t get_led_flags()      const { return (led_flags); }
+    inline uint8_t get_ams_led()         const { return (led_flags & 0x0003); }
+    inline uint8_t get_imd_led()         const { return (led_flags & 0x000C) >> 2;  }
+    inline uint8_t get_mode_led()        const { return (led_flags & 0x0030) >> 4;  }
+    inline uint8_t get_mc_error_led()    const { return (led_flags & 0x00C0) >> 6;  }
+    inline uint8_t get_start_led()       const { return (led_flags & 0x0300) >> 8;  }
+    inline uint8_t get_launch_ctrl_led() const { return (led_flags & 0x0C00) >> 10; }
 
-    inline void set_led_flags(uint8_t flags)              { led_flags = flags; }
-    inline void set_ams_led(bool ams_led)                 { led_flags = (led_flags & 0xFE) | (ams_led);  }
-    inline void set_imd_led(bool imd_led)                 { led_flags = (led_flags & 0xFD) | (imd_led           << 1); }
-    inline void set_mode_led(uint8_t mode_led)            { led_flags = (led_flags & 0xF3) | ((mode_led  & 0x3) << 2); }
-    inline void set_mc_error_led(bool mc_error_led)       { led_flags = (led_flags & 0xEF) | (mc_error_led      << 4); }
-    inline void set_start_led(uint8_t start_led)          { led_flags = (led_flags & 0x9F) | ((start_led & 0x3) << 5); }
-    inline void set_launch_ctrl_led(bool launch_ctrl_led) { led_flags = (led_flags & 0x7F) | (led_flags         << 7); }
+    inline void set_led_flags(uint16_t flags)                { led_flags = flags; }
+    inline void set_ams_led(uint8_t ams_led)                 { led_flags = (led_flags & 0xFFFC) | ((ams_led      & 0x3)     );  }
+    inline void set_imd_led(uint8_t imd_led)                 { led_flags = (led_flags & 0xFFF3) | ((imd_led      & 0x3) << 2);  }
+    inline void set_mode_led(uint8_t mode_led)               { led_flags = (led_flags & 0xFFCF) | ((mode_led     & 0x3) << 4);  }
+    inline void set_mc_error_led(uint8_t mc_error_led)       { led_flags = (led_flags & 0xFF3F) | ((mc_error_led & 0x3) << 6);  }
+    inline void set_start_led(uint8_t start_led)             { led_flags = (led_flags & 0xFCFF) | ((start_led    & 0x3) << 8);  }
+    inline void set_launch_ctrl_led(uint8_t launch_ctrl_led) { led_flags = (led_flags & 0xF3FF) | ((led_flags    & 0x3) << 10); }
 private:
-    /*
-     * buzzer active
-     * start button pressed
-     * ssok_high
-     * shutdown h high
-     * (4 bits) unused
-     */
+    // (4 bits) unused
+    /* @Parse @Flaglist(
+         start_btn,
+         buzzer_active,
+         ssok_above_threshold
+         shutdown_h_above_thershold
+        ) */
     uint8_t dashboard_states;
 
-    /*
-     * mark
-     * mode
-     * mc_cycle
-     * launch_ctrl
-     * (4 bits) unused
-     */
+    // (4 bits) unused
+    /* @Parse @Flaglist(
+         mark_btn
+         mode_btn
+         mc_cycle_btn
+         launch_ctrl_btn
+        ) */
     uint8_t button_flags;
 
     /*
-     * ams
-     * imd
-     * mode (2bit)
-     * mc_error
-     * start (2 bit)
-     * launch control
+     * ams (2 bit)
+     * imd (2 bis)
+     * mode (2 bits)
+     * mc_error (2 bits)
+     * start (2 bits)
+     * launch control (2 bits)
+     * (4 bits unused)
      */
-    uint8_t led_flags;
+    uint16_t led_flags;
 };
 
 #pragma pack(pop)

@@ -155,31 +155,36 @@ inline void mcu_status_received(){
     digitalWrite(BUZZER, mcu_status.get_activate_buzzer());
 
     //BMS/AMS LED (bms and ams are the same thing)
-    dashboard_status.set_ams_led(!mcu_status.get_bms_ok_high());
-    if (dashboard_status.get_ams_led()){
+    if (!mcu_status.get_bms_ok_high()){
         led_ams.setMode(BLINK_MODES::ON);
+        dashboard_status.set_ams_led(static_cast<uint8_t>(BLINK_MODES::ON));
         timer_led_ams.reset();
     }
     else if (init_ams){
         led_ams.setMode(BLINK_MODES::OFF);
+        dashboard_status.set_ams_led(static_cast<uint8_t>(BLINK_MODES::OFF));
         init_ams = false;
     }
     else if (led_ams.getMode() != BLINK_MODES::OFF && timer_led_ams.check()){
         led_ams.setMode(BLINK_MODES::SLOW);
+        dashboard_status.set_ams_led(static_cast<uint8_t>(BLINK_MODES::SLOW));
     }
     
     //IMD LED
     dashboard_status.set_imd_led(!mcu_status.get_imd_ok_high());
     if (dashboard_status.get_imd_led()){
         led_imd.setMode(BLINK_MODES::ON);
+        dashboard_status.set_imd_led(static_cast<uint8_t>(BLINK_MODES::ON));
         timer_led_imd.reset();
     }
     else if (init_imd){
         led_imd.setMode(BLINK_MODES::OFF);
+        dashboard_status.set_imd_led(static_cast<uint8_t>(BLINK_MODES::OFF));
         init_imd = false;
     }
     else if (led_imd.getMode() != BLINK_MODES::OFF && timer_led_imd.check()){
         led_imd.setMode(BLINK_MODES::SLOW);
+        dashboard_status.set_imd_led(static_cast<uint8_t>(BLINK_MODES::SLOW));
     }
 
     //Start LED
@@ -232,12 +237,13 @@ inline void mc_fault_codes_received(){
         is_mc_err = true;
     }
     //MC Error LED
-    dashboard_status.set_mc_error_led(is_mc_err);
     if (is_mc_err){
         led_mc_err.setMode(BLINK_MODES::ON);
+        dashboard_status.set_mc_error_led(static_cast<uint8_t>(BLINK_MODES::ON));
         timer_led_mc_err.reset();
     }
     else if (led_mc_err.getMode() != BLINK_MODES::OFF && timer_led_mc_err.check()){
         led_mc_err.setMode(BLINK_MODES::SLOW);
+        dashboard_status.set_mc_error_led(static_cast<uint8_t>(BLINK_MODES::SLOW));
     }
 }
