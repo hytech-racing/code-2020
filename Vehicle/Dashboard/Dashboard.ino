@@ -194,7 +194,7 @@ inline void mcu_status_received(){
         case MCU_STATE::STARTUP:
         case MCU_STATE::TRACTIVE_SYSTEM_NOT_ACTIVE:
             led_start.setMode(BLINK_MODES::OFF);
-            dashboard_status.set_start_led(static_cast<uint8_t>(BLINK_MODES::OFF));
+            dashboard_status.set_start_led(static_cast<uint8_t>(BLINK_MODES::SLOW));
             break;
         case MCU_STATE::TRACTIVE_SYSTEM_ACTIVE:
             led_start.setMode(BLINK_MODES::FAST);
