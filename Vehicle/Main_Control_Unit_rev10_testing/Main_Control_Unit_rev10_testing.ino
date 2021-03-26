@@ -9,7 +9,7 @@
 #include "MCU_rev10_dfs.h"
 
 // set to true or false for debugging
-#define DEBUG false
+#define DEBUG true
 
 // Outbound CAN messages
 MCU_pedal_readings mcu_pedal_readings{};
@@ -129,6 +129,7 @@ void setup() {
     Serial.println("CAN system and serial communication initialized");
     #endif
 
+
     analogWrite(FAN_1, FAN_1_DUTY_CYCLE);
     analogWrite(FAN_2, FAN_2_DUTY_CYCLE);
     // these are false by default
@@ -137,6 +138,8 @@ void setup() {
 
     digitalWrite(INVERTER_CTRL, HIGH);
     mcu_status.set_inverter_powered(true);
+    inverter_heartbeat(0);
+
 
     // present action for 5s
     delay(5000);
@@ -429,8 +432,11 @@ inline void inverter_heartbeat(int enable) {
 
 /* Implementation of software shutdown */
 inline void software_shutdown() {
-    // conditionally check depending on current state
-    if (mcu_status.get_software_is_ok()){
+
+     mcu_status.set_software_is_ok(true);
+
+      // conditionally check depending on current state
+    /*if (mcu_status.get_software_is_ok()){
         // check that software high ok and shutdown e are high when software is OK
         if (timer_software_enable_interval.check()){
             // once 100 ms passes, check this every loop
@@ -449,10 +455,10 @@ inline void software_shutdown() {
         }
         // assume software is ok because any subsequent check will fail it
         // because all software ok based checks have been preforned 
-        else { */
+        else { 
             mcu_status.set_software_is_ok(true);
        // }
-    }
+    }*/
 
 
     // check inputs
@@ -478,8 +484,11 @@ inline void software_shutdown() {
     }*/
     // add BMS software checks
     // software ok/not ok action
-    //if (mcu_status.get_software_is_ok()){
+    if (mcu_status.get_software_is_ok()){
         digitalWrite(TEENSY_OK, HIGH); //eventually make this HIGH only if software is ok
+    } else {
+        digitalWrite(TEENSY_OK, LOW);
+    }
         /* Watchdog timer */
         if (timer_watchdog_timer.check()){
             static bool watchdog_state = HIGH;
@@ -492,6 +501,7 @@ inline void software_shutdown() {
         timer_software_enable_interval.interval(TIMER_SOFTWARE_ENABLE);
         timer_software_enable_interval.reset();
     }*/
+    //Serial.println(mcu_status.get_software_is_ok());
 }
 
 /* Parse incoming CAN messages */
@@ -583,7 +593,6 @@ void set_state(MCU_STATE new_state) {
             for(int i = 0; i < 10; i++) {
                 CAN.write(tx_msg);
             }
-            /* We should test with this code uncommented. Wheels spun with it commented. 
             // look this up in datasheet
             mc_command_message.set_inverter_enable(false);
             mc_command_message.write(tx_msg.buf); // disable command
@@ -595,7 +604,7 @@ void set_state(MCU_STATE new_state) {
                 CAN.write(tx_msg);
             }
 
-            Serial.println("MCU Sent enable command");*/
+            Serial.println("MCU Sent enable command");
             timer_inverter_enable.reset();
             break;
         }
@@ -623,14 +632,14 @@ int calculate_torque() {
     
     int torque1 = map(round(filtered_accel1_reading), START_ACCELERATOR_PEDAL_1, END_ACCELERATOR_PEDAL_1, 0, max_torque);
     int torque2 = map(round(filtered_accel2_reading), START_ACCELERATOR_PEDAL_2, END_ACCELERATOR_PEDAL_2, 0, max_torque);
-    #if DEBUG
+   // #if DEBUG
       Serial.print("max torque: ");
       Serial.println(max_torque);
       Serial.print("torque1: ");
       Serial.println(torque1);
       Serial.print("torque2: ");
       Serial.println(torque2);
-    #endif
+   // #endif
 
     // torque values are greater than the max possible value, set them to max
     if (torque1 > max_torque) {
@@ -683,10 +692,10 @@ inline void read_pedal_values() {
     filtered_brake2_reading = ALPHA * filtered_brake2_reading + (1 - ALPHA) * ADC.read_adc(ADC_BRAKE_2_CHANNEL);
 
     #if DEBUG
-    Serial.print("ACCEL 1: "); Serial.println(filtered_accel1_reading);
-    Serial.print("ACCEL 2: "); Serial.println(filtered_accel2_reading);
-    Serial.print("BRAKE 1: "); Serial.println(filtered_brake1_reading);
-    Serial.print("BRAKE 2: "); Serial.println(filtered_brake2_reading);
+   // Serial.print("ACCEL 1: "); Serial.println(filtered_accel1_reading);
+   // Serial.print("ACCEL 2: "); Serial.println(filtered_accel2_reading);
+  //  Serial.print("BRAKE 1: "); Serial.println(filtered_brake1_reading);
+  //  Serial.print("BRAKE 2: "); Serial.println(filtered_brake2_reading);
     #endif
 
     // only uses front brake pedal
@@ -694,7 +703,7 @@ inline void read_pedal_values() {
     digitalWrite(BRAKE_LIGHT_CTRL, mcu_status.get_brake_pedal_active());
 
     /* Print values for debugging */
-    #if DEBUG
+    /*#if DEBUG
     if (timer_debug.check()) {
         Serial.print("MCU PEDAL ACCEL 1: ");
         Serial.println(mcu_pedal_readings.get_accelerator_pedal_1());
@@ -707,7 +716,7 @@ inline void read_pedal_values() {
         Serial.print("MCU STATE: ");
         Serial.println(mcu_status.get_state());
     }
-    #endif
+    #endif*/
 }
 
 /* Read shutdown system values */

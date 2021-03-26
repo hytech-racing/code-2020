@@ -146,6 +146,8 @@ inline void read_can(){
             case ID_MC_FAULT_CODES:
                 mc_fault_codes.load(buf);
                 mc_fault_codes_received();
+            default:
+                break;
         }
     }
 }
@@ -191,8 +193,8 @@ inline void mcu_status_received(){
     switch(mcu_status.get_state()){
         case MCU_STATE::STARTUP:
         case MCU_STATE::TRACTIVE_SYSTEM_NOT_ACTIVE:
-            led_start.setMode(BLINK_MODES::OFF);
-            dashboard_status.set_start_led(static_cast<uint8_t>(BLINK_MODES::OFF));
+            led_start.setMode(BLINK_MODES::SLOW);
+            dashboard_status.set_start_led(static_cast<uint8_t>(BLINK_MODES::SLOW));
             break;
         case MCU_STATE::TRACTIVE_SYSTEM_ACTIVE:
             led_start.setMode(BLINK_MODES::FAST);
@@ -203,6 +205,8 @@ inline void mcu_status_received(){
         case MCU_STATE::READY_TO_DRIVE:
             led_start.setMode(BLINK_MODES::ON);
             dashboard_status.set_start_led(static_cast<uint8_t>(BLINK_MODES::ON));
+            break;
+        default:
             break;
     }
 
@@ -237,7 +241,16 @@ inline void mc_fault_codes_received(){
         is_mc_err = true;
     }
     //MC Error LED
+
     if (is_mc_err){
+        led_mc_err.setMode(BLINK_MODES::ON);
+        dashboard_status.set_mc_error_led(static_cast<uint8_t>(BLINK_MODES::ON));
+    } else {
+        led_mc_err.setMode(BLINK_MODES::OFF);
+        dashboard_status.set_mc_error_led(static_cast<uint8_t>(BLINK_MODES::OFF));
+    }
+    
+    /*if (is_mc_err){
         led_mc_err.setMode(BLINK_MODES::ON);
         dashboard_status.set_mc_error_led(static_cast<uint8_t>(BLINK_MODES::ON));
         timer_led_mc_err.reset();
@@ -245,5 +258,5 @@ inline void mc_fault_codes_received(){
     else if (led_mc_err.getMode() != BLINK_MODES::OFF && timer_led_mc_err.check()){
         led_mc_err.setMode(BLINK_MODES::SLOW);
         dashboard_status.set_mc_error_led(static_cast<uint8_t>(BLINK_MODES::SLOW));
-    }
+    }*/
 }
