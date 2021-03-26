@@ -193,7 +193,7 @@ inline void mcu_status_received(){
     switch(mcu_status.get_state()){
         case MCU_STATE::STARTUP:
         case MCU_STATE::TRACTIVE_SYSTEM_NOT_ACTIVE:
-            led_start.setMode(BLINK_MODES::OFF);
+            led_start.setMode(BLINK_MODES::SLOW);
             dashboard_status.set_start_led(static_cast<uint8_t>(BLINK_MODES::SLOW));
             break;
         case MCU_STATE::TRACTIVE_SYSTEM_ACTIVE:
