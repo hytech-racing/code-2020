@@ -9,7 +9,7 @@
 #include "MCU_rev10_dfs.h"
 
 // set to true or false for debugging
-#define DEBUG true
+#define DEBUG false
 
 // Outbound CAN messages
 MCU_pedal_readings mcu_pedal_readings{};
@@ -632,14 +632,14 @@ int calculate_torque() {
     
     int torque1 = map(round(filtered_accel1_reading), START_ACCELERATOR_PEDAL_1, END_ACCELERATOR_PEDAL_1, 0, max_torque);
     int torque2 = map(round(filtered_accel2_reading), START_ACCELERATOR_PEDAL_2, END_ACCELERATOR_PEDAL_2, 0, max_torque);
-   // #if DEBUG
+    #if DEBUG
       Serial.print("max torque: ");
       Serial.println(max_torque);
       Serial.print("torque1: ");
       Serial.println(torque1);
       Serial.print("torque2: ");
       Serial.println(torque2);
-   // #endif
+    #endif
 
     // torque values are greater than the max possible value, set them to max
     if (torque1 > max_torque) {
@@ -649,7 +649,7 @@ int calculate_torque() {
         torque2 = max_torque;
     }
     // compare torques to check for accelerator implausibility
-    calculated_torque = min(torque1, torque2) / 2;
+    calculated_torque = (torque1 + torque2) / 2;
 
     if (calculated_torque > max_torque) {
         calculated_torque = max_torque;
