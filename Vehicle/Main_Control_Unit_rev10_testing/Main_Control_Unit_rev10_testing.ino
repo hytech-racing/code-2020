@@ -145,10 +145,11 @@ void setup() {
     delay(5000);
 
     set_state(MCU_STATE::TRACTIVE_SYSTEM_NOT_ACTIVE);
-    mcu_status.set_max_torque(60);
+    mcu_status.set_max_torque(100);
 }
 
 void loop() {
+   // Serial.println(analogRead(A4)*55 /12*3.3/1024);
     read_pedal_values();
     read_wheel_speed();
     read_status_values();
@@ -530,12 +531,12 @@ void parse_can_message() {
                 /* process dashboard buttons */
                 if (dashboard_status.get_mode_btn()){
                     switch (mcu_status.get_max_torque()){
-                        case 60:
-                            mcu_status.set_max_torque(100); break;
                         case 100:
-                            mcu_status.set_max_torque(120); break;
-                        case 120:
-                            mcu_status.set_max_torque(60); break;
+                            mcu_status.set_max_torque(140); break;
+                        case 140:
+                            mcu_status.set_max_torque(160); break;
+                        case 160:
+                            mcu_status.set_max_torque(100); break;
                     }
                 }
                 if (dashboard_status.get_launch_ctrl_btn()){
