@@ -220,14 +220,19 @@ void loop() {
     software_shutdown();
 
     #if BMS_DEBUG_ENABLE
+    static bool bms_print = false;
     if(Serial.available()){
-        print_bms();
+        String a = Serial.readString();
+        if (a == "on") bms_print = true;
+        else if (a == "off") bms_print = false;
     }
+    if (bms_print) print_bms();
     #endif
 }
 
 inline void state_machine() {
     switch (mcu_status.get_state()) {
+        case MCU_STATE::STARTUP: break;
         case MCU_STATE::TRACTIVE_SYSTEM_NOT_ACTIVE:
             inverter_heartbeat();
             #if DEBUG
@@ -540,22 +545,23 @@ void parse_can_message() {
             }
             #if BMS_DEBUG_ENABLE
             case ID_BMS_DETAILED_TEMPERATURES: {
-                BMS_detailed_temperatures temp = BMS_detailed_temperatures(rx_msg.buf);
-                bms_detailed_temperatures[temp.get_ic_id()].load(rx_msg.buf);
+                BMS_detailed_temperatures temp_det_temp = BMS_detailed_temperatures(rx_msg.buf);
+                bms_detailed_temperatures[temp_det_temp.get_ic_id()].load(rx_msg.buf);
                 break;
             }
             case ID_BMS_DETAILED_VOLTAGES: {
-                BMS_detailed_voltages temp = BMS_detailed_voltages(rx_msg.buf);
-                bms_detailed_voltages[temp.get_ic_id()][temp.get_group_id()].load(rx_msg.buf);
+                BMS_detailed_voltages temp_det_volt = BMS_detailed_voltages(rx_msg.buf);
+                bms_detailed_voltages[temp_det_volt.get_ic_id()][temp_det_volt.get_group_id()].load(rx_msg.buf);
                 break;
             }
             case ID_BMS_ONBOARD_TEMPERATURES:
                 bms_onboard_temperatures.load(rx_msg.buf);
                 break;
-            case ID_BMS_ONBOARD_DETAILED_TEMPERATURES:
-                BMS_onboard_detailed_temperatures temp = BMS_onboard_detailed_temperatures(rx_msg.buf);
-                bms_onboard_detailed_temperatures[temp.get_ic_id()].load(rx_msg.buf);
+            case ID_BMS_ONBOARD_DETAILED_TEMPERATURES: {
+                BMS_onboard_detailed_temperatures temp_onboard_det_temp = BMS_onboard_detailed_temperatures(rx_msg.buf);
+                bms_onboard_detailed_temperatures[temp_onboard_det_temp.get_ic_id()].load(rx_msg.buf);
                 break;
+            }
             case ID_BMS_BALANCING_STATUS: {
                 BMS_balancing_status temp = BMS_balancing_status(rx_msg.buf);
                 bms_balancing_status[temp.get_group_id()].load(rx_msg.buf);
@@ -585,6 +591,10 @@ void set_state(MCU_STATE new_state) {
 
     // exit logic
     switch(mcu_status.get_state()){
+        case MCU_STATE::STARTUP: break;
+        case MCU_STATE::TRACTIVE_SYSTEM_NOT_ACTIVE: break;
+        case MCU_STATE::TRACTIVE_SYSTEM_ACTIVE: break;
+        case MCU_STATE::ENABLING_INVERTER: break;
         case MCU_STATE::WAITING_READY_TO_DRIVE_SOUND:
             // make dashboard stop buzzer
             mcu_status.set_activate_buzzer(false);
@@ -593,12 +603,16 @@ void set_state(MCU_STATE new_state) {
             tx_msg.len = sizeof(mcu_status);
             CAN.write(tx_msg);
             break;
+        case MCU_STATE::READY_TO_DRIVE: break;
     }
 
     mcu_status.set_state(new_state);
 
     // entry logic
     switch (new_state) {
+        case MCU_STATE::STARTUP: break;
+        case MCU_STATE::TRACTIVE_SYSTEM_NOT_ACTIVE: break;
+        case MCU_STATE::TRACTIVE_SYSTEM_ACTIVE: break;
         case MCU_STATE::ENABLING_INVERTER: {
             MC_command_message mc_command_message(0, 0, 1, 1, 0, 0);
             tx_msg.id = 0xC0;
