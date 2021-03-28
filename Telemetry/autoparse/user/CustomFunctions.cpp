@@ -38,79 +38,37 @@ CUSTOMFUNC(parse_mcu_enums, MCU_status& data, MCU_status& prev){
 	}
 }
 
+#define EXTRACT_HELPER(prefix, led, postfix) prefix##led##postfix
+#define EXTRACT(var, led) var.EXTRACT_HELPER(get_, led, _led)()
+
+#define PARSE_LED(led, data, prev) \
+	if (EXTRACT(data,led) != EXTRACT(prev, led)){ \
+		switch (static_cast<BLINK_MODES>(EXTRACT(data, led))){ \
+			case BLINK_MODES::OFF: \
+				show(stringify(led) "_led,%s\n", "off"); break; \
+			case BLINK_MODES::ON: \
+				show(stringify(led) "_led,%s\n", "on"); break; \
+			case BLINK_MODES::FAST: \
+				show(stringify(led) "_led,%s\n", "fast"); break; \
+			case BLINK_MODES::SLOW: \
+				show(stringify(led) "_led,%s\n", "slow"); break; \
+			case BLINK_MODES::FASTER: \
+				show(stringify(led) "_led,%s\n", "faster"); break; \
+		} \
+	}
+
 CUSTOMFUNC(parse_dashboard_leds, Dashboard_status& data, Dashboard_status& prev){
-	// see VariableLed.h for enum definitions
-	enum class BLINK_MODES { OFF = 0, ON = 1, FAST = 2, SLOW = 3 };
-	if (data.get_ams_led() != prev.get_ams_led()){
-		switch (static_cast<BLINK_MODES>(data.get_ams_led())){
-			case BLINK_MODES::OFF:
-				show("ams_led,%s\n", "off"); break;
-			case BLINK_MODES::ON:
-				show("ams_led,%s\n", "on"); break;
-			case BLINK_MODES::FAST:
-				show("ams_led,%s\n", "fast"); break;
-			case BLINK_MODES::SLOW:
-				show("ams_led,%s\n", "slow"); break;
-		}
-	}
-	if (data.get_imd_led() != prev.get_imd_led()){
-		switch (static_cast<BLINK_MODES>(data.get_imd_led())){
-			case BLINK_MODES::OFF:
-				show("imd_led,%s\n", "off"); break;
-			case BLINK_MODES::ON:
-				show("imd_led,%s\n", "on"); break;
-			case BLINK_MODES::FAST:
-				show("imd_led,%s\n", "fast"); break;
-			case BLINK_MODES::SLOW:
-				show("imd_led,%s\n", "slow"); break;
-		}
-	}
-	if (data.get_mode_led() != prev.get_mode_led()){
-		switch (static_cast<BLINK_MODES>(data.get_mode_led())){
-			case BLINK_MODES::OFF:
-				show("mode_led,%s\n", "off"); break;
-			case BLINK_MODES::ON:
-				show("mode_led,%s\n", "on"); break;
-			case BLINK_MODES::FAST:
-				show("mode_led,%s\n", "fast"); break;
-			case BLINK_MODES::SLOW:
-				show("mode_led,%s\n", "slow"); break;
-		}
-	}
-	if (data.get_mc_error_led() != prev.get_mc_error_led()){
-		switch (static_cast<BLINK_MODES>(data.get_mc_error_led())){
-			case BLINK_MODES::OFF:
-				show("mc_error_led,%s\n", "off"); break;
-			case BLINK_MODES::ON:
-				show("mc_error_led,%s\n", "on"); break;
-			case BLINK_MODES::FAST:
-				show("mc_error_led,%s\n", "fast"); break;
-			case BLINK_MODES::SLOW:
-				show("mc_error_led,%s\n", "slow"); break;
-		}
-	}
-	if (data.get_start_led() != prev.get_start_led()){
-		switch (static_cast<BLINK_MODES>(data.get_start_led())){
-			case BLINK_MODES::OFF:
-				show("start_led,%s\n", "off"); break;
-			case BLINK_MODES::ON:
-				show("start_led,%s\n", "on"); break;
-			case BLINK_MODES::FAST:
-				show("start_led,%s\n", "fast"); break;
-			case BLINK_MODES::SLOW:
-				show("start_led,%s\n", "slow"); break;
-		}
-	}
-	if (data.get_launch_ctrl_led() != prev.get_launch_ctrl_led()){
-		switch (static_cast<BLINK_MODES>(data.get_launch_ctrl_led())){
-			case BLINK_MODES::OFF:
-				show("launch_ctrl_led,%s\n", "off"); break;
-			case BLINK_MODES::ON:
-				show("launch_ctrl_led,%s\n", "on"); break;
-			case BLINK_MODES::FAST:
-				show("launch_ctrl_led,%s\n", "fast"); break;
-			case BLINK_MODES::SLOW:
-				show("launch_ctrl_led,%s\n", "slow"); break;
-		}
-	}
+	/* see VariableLed.h for enum definitions */
+	enum class BLINK_MODES { OFF = 0, ON = 1, FAST = 2, SLOW = 3 , FASTER = 4};
+	PARSE_LED(ams, data, prev);
+	PARSE_LED(imd, data, prev);
+	PARSE_LED(mode, data, prev);
+	PARSE_LED(mc_error, data, prev);
+	PARSE_LED(start, data, prev);
+	PARSE_LED(launch_ctrl, data, prev);
+
 }
+
+#undef PARSE_LED
+#undef EXTRACT
+#undef EXTRACT_HELPER

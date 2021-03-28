@@ -192,6 +192,9 @@ inline void mcu_status_received(){
     //Start LED
     switch(mcu_status.get_state()){
         case MCU_STATE::STARTUP:
+            led_start.setMode(BLINK_MODES::OFF);
+            dashboard_status.set_start_led(static_cast<uint8_t>(BLINK_MODES::OFF));
+            break;
         case MCU_STATE::TRACTIVE_SYSTEM_NOT_ACTIVE:
             led_start.setMode(BLINK_MODES::SLOW);
             dashboard_status.set_start_led(static_cast<uint8_t>(BLINK_MODES::SLOW));
@@ -202,6 +205,9 @@ inline void mcu_status_received(){
             break;
         case MCU_STATE::ENABLING_INVERTER:
         case MCU_STATE::WAITING_READY_TO_DRIVE_SOUND:
+            led_start.setMode(BLINK_MODES::FASTER);
+            dashboard_status.set_start_led(static_cast<uint8_t>(BLINK_MODES::FASTER));
+            break;
         case MCU_STATE::READY_TO_DRIVE:
             led_start.setMode(BLINK_MODES::ON);
             dashboard_status.set_start_led(static_cast<uint8_t>(BLINK_MODES::ON));
@@ -212,6 +218,9 @@ inline void mcu_status_received(){
 
     // Mode LED
     switch(mcu_status.get_max_torque()){
+        case 100:
+            led_mode.setMode(BLINK_MODES::OFF);
+            dashboard_status.set_mode_led(static_cast<uint8_t>(BLINK_MODES::OFF));
         case 140:
             led_mode.setMode(BLINK_MODES::FAST);
             dashboard_status.set_mode_led(static_cast<uint8_t>(BLINK_MODES::FAST));
@@ -221,8 +230,6 @@ inline void mcu_status_received(){
             led_mode.setMode(BLINK_MODES::ON);
             dashboard_status.set_mode_led(static_cast<uint8_t>(BLINK_MODES::ON));
             break;
-        
-        case 100:
         default:
             led_mode.setMode(BLINK_MODES::OFF);
             dashboard_status.set_mode_led(static_cast<uint8_t>(BLINK_MODES::OFF));
@@ -245,7 +252,9 @@ inline void mc_fault_codes_received(){
     if (is_mc_err){
         led_mc_err.setMode(BLINK_MODES::ON);
         dashboard_status.set_mc_error_led(static_cast<uint8_t>(BLINK_MODES::ON));
-    } else {
+        timer_led_mc_err.reset();
+    // display fault for 1 second and then it clears
+    } else if (led_mc_err.getMode() != BLINK_MODES::OFF && timer_led_mc_err.check()){
         led_mc_err.setMode(BLINK_MODES::OFF);
         dashboard_status.set_mc_error_led(static_cast<uint8_t>(BLINK_MODES::OFF));
     }
