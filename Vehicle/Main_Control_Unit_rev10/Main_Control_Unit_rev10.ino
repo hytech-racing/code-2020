@@ -857,6 +857,7 @@ inline void update_distance_traveled() {
     mcu_status.set_distance_travelled(((total_ticks_front_left + total_ticks_front_right) / (2.0 * NUM_TEETH)) * WHEEL_CIRCUMFERENCE * 100);
 }
 
+#if BMS_DEBUG_ENABLE
 inline void print_bms(){
     print_cells();
     print_temps();
@@ -944,3 +945,5 @@ void print_temps() {
     Serial.print(bms_onboard_temperatures.get_high_temperature() / (double) 100, 2);
     Serial.println(" ºC\n");
 }
+
+#endif
