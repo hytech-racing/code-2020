@@ -52,14 +52,12 @@ CUSTOMFUNC(parse_mcu_enums, MCU_status& data, MCU_status& prev){
 				show(stringify(led) "_led,%s\n", "fast"); break; \
 			case BLINK_MODES::SLOW: \
 				show(stringify(led) "_led,%s\n", "slow"); break; \
-			case BLINK_MODES::FASTER: \
-				show(stringify(led) "_led,%s\n", "faster"); break; \
 		} \
 	}
 
 CUSTOMFUNC(parse_dashboard_leds, Dashboard_status& data, Dashboard_status& prev){
 	/* see VariableLed.h for enum definitions */
-	enum class BLINK_MODES { OFF = 0, ON = 1, FAST = 2, SLOW = 3 , FASTER = 4};
+	enum class BLINK_MODES { OFF = 0, ON = 1, FAST = 2, SLOW = 3};
 	PARSE_LED(ams, data, prev);
 	PARSE_LED(imd, data, prev);
 	PARSE_LED(mode, data, prev);

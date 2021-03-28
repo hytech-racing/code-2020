@@ -205,9 +205,6 @@ inline void mcu_status_received(){
             break;
         case MCU_STATE::ENABLING_INVERTER:
         case MCU_STATE::WAITING_READY_TO_DRIVE_SOUND:
-            led_start.setMode(BLINK_MODES::FASTER);
-            dashboard_status.set_start_led(static_cast<uint8_t>(BLINK_MODES::FASTER));
-            break;
         case MCU_STATE::READY_TO_DRIVE:
             led_start.setMode(BLINK_MODES::ON);
             dashboard_status.set_start_led(static_cast<uint8_t>(BLINK_MODES::ON));
