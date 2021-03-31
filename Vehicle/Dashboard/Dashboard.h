@@ -1,3 +1,5 @@
+#pragma once
+
 // Button pin definition
 #define BTN_MARK A0
 #define BTN_MODE A1

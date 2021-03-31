@@ -67,6 +67,9 @@ BMS_detailed_temperatures bms_detailed_temperatures[8];
 BMS_onboard_detailed_temperatures bms_onboard_detailed_temperatures[TOTAL_IC];
 BMS_onboard_temperatures bms_onboard_temperatures;
 BMS_balancing_status bms_balancing_status[(TOTAL_IC + 3) / 4]; // Round up TOTAL_IC / 4 since data from 4 ICs can fit in a single message
+
+Metro timer_bms_print(1000);
+
 #endif
 
 /*
@@ -226,7 +229,7 @@ void loop() {
         if (a == "on") bms_print = true;
         else if (a == "off") bms_print = false;
     }
-    if (bms_print) print_bms();
+    if (bms_print && timer_bms_print.check()) print_bms();
     #endif
 }
 
