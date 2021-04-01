@@ -11,10 +11,7 @@
 // set to true or false for debugging
 #define DEBUG false
 #define BMS_DEBUG_ENABLE true
-<<<<<<< HEAD
-=======
 
->>>>>>> 2b359dbd5e94a23db5b25e6b6dd994ecc20d397f
 
 // Outbound CAN messages
 MCU_pedal_readings mcu_pedal_readings{};
@@ -60,8 +57,6 @@ Metro timer_dashboard_heartbeat = Metro(0, 1);
 Metro timer_software_enable_interval = Metro(TIMER_SOFTWARE_ENABLE, 1);
 
 #if BMS_DEBUG_ENABLE
-<<<<<<< HEAD
-
 #define TOTAL_IC 8                      // Number of ICs in the system
 #define CELLS_PER_IC 9                  // Number of cells per IC
 #define THERMISTORS_PER_IC 3            // Number of cell thermistors per IC
@@ -77,23 +72,6 @@ Metro timer_bms_print(1000);
 
 #endif
 
-
-=======
-  #define TOTAL_IC 8                      // Number of ICs in the system
-  #define CELLS_PER_IC 9                  // Number of cells per IC
-  #define THERMISTORS_PER_IC 3            // Number of cell thermistors per IC
-  #define PCB_THERM_PER_IC 2              // Number of PCB thermistors per IC
-  BMS_detailed_voltages bms_detailed_voltages[8][3];
-  BMS_detailed_temperatures bms_detailed_temperatures[8];
-  BMS_onboard_detailed_temperatures bms_onboard_detailed_temperatures[TOTAL_IC];
-  BMS_onboard_temperatures bms_onboard_temperatures;
-  BMS_balancing_status bms_balancing_status[(TOTAL_IC + 3) / 4]; // Round up TOTAL_IC / 4 since data from 4 ICs can fit in a single message
-
-  Metro timer_bms_print(1000);
-  
-#endif
-
->>>>>>> 2b359dbd5e94a23db5b25e6b6dd994ecc20d397f
 /*
  * Variables to store filtered values from ADC channels
  */
@@ -247,25 +225,20 @@ void loop() {
 
     /* handle state functionality */
     state_machine();
-
-    #if BMS_DEBUG_ENABLE
-      static bool bms_print = false;
-      if(Serial.available()){
-        String a = Serial.readString();
-        if (a == "on") bms_print = true;
-        else if (a == "off") bms_print = false;      
-      }
-      if (bms_print && timer_bms_print.check()) print_bms();
-    #endif
-
     software_shutdown();
 
     #if BMS_DEBUG_ENABLE
     static bool bms_print = false;
     if(Serial.available()){
         String a = Serial.readString();
-        if (a == "on") bms_print = true;
-        else if (a == "off") bms_print = false;
+        if (a == "on" || a == "on\n") {
+          Serial.println("BMS print turned on");
+          bms_print = true;
+        }
+        else if (a == "off" || a == "off\n"){
+          Serial.println("BMS print turned off");
+          bms_print = false;
+        }
     }
     if (bms_print && timer_bms_print.check()) print_bms();
     #endif
@@ -944,10 +917,6 @@ inline void update_distance_traveled() {
     mcu_status.set_distance_travelled(((total_ticks_front_left + total_ticks_front_right) / (2.0 * NUM_TEETH)) * WHEEL_CIRCUMFERENCE * 100);
 }
 
-<<<<<<< HEAD
-
-=======
->>>>>>> 2b359dbd5e94a23db5b25e6b6dd994ecc20d397f
 #if BMS_DEBUG_ENABLE
 inline void print_bms(){
     print_cells();
@@ -1037,8 +1006,5 @@ void print_temps() {
     Serial.println(" ºC\n");
 }
 
-<<<<<<< HEAD
+
 #endif
-=======
-#endif
->>>>>>> 2b359dbd5e94a23db5b25e6b6dd994ecc20d397f
