@@ -218,6 +218,7 @@ inline void mcu_status_received(){
         case 100:
             led_mode.setMode(BLINK_MODES::OFF);
             dashboard_status.set_mode_led(static_cast<uint8_t>(BLINK_MODES::OFF));
+            break;
         case 140:
             led_mode.setMode(BLINK_MODES::FAST);
             dashboard_status.set_mode_led(static_cast<uint8_t>(BLINK_MODES::FAST));
