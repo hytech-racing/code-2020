@@ -29,6 +29,7 @@ void loop() {
     filtered_brake1_reading = ALPHA * filtered_brake1_reading + (1 - ALPHA) * ADC.read_adc(ADC_BRAKE_1_CHANNEL);
     filtered_brake2_reading = ALPHA * filtered_brake2_reading + (1 - ALPHA) * ADC.read_adc(ADC_BRAKE_2_CHANNEL);
 
+    Serial.println("\n\n");
     Serial.print("ACCEL 1: "); Serial.println(filtered_accel1_reading);
     Serial.print("ACCEL 2: "); Serial.println(filtered_accel2_reading);
     Serial.print("BRAKE 1: "); Serial.println(filtered_brake1_reading);
@@ -47,6 +48,7 @@ void loop() {
     if (filtered_accel1_reading > MAX_ACCELERATOR_PEDAL_1)
         Serial.print("Accel 1 is above maximum threshold of "); Serial.print(MAX_ACCELERATOR_PEDAL_1); Serial.println(". Fault.");
 
+    Serial.println("----------------------------\nAccel 2 Check");
     if (filtered_accel2_reading > MIN_ACCELERATOR_PEDAL_2)
         Serial.print("Accel 2 is below minimum threshold of "); Serial.print(MIN_ACCELERATOR_PEDAL_2); Serial.println(". Fault.");
     if (filtered_accel2_reading <= START_ACCELERATOR_PEDAL_2 && filtered_accel2_reading >= END_ACCELERATOR_PEDAL_2) {
