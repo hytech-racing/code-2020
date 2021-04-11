@@ -88,8 +88,11 @@ public:
     inline void set_distance_travelled(const uint16_t distance) { distance_travelled = distance; }
 
 
-    inline uint8_t get_max_torque()          const { return max_torque; }
-    inline void set_max_torque(const uint8_t mode) { max_torque = mode; }
+    inline uint8_t get_max_torque()         const { return max_torque; }
+    inline void set_max_torque(const uint8_t max) { max_torque = max; }
+
+    inline uint8_t get_torque_mode()          const { return torque_mode; }
+    inline void set_torque_mode(const uint8_t mode) { torque_mode = mode; }
 
 private:
     // no free bits
@@ -142,6 +145,9 @@ private:
 
     // @Parse @Unit(N)
     uint8_t max_torque;
+
+    // @Prase
+    uint8_t torque_mode;
 
     // @Parse @Unit(m) @Scale(100)
     uint16_t distance_travelled;

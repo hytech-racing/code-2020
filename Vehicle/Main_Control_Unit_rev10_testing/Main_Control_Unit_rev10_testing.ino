@@ -8,14 +8,19 @@
 
 #include "drivers.h"
 
+// constants to define for different operation
+
 #define DRIVER DAVID
 
-#include "MCU_rev10_dfs.h"
+#define TORQUE_1 100
+#define TORQUE_2 140
+#define TORQUE_3 160
 
 // set to true or false for debugging
 #define DEBUG false
 #define BMS_DEBUG_ENABLE true
 
+#include "MCU_rev10_dfs.h"
 
 // Outbound CAN messages
 MCU_pedal_readings mcu_pedal_readings{};
@@ -113,6 +118,7 @@ static CAN_message_t tx_msg;
 void setup() {
     // no torque can be provided on startup
     mcu_status.set_max_torque(0);
+    mcu_status.set_torque_mode(0);
     mcu_status.set_software_is_ok(true);
 
     pinMode(BRAKE_LIGHT_CTRL,OUTPUT);
@@ -167,7 +173,8 @@ void setup() {
     delay(5000);
 
     set_state(MCU_STATE::TRACTIVE_SYSTEM_NOT_ACTIVE);
-    mcu_status.set_max_torque(100);
+    mcu_status.set_max_torque(TORQUE_1);
+mcu_status.set_torque_mode(1);
 }
 
 void loop() {
@@ -570,11 +577,14 @@ void parse_can_message() {
                 if (dashboard_status.get_mode_btn()){
                     switch (mcu_status.get_max_torque()){
                         case 100:
-                            mcu_status.set_max_torque(140); break;
+                            mcu_status.set_max_torque(TORQUE_2); 
+                            mcu_status.set_torque_mode(2); break;
                         case 140:
-                            mcu_status.set_max_torque(160); break;
+                            mcu_status.set_max_torque(TORQUE_3); 
+                            mcu_status.set_torque_mode(3); break;
                         case 160:
-                            mcu_status.set_max_torque(100); break;
+                            mcu_status.set_max_torque(TORQUE_1);
+                            mcu_status.set_torque_mode(1); break;
                     }
                 }
                 if (dashboard_status.get_launch_ctrl_btn()){
