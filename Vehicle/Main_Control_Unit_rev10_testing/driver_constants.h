@@ -4,16 +4,16 @@
 
 #ifdef DRIVER
     #if DRIVER == DAVID
-        #define BRAKE_ACTIVE 600               // Threshold for brake pedal active  
+        #define BRAKE_ACTIVE 800               // Threshold for brake pedal active  
 
         #define MIN_ACCELERATOR_PEDAL_1 1850    // Low accelerator implausibility threshold
         #define START_ACCELERATOR_PEDAL_1 1930  // Position to start acceleration
-        #define END_ACCELERATOR_PEDAL_1 2360    // Position to max out acceleration
+        #define END_ACCELERATOR_PEDAL_1 2367    // Position to max out acceleration
         #define MAX_ACCELERATOR_PEDAL_1 2500    // High accelerator implausibility threshold
 
         #define MIN_ACCELERATOR_PEDAL_2 2250    // Low accelerator implausibility threshold
-        #define START_ACCELERATOR_PEDAL_2 2105  // Position to start acceleration
-        #define END_ACCELERATOR_PEDAL_2 1735    // Position to max out acceleration
+        #define START_ACCELERATOR_PEDAL_2 2160  // Position to start acceleration
+        #define END_ACCELERATOR_PEDAL_2 1726    // Position to max out acceleration
         #define MAX_ACCELERATOR_PEDAL_2 1590    // High accelerator implausibility threshold
     #endif
 #else
