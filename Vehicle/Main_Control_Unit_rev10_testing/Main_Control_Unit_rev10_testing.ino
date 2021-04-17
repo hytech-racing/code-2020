@@ -76,7 +76,7 @@ BMS_detailed_temperatures bms_detailed_temperatures[8];
 BMS_onboard_detailed_temperatures bms_onboard_detailed_temperatures[TOTAL_IC];
 BMS_onboard_temperatures bms_onboard_temperatures;
 BMS_balancing_status bms_balancing_status[(TOTAL_IC + 3) / 4]; // Round up TOTAL_IC / 4 since data from 4 ICs can fit in a single message
-
+MCU_analog_readings mcu_analog_readings{};
 Metro timer_bms_print(1000);
 
 #endif
@@ -122,6 +122,8 @@ void setup() {
     mcu_status.set_software_is_ok(true);
 
     pinMode(BRAKE_LIGHT_CTRL,OUTPUT);
+
+    // change to input if comparator is PUSH PULL
     pinMode(FRONT_LEFT_WHEEL, INPUT_PULLUP);
     pinMode(FRONT_RIGHT_WHEEL, INPUT_PULLUP);
     pinMode(BACK_LEFT_WHEEL, INPUT_PULLUP);
@@ -620,6 +622,9 @@ void parse_can_message() {
                 bms_balancing_status[temp.get_group_id()].load(rx_msg.buf);
                 break;
             }
+            case ID_MCU_ANALOG_READINGS:
+                mcu_analog_readings.load(rx_msg.buf);
+                break;
             #endif
         }
     }
@@ -1018,6 +1023,9 @@ void print_temps() {
     Serial.print("Max: ");
     Serial.print(bms_onboard_temperatures.get_high_temperature() / (double) 100, 2);
     Serial.println(" ºC\n");
+    Serial.println();
+    Serial.print("GLV Battery voltage: ");
+    Serial.println(mcu_analog_readings.get_glv_battery_voltage());
 }
 
 
