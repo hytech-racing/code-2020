@@ -12,9 +12,9 @@
 
 #define DRIVER DAVID
 
-#define TORQUE_1 100
-#define TORQUE_2 140
-#define TORQUE_3 160
+#define TORQUE_1 60
+#define TORQUE_2 100
+#define TORQUE_3 140
 
 // set to true or false for debugging
 #define DEBUG false
@@ -578,13 +578,13 @@ void parse_can_message() {
                 /* process dashboard buttons */
                 if (dashboard_status.get_mode_btn()){
                     switch (mcu_status.get_max_torque()){
-                        case 100:
+                        case TORQUE_1:
                             mcu_status.set_max_torque(TORQUE_2); 
                             mcu_status.set_torque_mode(2); break;
-                        case 140:
+                        case TORQUE_2:
                             mcu_status.set_max_torque(TORQUE_3); 
                             mcu_status.set_torque_mode(3); break;
-                        case 160:
+                        case TORQUE_3:
                             mcu_status.set_max_torque(TORQUE_1);
                             mcu_status.set_torque_mode(1); break;
                     }
