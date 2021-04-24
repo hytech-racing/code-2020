@@ -54,7 +54,7 @@
  * Set Accumulator Version
  * If installing in an Accumulator, set the version here for BMS to ignore problematic sensor readings unique to each accumulator
  */
-#define ACCUMULATOR_VERSION_HYTECH_2019_ACCUMULATOR
+//#define ACCUMULATOR_VERSION_HYTECH_2019_ACCUMULATOR
 #define ACCUMULATOR_VERSION_HYTECH_2021_ACCUMULATOR
 
 /*
@@ -297,6 +297,8 @@ void setup() {
 
     /* Ignore cells or thermistors in 2021 accumulator */
     #ifdef ACCUMULATOR_VERSION_HYTECH_2021_ACCUMULATOR
+    ignore_pcb_therm[5][0] = true; // Ignore IC 0 pcb thermistor 0 due to faulty sensor
+    total_count_pcb_thermistors -= 1;
     #endif
 
     /* Set up isoSPI */
