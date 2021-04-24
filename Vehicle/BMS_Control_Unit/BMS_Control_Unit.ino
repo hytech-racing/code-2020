@@ -109,11 +109,11 @@
 #define CELLS_PER_IC 9                  // Number of cells per IC
 #define THERMISTORS_PER_IC 3            // Number of cell thermistors per IC
 #define PCB_THERM_PER_IC 2              // Number of PCB thermistors per IC
-#define IGNORE_FAULT_THRESHOLD 5       // Number of fault-worthy values to read in succession before faulting
-#define CURRENT_FAULT_THRESHOLD 5       // Number of fault-worthy electrical current values to read in succession before faulting
+#define IGNORE_FAULT_THRESHOLD 10       // Number of fault-worthy values to read in succession before faulting
+#define CURRENT_FAULT_THRESHOLD 10      // Number of fault-worthy electrical current values to read in succession before faulting
 #define SHUTDOWN_HIGH_THRESHOLD 1500    // Value returned by ADC above which the shutdown circuit is considered powered (balancing not allowed when AIRs open)
-#define BALANCE_LIMIT_FACTOR 3          // Reciprocal of the cell balancing duty cycle (3 means balancing can happen during 1 out of every 3 loops, etc)
-#define COULOUMB_COUNT_INTERVAL 10000   // Microseconds between current readings
+#define BALANCE_LIMIT_FACTOR 2          // Reciprocal of the cell balancing duty cycle (3 means balancing can happen during 1 out of every 3 loops, etc)
+#define COULOUMB_COUNT_INTERVAL 800000  // Microseconds between current readings
 
 /*
  * Current Sensor ADC definitions
