@@ -1,0 +1,87 @@
+language: python
+python: "2.7"
+
+sudo: false
+cache:
+  directories:
+    - "~/.platformio"
+
+install:
+  - pip install -U platformio
+  - platformio update
+
+# atmelavr
+# atmelsam
+# espressif32
+# espressif8266
+# intel_arc32
+# nordicnrf51
+# nordicnrf52
+# ststm32
+# teensy
+script:
+  - platformio ci --lib="."
+    --board=micro
+    --board=uno
+    --board=due
+    --board=tian
+    --board=adafruit_feather_m0
+    --board=esp32dev
+    --board=nodemcu-32s
+    --board=esp12e
+    --board=genuino101
+    --board=bluz_dk
+    --board=nrf52_dk
+    --board=genericSTM32F103CB
+    --board=teensy2
+    --board=teensy30
+    --board=teensylc
+
+env:
+  - PLATFORMIO_CI_SRC=examples/adc_sample/adc_sample.ino
+  - PLATFORMIO_CI_SRC=examples/read_buffer/read_buffer.ino
+  - PLATFORMIO_CI_SRC=examples/sample_limit/sample_limit.ino
+
+stages:
+  - test
+  - docs
+  - release
+
+jobs:
+  include:
+    ### stage: test
+    ### stage: deploy docs
+    - stage: docs
+      install:
+      addons:
+        apt:
+          packages:
+            - doxygen
+            - doxygen-doc
+      script: skip
+      env:
+      before_deploy:
+        - mkdir -p doxygen/docs
+        - touch doxygen/.nojekyll
+        - doxygen doxygen.cfg
+      deploy:
+        provider: pages
+        target-branch: gh-pages
+        local_dir: doxygen
+        skip-cleanup: true
+        keep-history: true
+        github-token: $GITHUB_TOKEN
+        on:
+          branch: master
+
+    ### stage: deploy release
+    - stage: release
+      install:
+      script: skip
+      env:
+      deploy:
+        provider: releases
+        api_key: $GITHUB_TOKEN
+        skip_cleanup: true
+        on:
+          tags: true
