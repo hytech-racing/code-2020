@@ -7,7 +7,6 @@
 #include "HyTech_CAN.h"
 #include "kinetis_flexcan.h"
 #include "Metro.h"
-#include "exp.h"
 
 #include "drivers.h"
 
@@ -31,7 +30,6 @@
 // torque = ae^(bx) + x - a
 // see here: https://www.desmos.com/calculator/daidnwee5b
 #define B 0.065
-const float A = (TORQUE_3 - 100)/(pow(M_E, 100 * B) -1);
 
 #define MAP_MODE EXP
 
@@ -748,6 +746,7 @@ int calculate_torque() {
     }
     #elif MAP_MODE == EXP && TORQUE_3 > 100
     int torque1, torque2;
+    static const float A = (TORQUE_3 - 100)/(pow(M_E, 100 * B) -1);
     if (mcu_status.get_torque_mode() == 3){
         float x1 = (filtered_accel1_reading - START_ACCELERATOR_PEDAL_1)/(END_ACCELERATOR_PEDAL_1 - START_ACCELERATOR_PEDAL_1);
         torque1 = A * pow(M_E, B * x1) + x1 - A;
