@@ -476,7 +476,7 @@ inline void state_machine() {
                 if(mcu_status.get_torque_mode() == 2){
                     static int index = -1;
                     if (calculated_torque > 600 && !mcu_status.get_brake_pedal_active() && index < 200){
-                        mc_command_message.set_torque_command(torque_profile[++index]);
+                        mc_command_message.set_torque_command(torque_profile[++index] / 2);
                     } else {
                         mcu_status.set_torque_mode(3);
                         mcu_status.set_max_torque(TORQUE_3);
