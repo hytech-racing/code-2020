@@ -352,11 +352,11 @@ void loop() {
     process_temps(); // Poll controllers, process values, populate populate bms_temperatures, bms_detailed_temperatures, bms_onboard_temperatures, and bms_onboard_detailed_temperatures
     process_adc(); // Poll ADC, process values, populate bms_status
 
-//    print_temps(); // Print cell and pcb temperatures to serial
-//    print_cells(); // Print the cell voltages and balancing status to serial
+    print_temps(); // Print cell and pcb temperatures to serial
+    print_cells(); // Print the cell voltages and balancing status to serial
     print_current(); // Print measured current sensor value
     //process_coulombs(); // Process new coulomb counts, sending over CAN and printing to Serial
-//    print_uptime(); // Print the BMS uptime to serial
+    print_uptime(); // Print the BMS uptime to serial
 
     Serial.print("State: ");
     if (bms_status.get_state() == BMS_STATE_DISCHARGING) {Serial.println("DISCHARGING");}
@@ -1145,8 +1145,10 @@ void process_coulombs() {
  */
 uint16_t read_adc(MCP3208::Channel channel) {
     noInterrupts(); // Since timer interrupt triggers SPI communication, we don't want it to interrupt other SPI communication
-    spi_enable(SPI_CLOCK_DIV128);
+    SPISettings adcSettings(1600000, MSBFIRST, SPI_MODE0);
+    SPI.beginTransaction(adcSettings);
     uint16_t retval = ADC.read(channel) / 2;
+    SPI.endTransaction();
     Serial.print("Serial value: ");
     Serial.println(retval);
     interrupts();
