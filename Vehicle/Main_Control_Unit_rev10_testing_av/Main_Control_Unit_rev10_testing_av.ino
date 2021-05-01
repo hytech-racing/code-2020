@@ -8,15 +8,15 @@
 #include "kinetis_flexcan.h"
 #include "Metro.h"
 
-#include "drivers.h"
+#include "../../Vehicle/Main_Control_Unit_rev10_testing/drivers.h"
 
 // constants to define for different operation
 
 #define DRIVER DAVID
 
-#define TORQUE_1 100
-#define TORQUE_2 140
-#define TORQUE_3 160
+#define TORQUE_1 0
+#define TORQUE_2 100
+#define TORQUE_3 0
 
 // set to true or false for debugging
 #define DEBUG false
@@ -32,9 +32,9 @@
 // see here: https://www.desmos.com/calculator/daidnwee5b
 #define B 0.065
 
-#define MAP_MODE EXP
+#define MAP_MODE LINEAR
 
-#include "MCU_rev10_dfs.h"
+#include "../../Vehicle/Main_Control_Unit_rev10_testing/MCU_rev10_dfs.h"
 
 // Outbound CAN messages
 MCU_pedal_readings mcu_pedal_readings{};
@@ -127,6 +127,43 @@ float rpm_back_left{};
 float rpm_back_right{};
 
 static CAN_message_t tx_msg;
+
+
+uint16_t torque_profile[] =
+{
+    // 1
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    // 2
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    // 3
+    0, 8, 15, 23, 30, 38, 45, 53, 60, 68, 75, 83, 90, 98, 105, 113, 120, 128, 135, 143,
+    // 4
+    150, 158, 165, 173, 180, 188, 195, 203, 210, 218, 225, 233, 240, 248, 255, 263, 270, 278, 285, 293,
+    // 5
+    300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 
+    // 6
+    300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 
+    // 7
+    300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 
+    // 8
+    300, 325, 350, 375, 400, 425, 450, 475, 500, 525, 550, 575, 600, 625, 650, 675, 700, 725, 750, 775,
+    // 9
+    800, 785, 770, 755, 740, 725, 710, 695, 680, 665, 650, 635, 620, 605, 590, 575, 560, 545, 530, 515,
+    // 10
+    500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 
+    // 11
+    500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 
+    // 12
+    500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 
+    // 13
+    500, 487, 475, 462, 450, 437, 425, 412, 400, 387, 375, 362, 350, 337, 325, 312, 300, 287, 275, 262, 
+    // 14
+    250, 237, 225, 212, 200, 187, 175, 162, 160, 137, 125, 112, 100, 87, 75, 62, 50, 37, 25, 12,
+    // 15
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    // 16
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+};
 
 void setup() {
     // no torque can be provided on startup
@@ -448,8 +485,20 @@ inline void state_machine() {
                 // Serial.print("RPM: ");
                 // Serial.println(mc_motor_position_information.get_motor_speed());
                 // Serial.println(calculated_torque);
-
-                mc_command_message.set_torque_command(calculated_torque); 
+                if(mcu_status.get_torque_mode() == 2){
+                    static int index = -1;
+                    if (calculated_torque > 800 && !mcu_status.get_brake_pedal_active() && index < 280){
+                        mc_command_message.set_torque_command(torque_profile[++index]);
+                    } else {
+                        mcu_status.set_torque_mode(3);
+                        mcu_status.set_max_torque(TORQUE_3);
+                        digitalWrite(TEENSY_OK, LOW);
+                        delay(10);
+                    }
+                }
+                else {
+                    mc_command_message.set_torque_command(0); 
+                }
 
                 mc_command_message.write(tx_msg.buf);
                 tx_msg.id = ID_MC_COMMAND_MESSAGE;
@@ -592,15 +641,24 @@ void parse_can_message() {
                 /* process dashboard buttons */
                 if (dashboard_status.get_mode_btn()){
                     switch (mcu_status.get_torque_mode()){
-                        case 1:
-                            mcu_status.set_max_torque(TORQUE_2); 
-                            mcu_status.set_torque_mode(2); break;
+                        case 1: {
+                            mcu_status.set_max_torque(TORQUE_2);
+                            if (calculate_torque() > 800){
+                                mcu_status.set_torque_mode(2);
+                            }
+                            else {
+                                mcu_status.set_max_torque(TORQUE_3);
+                                mcu_status.set_torque_mode(3);
+                            }
+                            break;
+                        }
                         case 2:
                             mcu_status.set_max_torque(TORQUE_3); 
                             mcu_status.set_torque_mode(3); break;
                         case 3:
-                            mcu_status.set_max_torque(TORQUE_1);
-                            mcu_status.set_torque_mode(1); break;
+                        default:
+                            mcu_status.set_max_torque(TORQUE_3);
+                            mcu_status.set_torque_mode(3); break;
                     }
                 }
                 if (dashboard_status.get_launch_ctrl_btn()){
