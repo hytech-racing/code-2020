@@ -299,6 +299,9 @@ void setup() {
     #ifdef ACCUMULATOR_VERSION_HYTECH_2021_ACCUMULATOR
     ignore_pcb_therm[5][0] = true; // Ignore IC 0 pcb thermistor 0 due to faulty sensor
     total_count_pcb_thermistors -= 1;
+
+    ignore_cell_therm[5][1] = true; // Ignore IC 0 pcb thermistor 0 due to faulty sensor
+    total_count_cell_thermistors -= 1;
     #endif
 
     /* Set up isoSPI */
