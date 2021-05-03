@@ -21,7 +21,7 @@
 // set to true or false for debugging
 #define DEBUG false
 #define BMS_DEBUG_ENABLE true
-#define REGEN_ENABLE true
+#define REGEN_ENABLE false
 
 #define LINEAR 0
 #define PWL 1
@@ -32,7 +32,7 @@
 // see here: https://www.desmos.com/calculator/daidnwee5b
 #define B 0.065
 
-#define MAP_MODE EXP
+#define MAP_MODE LINEAR
 
 #include "MCU_rev10_dfs.h"
 
@@ -784,8 +784,16 @@ int calculate_torque() {
         calculated_torque = max_torque;
     }
     if (calculated_torque < 0) {
-        calculated_torque = 0;
+        #if REGEN_ENABLE
+            if(mc_motor_position_information.get_motor_speed() * 3 /25.0 * WHEEL_CIRCUMFERENCE/2 > 5)
+                calculated_torque = -200; //-20 Nm
+            else
+                calculated_torque = 0;
+        #else
+            calculated_torque = 0;
+        #endif
     }
+
     
     #if DEBUG
     if (timer_debug_raw_torque.check()) {
