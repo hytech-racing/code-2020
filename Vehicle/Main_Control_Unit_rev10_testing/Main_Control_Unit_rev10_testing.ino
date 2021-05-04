@@ -30,6 +30,7 @@
 // EXP
 // torque = ae^(bx) + x - a
 // see here: https://www.desmos.com/calculator/daidnwee5b
+// https://www.desmos.com/calculator/9xgerxnlyv
 #define B 0.065
 
 #define MAP_MODE LINEAR
@@ -786,7 +787,7 @@ int calculate_torque() {
     if (calculated_torque < 0) {
         #if REGEN_ENABLE
             if(abs(mc_motor_position_information.get_motor_speed()) / 4.4  * 3 /25.0 * WHEEL_CIRCUMFERENCE/2 > 5)
-                calculated_torque = -200; //-20 Nm
+                calculated_torque = -100; //-10 Nm
             else
                 calculated_torque = 0;
         #else
