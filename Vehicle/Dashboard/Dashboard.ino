@@ -18,7 +18,7 @@ Metro timer_led_ams   (LED_MIN_FAULT);
 Metro timer_led_imd   (LED_MIN_FAULT);
 Metro timer_led_mc_err(LED_MIN_FAULT);
 
-bool init_ams = true, init_imd = true;
+// bool init_ams = true, init_imd = true;
 
 // Button debouncing variables
 DebouncedButton btn_mark;
@@ -62,6 +62,9 @@ void setup() {
     {
         delay(200);
     }
+
+    // mcu_status.set_imd_ok_high(true);
+    // mcu_status.set_bms_ok_high(true);
 }
 
 void loop() { 
@@ -162,28 +165,27 @@ inline void mcu_status_received(){
         dashboard_status.set_ams_led(static_cast<uint8_t>(BLINK_MODES::ON));
         timer_led_ams.reset();
     }
-    else if (init_ams){
-        led_ams.setMode(BLINK_MODES::OFF);
-        dashboard_status.set_ams_led(static_cast<uint8_t>(BLINK_MODES::OFF));
-        init_ams = false;
-    }
+    // else if (init_ams){
+    //     led_ams.setMode(BLINK_MODES::OFF);
+    //     dashboard_status.set_ams_led(static_cast<uint8_t>(BLINK_MODES::OFF));
+    //     init_ams = false;
+    // }
     else if (led_ams.getMode() != BLINK_MODES::OFF && timer_led_ams.check()){
         led_ams.setMode(BLINK_MODES::SLOW);
         dashboard_status.set_ams_led(static_cast<uint8_t>(BLINK_MODES::SLOW));
     }
     
     //IMD LED
-    dashboard_status.set_imd_led(!mcu_status.get_imd_ok_high());
-    if (dashboard_status.get_imd_led()){
+    if (!mcu_status.get_imd_ok_high()){
         led_imd.setMode(BLINK_MODES::ON);
         dashboard_status.set_imd_led(static_cast<uint8_t>(BLINK_MODES::ON));
         timer_led_imd.reset();
     }
-    else if (init_imd){
-        led_imd.setMode(BLINK_MODES::OFF);
-        dashboard_status.set_imd_led(static_cast<uint8_t>(BLINK_MODES::OFF));
-        init_imd = false;
-    }
+    // else if (init_imd){
+    //     led_imd.setMode(BLINK_MODES::OFF);
+    //     dashboard_status.set_imd_led(static_cast<uint8_t>(BLINK_MODES::OFF));
+    //     init_imd = false;
+    // }
     else if (led_imd.getMode() != BLINK_MODES::OFF && timer_led_imd.check()){
         led_imd.setMode(BLINK_MODES::SLOW);
         dashboard_status.set_imd_led(static_cast<uint8_t>(BLINK_MODES::SLOW));
@@ -210,6 +212,8 @@ inline void mcu_status_received(){
             dashboard_status.set_start_led(static_cast<uint8_t>(BLINK_MODES::ON));
             break;
         default:
+            led_start.setMode(BLINK_MODES::OFF);
+            dashboard_status.set_start_led(static_cast<uint8_t>(BLINK_MODES::OFF));
             break;
     }
 
