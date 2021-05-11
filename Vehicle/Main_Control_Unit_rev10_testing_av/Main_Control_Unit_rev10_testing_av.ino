@@ -150,7 +150,7 @@ uint16_t torque_profile[] =
     // 9
     300, 292, 285, 277, 270, 262, 255, 247, 240, 232, 225, 217, 210, 202, 195, 187, 180, 172, 165, 157,
     // 10
-    150, 142, 135, 127, 120, 112, 105, 97, 90, 82, 75, 67, 60, 52, 45, 37, 30, 22, 15, 7
+    150, 142, 135, 127, 120, 112, 105, 97, 90, 82, 75, 67, 60, 52, 45, 37, 30, 22, 15, 7,
 };
 
 void setup() {
@@ -476,8 +476,8 @@ inline void state_machine() {
                 if(mcu_status.get_torque_mode() == 2){
                     static int index = -1;
                     if (calculated_torque > 600 && !mcu_status.get_brake_pedal_active() && index < 200){
-                        mc_command_message.set_torque_command(torque_profile[++index] / 2);
-                    } else {
+                        mc_command_message.set_torque_command(torque_profile[(++index)] / 2);
+                    } else if (mc_command_message.get_torque_command() != 0 ) {
                         mcu_status.set_torque_mode(3);
                         mcu_status.set_max_torque(TORQUE_3);
 
