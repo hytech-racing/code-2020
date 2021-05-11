@@ -1,7 +1,7 @@
 /*
  * Teensy 3.5 Telemetry Control Unit code
- * Written by Soohyun Kim, with assistance by Ryan Gallaway and Nathan Cheek. 
- * 
+ * Written by Soohyun Kim, with assistance by Ryan Gallaway and Nathan Cheek.
+ *
  * Rev 2 - 4/23/2019
  */
 
@@ -74,7 +74,7 @@ MC_voltage_information mc_voltage_information;
 MC_internal_states mc_internal_states;
 MC_fault_codes mc_fault_codes;
 MC_torque_timer_information mc_torque_timer_information;
-MC_modulation_index_flux_weakening_output_information mc_modulation_index_flux_weakening_output_information;
+MC_flux_weakening_output mc_flux_weakening_output;
 MC_firmware_information mc_firmware_information;
 MC_command_message mc_command_message;
 MC_read_write_parameter_command mc_read_write_parameter_command;
@@ -96,7 +96,7 @@ void setup() {
 	setSyncProvider((getExternalTime) teensy3_clock_class::get); // registers Teensy RTC as system time
 	Serial.println(timeStatus() == timeSet ? "System time set to RTC" : "RTC not set up - uncomment Teensy3Clock.set() to set time");
 
-	// Serial / XBee / CAN 
+	// Serial / XBee / CAN
 	Serial.begin(115200);
 	XB.begin(115200);
 	FLEXCAN0_MCR &= 0xFFFDFFFF; // Enables CAN message self-reception
@@ -208,8 +208,8 @@ void parse_can_message() {
 			case ID_MC_INTERNAL_STATES:					mc_internal_states.load(msg_rx.buf);				break;
 			case ID_MC_FAULT_CODES:						mc_fault_codes.load(msg_rx.buf);					break;
 			case ID_MC_TORQUE_TIMER_INFORMATION:		mc_torque_timer_information.load(msg_rx.buf);		break;
-			case ID_MC_MODULATION_INDEX_FLUX_WEAKENING_OUTPUT_INFORMATION: 
-				mc_modulation_index_flux_weakening_output_information.load(msg_rx.buf); 
+			case ID_MC_MODULATION_INDEX_FLUX_WEAKENING_OUTPUT_INFORMATION:
+				mc_modulation_index_flux_weakening_output_information.load(msg_rx.buf);
 				break;
 			case ID_MC_FIRMWARE_INFORMATION:			mc_firmware_information.load(msg_rx.buf);			break;
 			case ID_MC_COMMAND_MESSAGE:					mc_command_message.load(msg_rx.buf);				break;
@@ -237,7 +237,7 @@ void check_xbee_timers() {
 		send_xbee(ID_MCU_WHEEL_SPEED, mcu_wheel_speed, xb_msg);
 
 	}
-	
+
 	static Metro xb_metro_1s = Metro(1000);
     if (xb_metro_1s.check()) {
 		send_xbee(ID_BMS_VOLTAGES, bms_voltages, xb_msg);

@@ -2,6 +2,9 @@
 
 #include <string.h>
 #include <stdint.h>
+#ifdef HT_DEBUG_EN
+    #include "Arduino.h"
+#endif
 
 enum class MCU_STATE
 {
