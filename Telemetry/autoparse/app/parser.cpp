@@ -5,6 +5,8 @@
 #include <algorithm>
 #include <ctime>
 #include <getopt.h>
+#include <stdio.h>
+#include <iostream>
 
 void showMenu(char* exe) {
 	puts("\nHyTech SD Parsing System");
@@ -103,6 +105,5 @@ void run (FILE* infile) {
 		if (outfile == stdout)
 			fflush(outfile);
 	}
-
-	fcloseall();
+    exit(0);
 }
