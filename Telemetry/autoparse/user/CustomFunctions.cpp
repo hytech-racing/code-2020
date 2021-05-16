@@ -53,11 +53,12 @@ CUSTOMFUNC(parse_mcu_enums, MCU_status& data, MCU_status& prev){
 			case BLINK_MODES::SLOW: \
 				show(stringify(led) "_led,%s\n", "slow"); break; \
 		} \
+	}
 CUSTOMFUNC(print_shutdown_status, MCU_status& data, MCU_status& prev) {
     if (verbose || data.get_bms_ok_high() != prev.get_bms_ok_high())
 	show("bms_fault,%d\n", !data.get_bms_ok_high());
-    if (verbose || data.get_imd_okhs_high() != prev.get_imd_okhs_high())
-	show("imd_fault,%d\n", !data.get_imd_okhs_high());
+    if (verbose || data.get_imd_ok_high() != prev.get_imd_ok_high())
+	show("imd_fault,%d\n", !data.get_imd_ok_high());
     if (verbose || data.get_inverter_powered() != prev.get_inverter_powered())
 	show("inverter_power,%d\n", data.get_inverter_powered());
 
@@ -68,13 +69,13 @@ CUSTOMFUNC(print_shutdown_status, MCU_status& data, MCU_status& prev) {
 	if (data.get_shutdown_c_above_threshold()) shutdown[idx++] = 'C';
 	if (data.get_shutdown_d_above_threshold()) shutdown[idx++] = 'D';
 	if (data.get_shutdown_e_above_threshold()) shutdown[idx++] = 'E';
-	if (data.get_shutdown_f_above_threshold()) shutdown[idx++] = 'F';
 	shutdown[idx++] = '\0';
 
 	if (verbose || strcmp(shutdown, prev_shutdown)) {
 		show("shutdown_above_thresh,%s\n", shutdown);
 		strcpy(prev_shutdown, shutdown);
 	}
+}
 
 CUSTOMFUNC(parse_dashboard_leds, Dashboard_status& data, Dashboard_status& prev){
 	/* see VariableLed.h for enum definitions */
