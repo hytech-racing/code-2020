@@ -208,12 +208,12 @@ void loop() {
         tx_msg.len = sizeof(mcu_status);
         CAN.write(tx_msg);
 
-        // Send couloumb counting information
+        /*// Send coulomb counting information
         bms_coulomb_counts.set_total_charge(total_charge_amount);
         bms_coulomb_counts.set_total_discharge(total_discharge_amount);
         tx_msg.id = ID_BMS_COULOMB_COUNTS;
         tx_msg.len = sizeof(bms_coulomb_counts);
-        CAN.write(tx_msg);
+        CAN.write(tx_msg);*/
     }
 
     /* Send sensor data over CAN */
@@ -340,7 +340,7 @@ inline void state_machine() {
             check_TS_active();
             check_inverter_disabled();
 
-            update_couloumb_count();
+            //update_coulomb_count();
             if (timer_motor_controller_send.check()) {
                 MC_command_message mc_command_message(0, 0, 1, 1, 0, 0);
 
@@ -812,7 +812,7 @@ int calculate_torque() {
     return calculated_torque;
 }
 
-inline void update_couloumb_count() {
+inline void update_coulomb_count() {
     int new_current = mc_current_informtarion.get_dc_bus_current() * 10; // get current in Amps * 100
     if (new_current > 0) {
         total_discharge_amount += new_current;
