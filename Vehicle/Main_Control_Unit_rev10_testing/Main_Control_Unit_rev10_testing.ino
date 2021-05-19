@@ -22,6 +22,7 @@
 #define DEBUG false
 #define BMS_DEBUG_ENABLE true
 #define REGEN_ENABLE false
+#define AV_ENABLE true
 
 #define LINEAR 0
 #define PWL 1
@@ -94,6 +95,32 @@ BMS_balancing_status bms_balancing_status[(TOTAL_IC + 3) / 4]; // Round up TOTAL
 MCU_analog_readings mcu_analog_readings{};
 Metro timer_bms_print(1000);
 
+#endif
+
+#if AV_ENABLE
+uint16_t torque_profile[] =
+{
+    // 1
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    // 2
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    // 3
+    0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95,
+    // 4
+    100, 105, 110, 115, 120, 125, 130, 135, 140, 145, 150, 155, 160, 165, 170, 175, 180, 185, 190, 195,
+    // 5
+    200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 
+    // 6
+    200, 220, 240, 260, 280, 300, 320, 340, 360, 380, 400, 420, 440, 460, 480, 500, 520, 540, 560, 580, 
+    // 7
+    600, 585, 570, 555, 540, 525, 510, 495, 480, 465, 450, 435, 420, 405, 390, 375, 360, 345, 330, 315,
+    // 8
+    300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300,  
+    // 9
+    300, 292, 285, 277, 270, 262, 255, 247, 240, 232, 225, 217, 210, 202, 195, 187, 180, 172, 165, 157,
+    // 10
+    150, 142, 135, 127, 120, 112, 105, 97, 90, 82, 75, 67, 60, 52, 45, 37, 30, 22, 15, 7
+};
 #endif
 /*
  * Variables to store filtered values from ADC channels
@@ -340,7 +367,7 @@ inline void state_machine() {
             check_TS_active();
             check_inverter_disabled();
 
-            //update_coulomb_count();
+            //update_couloumb_count();
             if (timer_motor_controller_send.check()) {
                 MC_command_message mc_command_message(0, 0, 1, 1, 0, 0);
 
@@ -450,7 +477,32 @@ inline void state_machine() {
                 // Serial.println(mc_motor_position_information.get_motor_speed());
                 // Serial.println(calculated_torque);
 
+                #if AV_ENABLE
+                if(mcu_status.get_torque_mode() == 2){
+                    static int index = -1;
+                    if (calculated_torque > 600 && !mcu_status.get_brake_pedal_active() && index < 200){
+                        mc_command_message.set_torque_command(torque_profile[++index] / 2);
+                    } else {
+                        mcu_status.set_torque_mode(3);
+                        mcu_status.set_max_torque(TORQUE_3);
+
+                        digitalWrite(TEENSY_OK, LOW);
+
+                        mcu_status.write(tx_msg.buf);
+                        tx_msg.id = ID_MCU_STATUS;
+                        tx_msg.len = sizeof(mcu_status);
+                        CAN.write(tx_msg);
+                        delay(10);
+
+                        mc_command_message.set_torque_command(0); 
+                    }
+                }
+                else {
+                    mc_command_message.set_torque_command(0); 
+                }
+                #else
                 mc_command_message.set_torque_command(calculated_torque); 
+                #endif
 
                 mc_command_message.write(tx_msg.buf);
                 tx_msg.id = ID_MC_COMMAND_MESSAGE;
@@ -592,6 +644,31 @@ void parse_can_message() {
                 timer_dashboard_heartbeat.interval(DASH_HEARTBEAT_TIMEOUT);
                 /* process dashboard buttons */
                 if (dashboard_status.get_mode_btn()){
+                    #if AV_ENABLE
+                    switch (mcu_status.get_torque_mode()){
+                        case 1: {
+                            mcu_status.set_max_torque(TORQUE_2);
+                            if (calculate_torque() > 600){
+                                mcu_status.set_torque_mode(2);
+                            }
+                            else {
+                                mcu_status.set_max_torque(TORQUE_3);
+                                mcu_status.set_torque_mode(3);
+                                digitalWrite(TEENSY_OK, LOW);
+                                delay(10);
+                            }
+                            break;
+                        }
+                        case 2:
+                        case 3:
+                        default:
+                            mcu_status.set_max_torque(TORQUE_3);
+                            mcu_status.set_torque_mode(3);
+                            digitalWrite(TEENSY_OK, LOW);
+                            delay(10);
+                            break;
+                    }
+                    #else
                     switch (mcu_status.get_torque_mode()){
                         case 1:
                             mcu_status.set_max_torque(TORQUE_2); 
@@ -603,6 +680,7 @@ void parse_can_message() {
                             mcu_status.set_max_torque(TORQUE_1);
                             mcu_status.set_torque_mode(1); break;
                     }
+                    #endif
                 }
                 if (dashboard_status.get_launch_ctrl_btn()){
                     mcu_status.toggle_launch_ctrl_active();
