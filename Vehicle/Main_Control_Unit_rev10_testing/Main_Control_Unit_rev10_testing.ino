@@ -445,6 +445,8 @@ inline void state_machine() {
                     mcu_status.get_imd_ok_high()
                     ) {
                     calculated_torque = calculate_torque();
+                    //Serial.print("torque calc: ");
+                    //Serial.println(calculated_torque);
                 } else {
                   Serial.println("not calculating torque");
                   Serial.printf("no brake implausibility: %d\n", mcu_status.get_no_brake_implausability());
@@ -479,10 +481,19 @@ inline void state_machine() {
 
                 #if AV_ENABLE
                 if(mcu_status.get_torque_mode() == 2){
-                    static int index = -1;
+                    static int index = 0;
                     if (calculated_torque > 600 && !mcu_status.get_brake_pedal_active() && index < 200){
-                        mc_command_message.set_torque_command(torque_profile[++index] / 2);
-                    } else {
+                        mc_command_message.set_torque_command(torque_profile[index] / 36); //divide by 12 for on jack testing
+                        //Serial.print("index: ");
+                        //Serial.println(index);
+                        index++;
+                        //Serial.print("torque cmd: ");
+                        //Serial.println(mc_command_message.get_torque_command());
+                        if (index == 199) {
+                          set_state(MCU_STATE::TRACTIVE_SYSTEM_ACTIVE);
+                          //Serial.println("End of profile reached; returning to TS active");
+                        }
+                    } else if (index != 0) {
                         mcu_status.set_torque_mode(3);
                         mcu_status.set_max_torque(TORQUE_3);
 
@@ -501,7 +512,7 @@ inline void state_machine() {
                     mc_command_message.set_torque_command(0); 
                 }
                 #else
-                mc_command_message.set_torque_command(calculated_torque); 
+                mc_command_message.set_torque_command(calculated_torque);
                 #endif
 
                 mc_command_message.write(tx_msg.buf);
@@ -907,12 +918,12 @@ inline void read_pedal_values() {
     filtered_brake1_reading = ALPHA * filtered_brake1_reading + (1 - ALPHA) * ADC.read_adc(ADC_BRAKE_1_CHANNEL);
     filtered_brake2_reading = ALPHA * filtered_brake2_reading + (1 - ALPHA) * ADC.read_adc(ADC_BRAKE_2_CHANNEL);
 
-    #if DEBUG
-   // Serial.print("ACCEL 1: "); Serial.println(filtered_accel1_reading);
-   // Serial.print("ACCEL 2: "); Serial.println(filtered_accel2_reading);
-  //  Serial.print("BRAKE 1: "); Serial.println(filtered_brake1_reading);
-  //  Serial.print("BRAKE 2: "); Serial.println(filtered_brake2_reading);
-    #endif
+    //#if DEBUG
+    //Serial.print("ACCEL 1: "); Serial.println(filtered_accel1_reading);
+    //Serial.print("ACCEL 2: "); Serial.println(filtered_accel2_reading);
+    //Serial.print("BRAKE 1: "); Serial.println(filtered_brake1_reading);
+    //Serial.print("BRAKE 2: "); Serial.println(filtered_brake2_reading);
+    //#endif
 
     // only uses front brake pedal
     mcu_status.set_brake_pedal_active(filtered_brake1_reading >= BRAKE_ACTIVE);
