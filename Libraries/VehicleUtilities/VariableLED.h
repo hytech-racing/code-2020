@@ -2,6 +2,7 @@
 #include <Metro.h>
 
 enum class BLINK_MODES { OFF = 0, ON = 1, FAST = 2, SLOW = 3};
+const int BLINK_RATES[4] = { 0, 0, 150, 400}; // OFF, ON, FAST, SLOW, FASTER
 
 class VariableLED {
 private:
@@ -12,7 +13,6 @@ private:
     bool pwm = false;
     uint8_t pwm_speed = 0;
 
-    const int BLINK_RATES[4] = { 0, 0, 150, 400}; // OFF, ON, FAST, SLOW, FASTER
 public:
     VariableLED(int p, bool metro_should_autoreset = true, bool pwm = false, uint8_t pwm_speed = 0) :
         blinker(0, metro_should_autoreset),
