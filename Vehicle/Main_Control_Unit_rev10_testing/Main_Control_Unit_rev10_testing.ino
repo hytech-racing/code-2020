@@ -8,6 +8,7 @@
 #include "kinetis_flexcan.h"
 #include "Metro.h"
 
+// conditional parameter selection based on simulator
 #ifndef HYTECH_ARDUINO_TEENSY_32
 
 #include "drivers.h"
