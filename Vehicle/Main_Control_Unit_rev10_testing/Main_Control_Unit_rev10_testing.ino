@@ -41,24 +41,28 @@
 #include "driver_constants.h"
 
 #else
-#define TORQUE_1 eintTORQUE1
-extern int eintTORQUE1;
-#define TORQUE_2 eintTORQUE2
-extern int eintTORQUE2;
-#define TORQUE_3 eintTORQUE3
-extern int eintTORQUE3;
-#define DEBUG eboolDEBUG
-extern bool eboolDEBUG;
-#define BMS_DEBUG_ENABLE eboolBMS_DEBUG_ENABLE
-extern bool eboolBMS_DEBUG_ENABLE;
-#define REGEN_ENABLE eboolREGEN_ENABLE
-extern bool eboolREGEN_ENABLE;
-#define AV_ENABLE eboolAV_ENABLE
-extern bool eboolAV_ENABLE;
-#define MAP_MODE eintMAP_MODE
-extern int eintMAP_MODE;
+#define TORQUE_1 40
+#define TORQUE_2 100
+#define TORQUE_3 160
+#define DEBUG false
+#define BMS_DEBUG false
+#define REGEN_ENABLE false
+#define AV_ENABLE false
+#define MAP_MODE linear
+// #define DEBUG eboolDEBUG
+// extern bool eboolDEBUG;
+// #define BMS_DEBUG_ENABLE eboolBMS_DEBUG_ENABLE
+// extern bool eboolBMS_DEBUG_ENABLE;
+// #define REGEN_ENABLE eboolREGEN_ENABLE
+// extern bool eboolREGEN_ENABLE;
+// #define AV_ENABLE eboolAV_ENABLE
+// extern bool eboolAV_ENABLE;
+// #define MAP_MODE eintMAP_MODE
+// extern int eintMAP_MODE;
 
 // feel free to change these constants around as appropriate
+
+#define BRAKE_ACTIVE 800               // Threshold for brake pedal active  
 
 #define MIN_ACCELERATOR_PEDAL_1   1850    // Low accelerator implausibility threshold
 #define START_ACCELERATOR_PEDAL_1 1900  // Position to start acceleration
@@ -73,6 +77,22 @@ extern int eintMAP_MODE;
 #define HALF_ACCELERATOR_PEDAL_1 ((START_ACCELERATOR_PEDAL_1 + END_ACCELERATOR_PEDAL_1)/2)
 #define HALF_ACCELERATOR_PEDAL_2 ((START_ACCELERATOR_PEDAL_2 + END_ACCELERATOR_PEDAL_2)/2)
 
+void setup();
+void loop();
+inline void state_machine();
+inline void check_TS_active();
+inline void check_inverter_disabled();
+inline void inverter_heartbeat(int enable);
+inline void software_shutdown();
+void parse_can_message();
+inline void reset_inverter();
+void set_state(MCU_STATE new_state);
+int calculate_torque();
+inline void update_coulomb_count();
+inline void read_pedal_values();
+inline void read_status_values();
+inline void read_wheel_speed();
+inline void update_distance_traveled();
 #endif
 
 #include "MCU_rev10_dfs.h"
@@ -235,7 +255,7 @@ void setup() {
 
     delay(500);
 
-    #if DEBUG
+    #if DEBUG || BMS_DEBUG_ENABLE
     Serial.println("CAN system and serial communication initialized");
     #endif
 
@@ -487,14 +507,15 @@ inline void state_machine() {
                     //Serial.print("torque calc: ");
                     //Serial.println(calculated_torque);
                 } else {
-                  Serial.println("not calculating torque");
-                  Serial.printf("no brake implausibility: %d\n", mcu_status.get_no_brake_implausability());
-                  Serial.printf("no accel implausibility: %d\n", mcu_status.get_no_accel_implausability());
-                  Serial.printf("no accel brake implausibility: %d\n", mcu_status.get_no_accel_brake_implausability());
-                  Serial.printf("software is ok: %d\n", mcu_status.get_software_is_ok());
-                  Serial.printf("get bms ok high: %d\n", mcu_status.get_bms_ok_high());
-                  Serial.printf("get imd ok high: %d\n", mcu_status.get_imd_ok_high());
-
+                    #if DEBUG
+                    Serial.println("not calculating torque");
+                    Serial.printf("no brake implausibility: %d\n", mcu_status.get_no_brake_implausability());
+                    Serial.printf("no accel implausibility: %d\n", mcu_status.get_no_accel_implausability());
+                    Serial.printf("no accel brake implausibility: %d\n", mcu_status.get_no_accel_brake_implausability());
+                    Serial.printf("software is ok: %d\n", mcu_status.get_software_is_ok());
+                    Serial.printf("get bms ok high: %d\n", mcu_status.get_bms_ok_high());
+                    Serial.printf("get imd ok high: %d\n", mcu_status.get_imd_ok_high());
+                    #endif
                 }
                 // Implausibility exists, command 0 torque
 
