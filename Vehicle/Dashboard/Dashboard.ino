@@ -42,6 +42,7 @@ inline void led_update();
 inline void read_can();
 inline void btn_update();
 inline void mcu_status_received();
+inline void mc_fault_codes_received();
 
 void setup() {
     btn_mark.begin(BTN_MARK, 100);

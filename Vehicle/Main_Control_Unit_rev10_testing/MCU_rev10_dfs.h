@@ -1,5 +1,4 @@
 #pragma once
-#include "driver_constants.h"
 
 /*
  * Teensy Pin definitions
