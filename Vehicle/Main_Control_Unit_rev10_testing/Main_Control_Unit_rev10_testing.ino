@@ -23,6 +23,7 @@
 #define BMS_DEBUG_ENABLE true
 #define REGEN_ENABLE false
 #define AV_ENABLE true
+#define STEP_RESPONSE true
 
 #define LINEAR 0
 #define PWL 1
@@ -98,6 +99,31 @@ Metro timer_bms_print(1000);
 #endif
 
 #if AV_ENABLE
+#if STEP_RESPONSE
+uint16_t torque_profile[] =
+{
+    // 1
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    // 2
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    // 3
+    300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300,
+    // 4
+    300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300,
+    // 5
+    300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 
+    // 6
+    300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300,
+    // 7
+    300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300,
+    // 8
+    300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300,  
+    // 9
+    300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300,
+    // 10
+    300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300
+};
+#else
 uint16_t torque_profile[] =
 {
     // 1
@@ -121,6 +147,7 @@ uint16_t torque_profile[] =
     // 10
     150, 142, 135, 127, 120, 112, 105, 97, 90, 82, 75, 67, 60, 52, 45, 37, 30, 22, 15, 7
 };
+#endif
 #endif
 /*
  * Variables to store filtered values from ADC channels
@@ -483,15 +510,16 @@ inline void state_machine() {
                 if(mcu_status.get_torque_mode() == 2){
                     static int index = 0;
                     if (calculated_torque > 600 && !mcu_status.get_brake_pedal_active() && index < 200){
-                        mc_command_message.set_torque_command(torque_profile[index] / 36); //divide by 12 for on jack testing
+                        mc_command_message.set_torque_command(torque_profile[index] / 5); //divide by 12 for on jack testing
                         //Serial.print("index: ");
                         //Serial.println(index);
                         index++;
-                        //Serial.print("torque cmd: ");
-                        //Serial.println(mc_command_message.get_torque_command());
+                        Serial.print("torque cmd: ");
+                        Serial.println(mc_command_message.get_torque_command());
+                        //Serial.println(torque_profile[index] / 12);
                         if (index == 199) {
                           set_state(MCU_STATE::TRACTIVE_SYSTEM_ACTIVE);
-                          //Serial.println("End of profile reached; returning to TS active");
+                          Serial.println("End of profile reached; returning to TS active");
                         }
                     } else if (index != 0) {
                         mcu_status.set_torque_mode(3);
