@@ -2,7 +2,7 @@
 
 set(BINARY        mcu_test   )  # Name of testing output executable
 set(VEHICLE_CODE  Main_Control_Unit_rev10_testing  )  # Path to folder contianing .ino file (relative to '/Vehicle')
-set(TEST_SOURCES  "")  # Space-separated list of test source files
+set(TEST_SOURCES  testing.cpp)  # Space-separated list of test source files
 set(CODE_DEPS     ADC_SPI EXPANDER FLEXCAN HYTECH_CAN METRO VEHICLE_UTILITIES WIRE)  # Space-separated list of library dependencies
                               # Always included: GTEST, CORE
 

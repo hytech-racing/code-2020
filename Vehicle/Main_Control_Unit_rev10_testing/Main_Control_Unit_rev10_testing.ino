@@ -257,9 +257,17 @@ void setup() {
     pinMode(BACK_LEFT_WHEEL, INPUT_PULLUP);
     pinMode(BACK_RIGHT_WHEEL, INPUT_PULLUP);
     pinMode(INVERTER_CTRL,OUTPUT);
-
-    // pinMode(FAN_1, OUTPUT);
-    // pinMode(FAN_2, OUTPUT);
+    // not necessary since the following are analog
+    pinMode(SHUTDOWN_B_READ, INPUT);
+    pinMode(SHUTDOWN_C_READ, INPUT);
+    pinMode(SHUTDOWN_D_READ, INPUT);
+    pinMode(SHUTDOWN_E_READ, INPUT);
+    pinMode(IMD_OK_READ, INPUT);
+    pinMode(BMS_OK_READ, INPUT);
+    pinMode(BSPD_OK_READ, INPUT);
+    pinMode(SOFTWARE_OK_READ, INPUT);
+    pinMode(FAN_1, OUTPUT);
+    pinMode(FAN_2, OUTPUT);
 
     pinMode(WATCHDOG_INPUT, OUTPUT);
     // the initial state of the watchdog is high 
@@ -286,7 +294,6 @@ void setup() {
     #if DEBUG || BMS_DEBUG_ENABLE
     Serial.println("CAN system and serial communication initialized");
     #endif
-
 
     analogWrite(FAN_1, FAN_1_DUTY_CYCLE);
     analogWrite(FAN_2, FAN_2_DUTY_CYCLE);
