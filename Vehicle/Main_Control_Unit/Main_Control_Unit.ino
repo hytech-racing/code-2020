@@ -21,11 +21,8 @@
 // set to true or false for debugging
 #define DEBUG false
 #define BMS_DEBUG_ENABLE true
-#define REGEN_ENABLE false
 
 #define LINEAR 0
-#define PWL 1
-#define EXP 2
 
 // EXP
 // torque = ae^(bx) + x - a
@@ -733,37 +730,8 @@ int calculate_torque() {
     int calculated_torque = 0;
 
     const int max_torque = mcu_status.get_max_torque() * 10;
-    #if MAP_MODE == PWL  && TORQUE_3 > 100
-    int torque1, torque2;
-    if (mcu_status.get_torque_mode() == 3){
-        if (filtered_accel1_reading > HALF_ACCELERATOR_PEDAL_1)
-            torque1 = map(round(filtered_accel1_reading), HALF_ACCELERATOR_PEDAL_1, END_ACCELERATOR_PEDAL_1, 50, max_torque);
-        else
-            torque1 = map(round(filtered_accel1_reading), START_ACCELERATOR_PEDAL_1, HALF_ACCELERATOR_PEDAL_1, 0, 50);
-        if (filtered_accel2_reading < HALF_ACCELERATOR_PEDAL_2)
-            torque2 = map(round(filtered_accel2_reading), HALF_ACCELERATOR_PEDAL_2, END_ACCELERATOR_PEDAL_2, 50, max_torque);
-        else
-            torque2 = map(round(filtered_accel2_reading), START_ACCELERATOR_PEDAL_2, HALF_ACCELERATOR_PEDAL_2, 0, 50);
-    } else {
-        torque1 = map(round(filtered_accel1_reading), START_ACCELERATOR_PEDAL_1, END_ACCELERATOR_PEDAL_1, 0, max_torque);
-        torque2 = map(round(filtered_accel2_reading), START_ACCELERATOR_PEDAL_2, END_ACCELERATOR_PEDAL_2, 0, max_torque);
-    }
-    #elif MAP_MODE == EXP && TORQUE_3 > 100
-    int torque1, torque2;
-    static const float A = (TORQUE_3 - 100)/(pow(M_E, 100 * B) -1);
-    if (mcu_status.get_torque_mode() == 3){
-        float x1 = (filtered_accel1_reading - START_ACCELERATOR_PEDAL_1)/(END_ACCELERATOR_PEDAL_1 - START_ACCELERATOR_PEDAL_1);
-        torque1 = A * pow(M_E, B * x1) + x1 - A;
-        float x2 = (filtered_accel1_reading - START_ACCELERATOR_PEDAL_2)/(END_ACCELERATOR_PEDAL_2 - START_ACCELERATOR_PEDAL_2);
-        torque2 = A * pow(M_E, B * x2) + x2 - A;
-    } else {
-        torque1 = map(round(filtered_accel1_reading), START_ACCELERATOR_PEDAL_1, END_ACCELERATOR_PEDAL_1, 0, max_torque);
-        torque2 = map(round(filtered_accel2_reading), START_ACCELERATOR_PEDAL_2, END_ACCELERATOR_PEDAL_2, 0, max_torque);
-    }
-    #else
     int torque1 = map(round(filtered_accel1_reading), START_ACCELERATOR_PEDAL_1, END_ACCELERATOR_PEDAL_1, 0, max_torque);
     int torque2 = map(round(filtered_accel2_reading), START_ACCELERATOR_PEDAL_2, END_ACCELERATOR_PEDAL_2, 0, max_torque);
-    #endif
     #if DEBUG
       Serial.print("max torque: ");
       Serial.println(max_torque);
@@ -787,14 +755,7 @@ int calculate_torque() {
         calculated_torque = max_torque;
     }
     if (calculated_torque < 0) {
-        #if REGEN_ENABLE
-            if(abs(mc_motor_position_information.get_motor_speed()) / 4.4  * 3 /25.0 * WHEEL_CIRCUMFERENCE/2 > 5)
-                calculated_torque = -100; //-10 Nm
-            else
-                calculated_torque = 0;
-        #else
-            calculated_torque = 0;
-        #endif
+        calculated_torque = 0;
     }
 
     
