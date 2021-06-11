@@ -25,8 +25,8 @@
 #define DEBUG false
 #define BMS_DEBUG_ENABLE true
 #define REGEN_ENABLE false
-#define AV_ENABLE true
-#define STEP_RESPONSE true
+#define AV_ENABLE false
+#define STEP_RESPONSE false
 
 #define LINEAR 0
 #define PWL 1
@@ -312,7 +312,7 @@ void setup() {
     set_state(MCU_STATE::TRACTIVE_SYSTEM_NOT_ACTIVE);
     mcu_status.set_max_torque(TORQUE_1);
     mcu_status.set_torque_mode(1);
-mcu_status.set_torque_mode(1);
+    mcu_status.set_torque_mode(1);
 }
 
 void loop() {
