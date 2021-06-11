@@ -235,8 +235,8 @@ inline void mcu_status_received(){
             dashboard_status.set_mode_led(static_cast<uint8_t>(BLINK_MODES::ON));
             break;
         default:
-            led_mode.setMode(BLINK_MODES::OFF);
-            dashboard_status.set_mode_led(static_cast<uint8_t>(BLINK_MODES::OFF));
+            //led_mode.setMode(BLINK_MODES::OFF);
+            //dashboard_status.set_mode_led(static_cast<uint8_t>(BLINK_MODES::OFF));
             break;
     }
 }
