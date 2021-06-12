@@ -146,10 +146,10 @@ private:
         )*/
     uint8_t ecu_states;
 
-    // @Parse @Unit(N)
+    // @Parse @Unit(Nm)
     uint8_t max_torque;
 
-    // @Prase
+    // @Parse
     uint8_t torque_mode;
 
     // @Parse @Unit(m) @Scale(100)

@@ -39,6 +39,8 @@ CONSOLE_CONFIG = {
     # GLV CURRENT READINGS
     'ECU CURRENT'                    : [ 41 , 5 ],
     'COOLING CURRENT'                : [ 42 , 5 ],
+    'TEMPERATURE'                    : [ 43,  5 ],
+    'GLV BATTERY VOLTAGE'            : [ 44,  5 ],
 
     # BATTERY MANAGEMENT SYSTEM
     'BMS AVERAGE TEMPERATURE'        : [ 4 , 55 ],
@@ -62,24 +64,24 @@ CONSOLE_CONFIG = {
 	'MCU SHUTDOWN ABOVE THRESH' 	 : [ 22 , 55 ],
 	'MCU TEMPERATURE'           	 : [ 23 , 55 ],
 	'MCU GLV VOLTAGE'           	 : [ 24 , 55 ],
-	'MCU PEDAL ACCEL 1'         	 : [ 25 , 55 ],
-	'MCU PEDAL ACCEL 2'         	 : [ 26 , 55 ],
-	'MCU PEDAL BRAKE'           	 : [ 27 , 55 ],
-	'MCU BRAKE ACT'             	 : [ 28 , 55 ],
-	'MCU IMPLAUS ACCEL'         	 : [ 29 , 55 ],
-	'MCU IMPLAUS BRAKE'         	 : [ 30 , 55 ],
-	'MCU TORQUE MAP MODE'       	 : [ 31 , 55 ],
-	'REQUESTED TORQUE'          	 : [ 32 , 55 ],
+	'ACCELERATOR PEDAL 1'         	 : [ 25 , 55 ],
+	'ACCELERATOR PEDAL 2'         	 : [ 26 , 55 ],
+	'BRAKE TRANSDUCER 1'           	 : [ 27 , 55 ],
+    'BRAKE TRANSDUCER 2'             : [ 28 , 55 ],
+	'MCU BRAKE ACT'             	 : [ 29 , 55 ],
+	'MCU IMPLAUS ACCEL'         	 : [ 30 , 55 ],
+	'MCU IMPLAUS BRAKE'         	 : [ 31 , 55 ],
+	'TORQUE MODE'       	         : [ 32 , 55 ],
+    'MAX TORQUE'                     : [ 33,  55 ],
+	'REQUESTED TORQUE'          	 : [ 34 , 55 ],
 
-    'TCU WHEEL RPM REAR LEFT'        : [ 38 , 55 ],
-    'TCU WHEEL RPM REAR RIGHT'       : [ 39 , 55 ],
-    'TCU WHEEL RPM FRONT LEFT'       : [ 40 , 55 ],
-    'TCU WHEEL RPM FRONT RIGHT'      : [ 41 , 55 ],
+    'RPM BACK LEFT'                  : [ 38 , 55 ],
+    'RPM BACK RIGHT'                 : [ 39 , 55 ],
+    'RPM FRONT LEFT'                 : [ 40 , 55 ],
+    'RPM FRONT RIGHT'                : [ 41 , 55 ],
 
     'MCU SLIP RATIO'                 : [ 43 , 55 ],
     'MCU SLIP LIMITING FACTOR'       : [ 44 , 55 ],
-
-    'TCU DISTANCE TRAVELED'          : [ 46 , 55 ],
 
     # BATTERY MANAGEMENT SYSTEM DETAILED VOLTAGES
     'IC 0 CELL 0'                    : [ 4 , 105 ],
