@@ -1,7 +1,7 @@
 /*
  * HyTech 2021 BMS Control Unit
  * Init 2017-04-11
- * Configured for HV Board Rev 13
+ * Configured for HV Board Rev 14
  * Monitors cell voltages and temperatures, sends BMS_OK signal to close Shutdown Circuit
  */
 
@@ -48,7 +48,7 @@
  * Uncomment whichever board this code is being uploaded to
  * Used to set pins correctly and only enable features compatible with board
  */
-#define BOARD_VERSION_HYTECH_2021_HV_REV_13
+#define BOARD_VERSION_HYTECH_2021_HV_REV_14
 
 /*
  * Set Accumulator Version
@@ -94,7 +94,7 @@
 #define WATCHDOG A0
 #endif
 
-#ifdef BOARD_VERSION_HYTECH_2021_HV_REV_13 // 2021 HV Board rev13
+#ifdef BOARD_VERSION_HYTECH_2021_HV_REV_14 // 2021 HV Board rev14
 #define ADC_CS 9
 #define BMS_OK 5
 #define LED_STATUS 6
