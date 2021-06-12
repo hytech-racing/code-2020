@@ -224,18 +224,53 @@ bool watchdog_high = true; // Initialize watchdog signal - this alternates every
 uint8_t balance_offcycle = 0; // Tracks which loops balancing will be disabled on
 bool charge_mode_entered = false; // Used to enter charge mode immediately at startup instead of waiting for timer
 
+void initialize();
+void init_cfg();
+void modify_discharge_config(int ic, int cell, bool setDischarge);
+void discharge_cell(int ic, int cell);
+void discharge_cell(int ic, int cell, bool setDischarge);
+void discharge_all();
+void stop_discharge_cell(int ic, int cell);
+void stop_discharge_all(bool skip_clearing_status);
+void stop_discharge_all();
+void balance_cells();
+void poll_cell_voltages();
+void process_voltages();
+void poll_aux_voltages();
+void process_temps();
+void process_cell_temps() ;
+double calculate_cell_temp(double aux_voltage, double v_ref);
+void process_onboard_temps() ;
+double calculate_onboard_temp(double aux_voltage, double v_ref);
+void process_adc();
+int update_constraints(uint8_t address, uint16_t value) ;
+void print_temps();
+void print_cells();
+void print_current();
+void print_aux();
+void print_cell_temperatures();
+void print_onboard_temperatures();
+void print_uptime();
+void cfg_set_overvoltage_comparison_voltage(uint16_t voltage);
+void cfg_set_undervoltage_comparison_voltage(uint16_t voltage);
+void parse_can_message();
+int16_t get_current();
+void integrate_current();
+void process_coulombs();
+int read_adc(int channel);
+
 void setup() {
     pinMode(BMS_OK, OUTPUT);
     pinMode(LED_STATUS, OUTPUT);
     pinMode(LTC6820_CS, OUTPUT);
     pinMode(WATCHDOG, OUTPUT);
     pinMode(ADC_CS, OUTPUT);
-    
+
     digitalWrite(LTC6820_CS, HIGH);
     digitalWrite(ADC_CS, HIGH);
     digitalWrite(BMS_OK, HIGH);
     digitalWrite(WATCHDOG, watchdog_high);
-    
+
     Serial.begin(115200); // Init serial for PC communication
     CAN.begin(); // Init CAN for vehicle communication
     for (int i = 0; i < 8; i++) { // Fill all filter slots with Charger Control Unit message filter (CAN controller requires filling all slots)
@@ -1112,7 +1147,7 @@ int16_t get_current() {
     double voltage = read_adc(CH_CUR_SENSE) / (double) 819;
     double ref_voltage = read_adc(CH_CUR_REF) / (double) 819;
     double current = (voltage - ref_voltage) * (double) 50;
-    
+
     return (int16_t) (current * 100); // Current in Amps x 100
 }
 
