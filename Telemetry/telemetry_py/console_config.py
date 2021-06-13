@@ -36,11 +36,16 @@ CONSOLE_CONFIG = {
     'TORQUE FEEDBACK'                : [ 37 , 5 ],
     'RMS UPTIME'                     : [ 38 , 5 ],
 
-    # GLV CURRENT READINGS
+    # MCU ANALOG READINGS
     'ECU CURRENT'                    : [ 41 , 5 ],
     'COOLING CURRENT'                : [ 42 , 5 ],
     'TEMPERATURE'                    : [ 43,  5 ],
     'GLV BATTERY VOLTAGE'            : [ 44,  5 ],
+
+    # DASHBOARD STATUS
+    'SSOK ABOVE THRESHOLD'           : [ 47,  5 ],
+    'SHUTDOWN H ABOVE THRESHOLD'     : [ 48,  5 ],
+
 
     # BATTERY MANAGEMENT SYSTEM
     'BMS AVERAGE TEMPERATURE'        : [ 4 , 55 ],
@@ -57,20 +62,20 @@ CONSOLE_CONFIG = {
     'BMS TOTAL DISCHARGE'            : [ 15 , 55 ],
 
 	# MAIN CONTROL UNIT
-	'MCU STATE'                 	 : [ 18 , 55 ],
-	'MCU BMS FAULT'             	 : [ 19 , 55 ],
-	'MCU IMD FAULT'             	 : [ 20 , 55 ],
-	'MCU INVERTER POWER'        	 : [ 21 , 55 ],
-	'MCU SHUTDOWN ABOVE THRESH' 	 : [ 22 , 55 ],
-	'MCU TEMPERATURE'           	 : [ 23 , 55 ],
-	'MCU GLV VOLTAGE'           	 : [ 24 , 55 ],
+	'IMD OK HIGH'                 	 : [ 18 , 55 ],
+	'BMS OK HIGH'             	     : [ 19 , 55 ],
+	'BSPD OK HIGH'             	     : [ 20 , 55 ],
+	'SOFTWARE OK HIGH'        	     : [ 21 , 55 ],
+	'SHUTDOWN D ABOVE THRESHOLD' 	 : [ 22 , 55 ],
+	'SHUTDOWN E ABOVE THRESHOLD'     : [ 23 , 55 ],
+	'INVERTER POWERED'           	 : [ 24 , 55 ],
 	'ACCELERATOR PEDAL 1'         	 : [ 25 , 55 ],
 	'ACCELERATOR PEDAL 2'         	 : [ 26 , 55 ],
 	'BRAKE TRANSDUCER 1'           	 : [ 27 , 55 ],
     'BRAKE TRANSDUCER 2'             : [ 28 , 55 ],
-	'MCU BRAKE ACT'             	 : [ 29 , 55 ],
-	'MCU IMPLAUS ACCEL'         	 : [ 30 , 55 ],
-	'MCU IMPLAUS BRAKE'         	 : [ 31 , 55 ],
+	'BRAKE PEDAL ACTIVE'             : [ 29 , 55 ],
+	'NO ACCEL IMPLAUSIBILITY'        : [ 30 , 55 ],
+	'NO BRAKE IMPLAUSIBILITY'        : [ 31 , 55 ],
 	'TORQUE MODE'       	         : [ 32 , 55 ],
     'MAX TORQUE'                     : [ 33,  55 ],
 	'REQUESTED TORQUE'          	 : [ 34 , 55 ],
