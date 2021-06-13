@@ -450,7 +450,6 @@ void loop() {
     tx_msg.len = sizeof(CAN_message_bms_detailed_temperatures_t);
     for (int i = 0; i < TOTAL_IC; i++) {
         bms_detailed_temperatures[i].write(tx_msg.buf);
-
         CAN.write(tx_msg);
     }
 
