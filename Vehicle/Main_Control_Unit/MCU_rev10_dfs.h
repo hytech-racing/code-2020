@@ -45,8 +45,8 @@
  */
 #define MIN_HV_VOLTAGE 600               // Volts in V * 0.1 - Used to check if Accumulator is energized
 
-#define FAN_1_DUTY_CYCLE 127             // TODO: figure out correct duty cycle (0 = 0%, 255 = 100%)
-#define FAN_2_DUTY_CYCLE 127             // TODO: figure out correct duty cycle (0 = 0%, 255 = 100%)
+#define FAN_1_DUTY_CYCLE 255             // TODO: figure out correct duty cycle (0 = 0%, 255 = 100%)
+#define FAN_2_DUTY_CYCLE 255             // TODO: figure out correct duty cycle (0 = 0%, 255 = 100%)
 
 #define BMS_HIGH_BATTERY_TEMPERATURE 50  // TODO: figure out correct value
 #define GLV_VOLTAGE_MULTIPLIER 5.5963    // TODO: calibrate this constant
