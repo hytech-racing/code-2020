@@ -5,6 +5,8 @@
  * Rev 2 - 4/23/2019
  */
 
+#define GPS_EN false
+
 #include <SD.h>
 #include <Adafruit_Sensor.h>
 #include <Adafruit_ADXL345_U.h>
@@ -21,13 +23,20 @@
 #define XB Serial2
 #define XBEE_PKT_LEN 15
 
-#define BMS_HIGH 134 // ~3V on BMS_OK line
-#define IMD_HIGH 134 // ~3V on OKHS line
-
 #define TEMP_SENSE_CHANNEL 0
 #define ECU_CURRENT_CHANNEL 1
 #define SUPPLY_READ_CHANNEL 2
 #define COOLING_CURRENT_CHANNEL 3
+
+#define ALPHA 0.9772                     // parameter for the sowftware filter used on ADC pedal channels
+/*
+ * Variables to store filtered values from ADC channels
+ */
+float filtered_temp_reading{};
+float filtered_ecu_current_reading{};
+float filtered_supply_reading{};
+float filtered_cooling_current_reading{};
+
 
 FlexCAN CAN(500000);
 static CAN_message_t msg_rx;
@@ -35,7 +44,9 @@ static CAN_message_t msg_tx;
 static CAN_message_t xb_msg;
 File logger;
 
+#if GPS_EN
 Adafruit_GPS GPS(&Serial1);
+#endif
 ADC_SPI ADC(A1, 1800000);
 
 Metro timer_debug_mcu_status = Metro(2000);
@@ -97,13 +108,14 @@ MC_command_message mc_command_message;
 MC_read_write_parameter_command mc_read_write_parameter_command;
 MC_read_write_parameter_response mc_read_write_parameter_response;
 
-static bool pending_gps_data;
-
 void parse_can_message();
 void write_to_SD(CAN_message_t *msg);
 time_t getTeensy3Time();
 void process_current();
+#if GPS_EN
 void process_gps();
+static bool pending_gps_data;
+#endif
 int write_xbee_data();
 void send_xbee();
 void sd_date_time(uint16_t* date, uint16_t* time);
@@ -125,11 +137,13 @@ void setup() {
     FLEXCAN0_MCR &= 0xFFFDFFFF; // Enables CAN message self-reception
     CAN.begin();
 
+	#if GPS_EN
     /* Set up GPS */
     GPS.begin(9600);
     GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCGGA); // specify data to be received (minimum + fix)
     GPS.sendCommand(PMTK_SET_NMEA_UPDATE_10HZ); // set update rate (10Hz)
     GPS.sendCommand(PGCMD_ANTENNA); // report data about antenna
+	#endif
 
     /* Set up SD card */
     Serial.println("Initializing SD card...");
@@ -164,6 +178,8 @@ void loop() {
     /* Process and log incoming CAN messages */
     parse_can_message();
 
+	read_analog_values();
+
     /* Send messages over XBee */
     send_xbee();
 
@@ -182,6 +198,7 @@ void loop() {
         process_mcu_analog_readings();
     }
 
+	#if GPS_EN
     /* Process GPS readings */
     GPS.read();
     if (GPS.newNMEAreceived()) {
@@ -191,6 +208,7 @@ void loop() {
     if (timer_gps.check() && pending_gps_data) {
         process_gps();
     }
+	#endif
 }
 
 void parse_can_message() {
@@ -269,24 +287,30 @@ time_t getTeensy3Time() {
     return Teensy3Clock.get();
 }
 
+inline void read_analog_values() {
+    /* Filter ADC readings */
+    filtered_temp_reading 		 	 = ALPHA * filtered_temp_reading 			+ (1 - ALPHA) * ADC.read_adc(TEMP_SENSE_CHANNEL);
+    filtered_ecu_current_reading 	 = ALPHA * filtered_ecu_current_reading 	+ (1 - ALPHA) * ADC.read_adc(ECU_CURRENT_CHANNEL);
+    filtered_supply_reading 	 	 = ALPHA * filtered_supply_reading 			+ (1 - ALPHA) * ADC.read_adc(SUPPLY_READ_CHANNEL);
+    filtered_cooling_current_reading = ALPHA * filtered_cooling_current_reading + (1 - ALPHA) * ADC.read_adc(COOLING_CURRENT_CHANNEL);
+}
+
+
 void process_mcu_analog_readings() {
     //self derived
-    float current_ecu = (ADC.read_adc(ECU_CURRENT_CHANNEL) - 2048) / 151.0;
-    float current_cooling = (ADC.read_adc(TEMP_SENSE_CHANNEL) - 2048) / 151.0;
+    float current_ecu = (filtered_ecu_current_reading - 2048) / 151.0;
+    float current_cooling = (filtered_cooling_current_reading - 2048) / 151.0;
     //Serial.println(current_cooling);
     //Serial.println(current_ecu);
 
-    float glv_voltage_reading = ADC.read_adc(SUPPLY_READ_CHANNEL);
-    float glv_voltage_value = (((glv_voltage_reading/4096) * 5) * 55/12) + 0.14; //ADC->12V conversion + offset likely due to resistor values
+    float glv_voltage_value = (((filtered_supply_reading/4096) * 5) * 55/12) + 0.14; //ADC->12V conversion + offset likely due to resistor values
     //Serial.print("GLV: ");
     //Serial.println(glv_voltage_value);
 
-    float temp_reading = ADC.read_adc(TEMP_SENSE_CHANNEL);
-      
     mcu_analog_readings.set_ecu_current(current_ecu * 5000);
     mcu_analog_readings.set_cooling_current(current_cooling * 5000);
     mcu_analog_readings.set_glv_battery_voltage(glv_voltage_value * 2500);
-    mcu_analog_readings.set_temperature(temp_reading);
+    mcu_analog_readings.set_temperature(filtered_temp_reading);
 
     mcu_analog_readings.write(msg_tx.buf);
     msg_tx.id = ID_MCU_ANALOG_READINGS;
@@ -299,6 +323,7 @@ void process_mcu_analog_readings() {
     write_xbee_data();   
 }
 
+#if GPS_EN
 void process_gps() {
     mcu_gps_readings.set_latitude(GPS.latitude_fixed);
     mcu_gps_readings.set_longitude(GPS.longitude_fixed);
@@ -312,7 +337,7 @@ void process_gps() {
 
     pending_gps_data = false;
 }
-
+#endif
 int write_xbee_data() {
     /*
      * DECODED FRAME STRUCTURE:
