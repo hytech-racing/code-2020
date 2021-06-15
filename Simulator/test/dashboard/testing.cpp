@@ -14,16 +14,14 @@ class DashboardTesting : public ::testing::Test {
 protected:
 	DashboardTesting () {}
 	void SetUp() {
-		extern bool is_mc_err;
-		extern VariableLED variable_led_start;
+		extern VariableLED led_start;
 		extern Metro timer_can_update;
 		extern MCP_CAN CAN;
 		extern Dashboard_status dashboard_status;
 		extern MCU_status mcu_status;
 
 		MockCAN::teardown();
-		is_mc_err = false;
-		variable_led_start = VariableLED(LED_START);
+		led_start = VariableLED(LED_START);
 		timer_can_update = Metro(100);
 		CAN = MCP_CAN(SPI_CS);
 		dashboard_status = {};

@@ -2,6 +2,19 @@
 
 #include <string.h>
 #include <stdint.h>
+#ifdef HT_DEBUG_EN
+    #include "Arduino.h"
+#endif
+
+enum class MCU_STATE
+{
+    STARTUP                      = 0,
+    TRACTIVE_SYSTEM_NOT_ACTIVE   = 1,
+    TRACTIVE_SYSTEM_ACTIVE       = 2,
+    ENABLING_INVERTER            = 3,
+    WAITING_READY_TO_DRIVE_SOUND = 4,
+    READY_TO_DRIVE               = 5
+};
 
 enum class MCU_STATE
 {
@@ -143,10 +156,10 @@ private:
         )*/
     uint8_t ecu_states;
 
-    // @Parse @Unit(N)
+    // @Parse @Unit(Nm)
     uint8_t max_torque;
 
-    // @Prase
+    // @Parse
     uint8_t torque_mode;
 
     // @Parse @Unit(m) @Scale(100)

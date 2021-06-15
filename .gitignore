@@ -151,8 +151,15 @@ dist
 .pnp.*
 
 # VSCode
+.vscode/
+.vscode/*
 .vscode/**
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
 *.code-workspace
+.dist/
 
 # VS
 .vs/**
@@ -239,4 +246,4 @@ $RECYCLE.BIN/
 Telemetry/autoparse/log
 Telemetry/autoparse/webserver/uploads
 Telemetry/telemetry_py/*.txt
-Telemetry/telemetry_py/*.csv
+*.csv

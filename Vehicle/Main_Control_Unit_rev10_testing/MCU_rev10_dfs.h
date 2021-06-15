@@ -1,5 +1,4 @@
 #pragma once
-#include "driver_constants.h"
 
 /*
  * Teensy Pin definitions
@@ -54,14 +53,14 @@
 
 #define ALPHA 0.9772                     // parameter for the sowftware filter used on ADC pedal channels
 #define ADC_SPI_SPEED 1800000            // max SPI clokc frequency for MCP3208 is 2MHz in ideal conditions
-#define TORQUE_ADJUSTMENT_VOLTAGE 3.5242 
+#define TORQUE_ADJUSTMENT_VOLTAGE 3.5242
 
 #define BMS_HEARTBEAT_TIMEOUT 3000
 #define DASH_HEARTBEAT_TIMEOUT 1000
 #define TIMER_SOFTWARE_ENABLE 100
 
 // this is just for reference
-#define MAX_POSSIBLE_TORQUE 1200         
+#define MAX_POSSIBLE_TORQUE 1200
 
 
 #define NUM_TEETH 24 //CHANGE THIS FOR #OF TEETH PER REVOLUTION
