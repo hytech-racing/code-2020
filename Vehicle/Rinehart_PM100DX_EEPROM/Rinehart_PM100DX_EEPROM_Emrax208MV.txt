@@ -27,7 +27,7 @@ CAN_Extended_Msg_ID_EEPROM(0=N_1=Y)   ,      0 checked
 CAN_J1939_Option_Active_EEPROM        ,      0 checked
 CAN_OBD2_Enable_EEPROM                ,      0 checked
 CAN_BMS_Limit_Enable_EEPROM           ,      0 checked
-CAN_Term_Res_Present_EEPROM           ,      0 wrong; currently 1
+CAN_Term_Res_Present_EEPROM           ,      1 on car
 CAN_Command_Message_Active_EEPROM     ,      1 checked
 CAN_Bit_Rate_EEPROM_(kbps)            ,    500 checked
 CAN_ACTIVE_MSGS_EEPROM_(Lo_Word)      ,  65535 checked
