@@ -146,7 +146,7 @@ uint16_t charge_temp_cell_critical_high = 5500; // 55.00C
 uint16_t discharge_temp_cell_critical_high = 6000; // 60.00C
 uint16_t onboard_temp_balance_disable = 8000;  // 80.00C
 uint16_t onboard_temp_balance_reenable = 7000; // 70.00C
-uint16_t onboard_temp_critical_high = 6000; // 60.00C
+uint16_t onboard_temp_critical_high = 8000; // 80.00C
 uint16_t voltage_difference_threshold = 100; // 0.0100V
 
 uint8_t total_count_cells = CELLS_PER_IC * TOTAL_IC; // Number of non-ignored cells (used for calculating averages)
