@@ -241,7 +241,9 @@ void parse_can_message() {
             bms_balancing_status[temp.get_group_id()].load(msg_rx.buf);
         }
         else switch(msg_rx.id) {
-            case ID_MCU_STATUS:                         mcu_status.load(msg_rx.buf);                        break;
+            case ID_MCU_STATUS:                         
+                // Serial.println("mcu_received");
+                mcu_status.load(msg_rx.buf);                        break;
             case ID_DASHBOARD_STATUS:                   dashboard_status.load(msg_rx.buf);                  break;
             case ID_MCU_PEDAL_READINGS:                 mcu_pedal_readings.load(msg_rx.buf);                break;
             case ID_MCU_ANALOG_READINGS:                mcu_analog_readings.load(msg_rx.buf);               break;
@@ -602,6 +604,7 @@ void send_xbee() {
         mcu_status.write(xb_msg.buf);
         xb_msg.len = sizeof(MCU_status);
         xb_msg.id = ID_MCU_STATUS;
+        // Serial.println("xbee mcu send");
         write_xbee_data();
     }
 
