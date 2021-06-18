@@ -206,9 +206,9 @@ def decode(msg):
     #     ret.append(["GPS_SATELLITE_COUNT",              b2ui8(msg[6:7])                        ])
     #     ret.append(["TIMESTAMP_SECONDS",                b2i16(msg[7:11])                       ])
     #     ret.append(["TIMESTAMP_MILLISECONDS",           b2i16(msg[11:13])                      ])
-    elif (id == 0xEC):
-        ret.append(["MCU_SLIP_RATIO",                   b2i16(msg[5:7]) / 100.                 ])
-        ret.append(["MCU_SLIP_LIMITING_FACTOR",         b2i16(msg[7:9]) / 100.                 ])
+    # elif (id == 0xEC):
+    #     ret.append(["MCU_SLIP_RATIO",                   b2i16(msg[5:7]) / 100.                 ])
+    #     ret.append(["MCU_SLIP_LIMITING_FACTOR",         b2i16(msg[7:9]) / 100.                 ])
 
     return ret
 
