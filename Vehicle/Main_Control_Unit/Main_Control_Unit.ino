@@ -1,3 +1,11 @@
+/*
+ * Teensy 3.2 Main Control Unit code
+ * Written by Ethan Weinstock with assistance from Shaan Dhawan
+ * 
+ * Rev 10 - 6/16/2021
+ * FSAE Nevada
+ */
+
 #include <stdint.h>
 #define _USE_MATH_DEFINES
 #include <cmath>
@@ -20,7 +28,7 @@
 
 // set to true or false for debugging
 #define DEBUG false
-#define BMS_DEBUG_ENABLE true
+#define BMS_DEBUG_ENABLE false
 
 #define LINEAR 0
 
@@ -47,7 +55,7 @@ BMS_status bms_status{};
 BMS_temperatures bms_temperatures{};
 BMS_voltages bms_voltages{};
 Dashboard_status dashboard_status{};
-MC_current_information mc_current_informtarion{};
+MC_current_information mc_current_information{};
 MC_internal_states mc_internal_states{};
 MC_motor_position_information mc_motor_position_information{};
 MC_voltage_information mc_voltage_information{};
@@ -63,6 +71,7 @@ Metro timer_imd_print_fault = Metro(500);
 #endif
 Metro timer_inverter_enable = Metro(2000); // Timeout failed inverter enable
 Metro timer_motor_controller_send = Metro(50);
+Metro timer_coloumb_count_send = Metro(1000);
 Metro timer_ready_sound = Metro(2000); // Time to play RTD sound
 Metro timer_can_update = Metro(100);
 Metro timer_sensor_can_update = Metro(5);
@@ -76,8 +85,8 @@ Metro timer_watchdog_timer = Metro(500);
 // until a CAN message comes in which resets the timer and the interval
 Metro timer_bms_heartbeat = Metro(0, 1);
 // add dashboard heartbeat
-Metro timer_dashboard_heartbeat = Metro(0, 1);
-Metro timer_software_enable_interval = Metro(TIMER_SOFTWARE_ENABLE, 1);
+// Metro timer_dashboard_heartbeat = Metro(0, 1);
+// Metro timer_software_enable_interval = Metro(TIMER_SOFTWARE_ENABLE, 1);
 
 #if BMS_DEBUG_ENABLE
 #define TOTAL_IC 8                      // Number of ICs in the system
@@ -127,6 +136,10 @@ float rpm_back_left{};
 float rpm_back_right{};
 
 static CAN_message_t tx_msg;
+
+// coloumb counts
+uint32_t total_discharge;
+unsigned long previous_data_time;
 
 void setup() {
     // no torque can be provided on startup
@@ -190,7 +203,10 @@ void setup() {
     set_state(MCU_STATE::TRACTIVE_SYSTEM_NOT_ACTIVE);
     mcu_status.set_max_torque(TORQUE_1);
     mcu_status.set_torque_mode(1);
-mcu_status.set_torque_mode(1);
+
+    /* Set up total discharge readings */
+    setup_total_discharge();
+
 }
 
 void loop() {
@@ -243,6 +259,13 @@ void loop() {
         CAN.write(tx_msg);
     }
 
+    if (timer_coloumb_count_send.check()){
+        bms_coulomb_counts.write(tx_msg.buf);
+        tx_msg.id = ID_BMS_COULOMB_COUNTS;
+        tx_msg.len = sizeof(bms_coulomb_counts);
+        CAN.write(tx_msg);
+    }
+
     /* Finish restarting the inverter when timer expires */
     if (timer_restart_inverter.check() && inverter_restart) {
         inverter_restart = false;
@@ -269,6 +292,21 @@ void loop() {
     }
     if (bms_print && timer_bms_print.check()) print_bms();
     #endif
+}
+
+inline void setup_total_discharge() {
+    total_discharge = 0;
+    previous_data_time = millis();
+    bms_coulomb_counts.set_total_discharge(total_discharge);
+}
+
+inline void process_total_discharge() {
+    unsigned long current_time = millis();
+    double new_current = mc_current_information.get_dc_bus_current() / 10;
+    uint32_t added_Ah = new_current * ((current_time - previous_data_time) * 10000 / (1000 * 60 * 60 )); //scaled by 10000 for telemetry parsing
+    previous_data_time = current_time;
+    total_discharge += added_Ah;
+    bms_coulomb_counts.set_total_discharge(total_discharge);
 }
 
 inline void state_machine() {
@@ -532,13 +570,13 @@ inline void software_shutdown() {
         #endif
         mcu_status.set_software_is_ok(false);
     }
-    if (timer_dashboard_heartbeat.check()){
-        timer_dashboard_heartbeat.interval(0);
-        #if DEBUG
-           Serial.println("no dashboard");
-        #endif
-        mcu_status.set_software_is_ok(false);
-    }
+    // if (timer_dashboard_heartbeat.check()){
+    //     timer_dashboard_heartbeat.interval(0);
+    //     #if DEBUG
+    //        Serial.println("no dashboard");
+    //     #endif
+    //     mcu_status.set_software_is_ok(false);
+    // }
     // check if any shutdown circuit inputs are low except software shutdown ones
     /*if ((mcu_status.get_shutdown_inputs() & 0x3F) != 0x3F){
        // Serial.println("not 3F");
@@ -573,7 +611,10 @@ void parse_can_message() {
         switch (rx_msg.id) {
             case ID_MC_VOLTAGE_INFORMATION:        mc_voltage_information.load(rx_msg.buf);        break;
             case ID_MC_INTERNAL_STATES:            mc_internal_states.load(rx_msg.buf);            break;
-            case ID_MC_CURRENT_INFORMATION:        mc_current_informtarion.load(rx_msg.buf);       break;
+            case ID_MC_CURRENT_INFORMATION:       
+                mc_current_information.load(rx_msg.buf);
+                process_total_discharge();
+                break;
             case ID_MC_MOTOR_POSITION_INFORMATION: mc_motor_position_information.load(rx_msg.buf); break;
             case ID_BMS_TEMPERATURES:              bms_temperatures.load(rx_msg.buf);              break;
             case ID_BMS_VOLTAGES:                  bms_voltages.load(rx_msg.buf);                  break;
@@ -587,8 +628,8 @@ void parse_can_message() {
             case ID_DASHBOARD_STATUS:
                 dashboard_status.load(rx_msg.buf);
 
-                timer_dashboard_heartbeat.reset();
-                timer_dashboard_heartbeat.interval(DASH_HEARTBEAT_TIMEOUT);
+                // timer_dashboard_heartbeat.reset();
+                // timer_dashboard_heartbeat.interval(DASH_HEARTBEAT_TIMEOUT);
                 /* process dashboard buttons */
                 if (dashboard_status.get_mode_btn()){
                     switch (mcu_status.get_torque_mode()){
@@ -775,14 +816,14 @@ int calculate_torque() {
     return calculated_torque;
 }
 
-inline void update_coulomb_count() {
-    int new_current = mc_current_informtarion.get_dc_bus_current() * 10; // get current in Amps * 100
-    if (new_current > 0) {
-        total_discharge_amount += new_current;
-    } else {
-        total_charge_amount -= new_current;
-    }
-}
+// inline void update_coulomb_count() {
+//     int new_current = mc_current_informtarion.get_dc_bus_current() * 10; // get current in Amps * 100
+//     if (new_current > 0) {
+//         total_discharge_amount += new_current;
+//     } else {
+//         total_charge_amount -= new_current;
+//     }
+// }
 
 /* Read pedal sensor values */
 inline void read_pedal_values() {
