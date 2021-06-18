@@ -7,7 +7,13 @@ using namespace std;
 
 int main()
 {
-    BMS_detailed_temperatures bms = {};
-    cout << is_standard_layout<BMS_detailed_temperatures>::value
-     << " " << is_trivial<BMS_detailed_temperatures>::value << endl;
+    MCU_status mcu_status = {};
+    BMS_status bms_status = {};
+    cout << is_standard_layout<MCU_status>::value
+     << " " << is_trivial<MCU_status>::value 
+     << " " << sizeof mcu_status << endl;
+
+     cout << is_standard_layout<BMS_status>::value
+     << " " << is_trivial<BMS_status>::value 
+     << " " << sizeof bms_status << endl;
 }
