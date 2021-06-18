@@ -33,13 +33,13 @@ void loop() {
     filtered_brake1_reading = ALPHA * filtered_brake1_reading + (1 - ALPHA) * ADC.read_adc(ADC_BRAKE_1_CHANNEL);
     filtered_brake2_reading = ALPHA * filtered_brake2_reading + (1 - ALPHA) * ADC.read_adc(ADC_BRAKE_2_CHANNEL);
 
-    static bool print = false;
+    static bool raw = false;
     static bool apps = false;
     if(Serial.available()){
         String a = Serial.readString();
         if (a == "on" || a == "on\n") {
           Serial.println("raw print turned on");
-          print = true;
+          raw = true;
         }
         else if (a == "apps" || a == "apps\n"){
           Serial.println("apps print turned on");
@@ -47,11 +47,11 @@ void loop() {
         }
         else if (a == "off" || a == "off\n"){
           Serial.println("Print turned off");
-          print = false;
+          raw = false;
           apps = false;
         }
     }
-    if (print && timer_serial_print.check()) {
+    if (raw && timer_serial_print.check()) {
       Serial.println("\n\n");
       Serial.print("ACCEL 1: "); Serial.println(filtered_accel1_reading);
       Serial.print("ACCEL 2: "); Serial.println(filtered_accel2_reading);
@@ -113,25 +113,25 @@ void loop() {
 
         // FSAE EV.5.7
         // APPS/Brake Pedal Plausability Check
-        if  (
-                (
-                    (filtered_accel1_reading > ((END_ACCELERATOR_PEDAL_1 - START_ACCELERATOR_PEDAL_1)/4 + START_ACCELERATOR_PEDAL_1))
-                    ||
-                    (filtered_accel2_reading < ((END_ACCELERATOR_PEDAL_2 - START_ACCELERATOR_PEDAL_2)/4 + START_ACCELERATOR_PEDAL_2))
-                )
-                && filtered_brake1_reading > BRAKE_ACTIVE
-            )
-        {
-            Serial.println("EV.5.7 APPS/Brake Pedal implausability entering");
-        }
-        else if
-        (
-            (filtered_accel1_reading < ((END_ACCELERATOR_PEDAL_1 - START_ACCELERATOR_PEDAL_1)/20 + START_ACCELERATOR_PEDAL_1))
-            &&
-            (filtered_accel2_reading > ((END_ACCELERATOR_PEDAL_2 - START_ACCELERATOR_PEDAL_2)/20 + START_ACCELERATOR_PEDAL_2))
-        )
-        {
-            Serial.println("EV.5.7 APPS/Brake Pedal implausability exiting");
-        }
+        // if  (
+        //         (
+        //             (filtered_accel1_reading > ((END_ACCELERATOR_PEDAL_1 - START_ACCELERATOR_PEDAL_1)/4 + START_ACCELERATOR_PEDAL_1))
+        //             ||
+        //             (filtered_accel2_reading < ((END_ACCELERATOR_PEDAL_2 - START_ACCELERATOR_PEDAL_2)/4 + START_ACCELERATOR_PEDAL_2))
+        //         )
+        //         && filtered_brake1_reading > BRAKE_ACTIVE
+        //     )
+        // {
+        //     Serial.println("EV.5.7 APPS/Brake Pedal implausability entering");
+        // }
+        // else if
+        // (
+        //     (filtered_accel1_reading < ((END_ACCELERATOR_PEDAL_1 - START_ACCELERATOR_PEDAL_1)/20 + START_ACCELERATOR_PEDAL_1))
+        //     &&
+        //     (filtered_accel2_reading > ((END_ACCELERATOR_PEDAL_2 - START_ACCELERATOR_PEDAL_2)/20 + START_ACCELERATOR_PEDAL_2))
+        // )
+        // {
+        //     Serial.println("EV.5.7 APPS/Brake Pedal implausability exiting");
+        // }
     }
 }
