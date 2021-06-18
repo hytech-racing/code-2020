@@ -148,8 +148,8 @@ def decode(msg):
         ret.append(["BMS_VOLTAGE_HIGH",                  (b2ui16(msg[9:11]) / 10e3),     "V"     ])
         ret.append(["BMS_VOLTAGE_TOTAL",                 (b2ui16(msg[11:13]) / 100.),    "V"     ])
     elif (id == 0xE2): # ID_BMS_COULOMB_COUNTS
-        ret.append(["BMS_TOTAL_CHARGE",                 b2ui32(msg[5:9]) / 10000.,      "C"    ])
-        ret.append(["BMS_TOTAL_DISCHARGE",              b2ui32(msg[9:13]) / 10000.,     "C"    ])
+        ret.append(["BMS_TOTAL_CHARGE",                 b2ui32(msg[5:9]) / 100.,      "Ah"    ])
+        ret.append(["BMS_TOTAL_DISCHARGE",              b2ui32(msg[9:13]) / 100.,     "Ah"    ])
     elif (id == 0xC3): # ID_MCU_STATUS
         ret.append(["IMD_OK_HIGH",                      (msg[5] & 0x1)                          ])
         ret.append(["BMS_OK_HIGH",                      ((msg[5] & 0x4) >> 2)                   ])
