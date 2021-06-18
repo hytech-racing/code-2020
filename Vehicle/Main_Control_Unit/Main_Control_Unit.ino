@@ -198,7 +198,6 @@ void setup() {
     set_state(MCU_STATE::TRACTIVE_SYSTEM_NOT_ACTIVE);
     mcu_status.set_max_torque(TORQUE_1);
     mcu_status.set_torque_mode(1);
-    mcu_status.set_torque_mode(1);
 }
 
 void loop() {
