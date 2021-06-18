@@ -144,8 +144,8 @@ uint16_t discharge_current_constant_high = 22000; // 220.00A
 int16_t  charge_current_constant_high = -11000; // 110.00A
 uint16_t charge_temp_cell_critical_high = 5500; // 55.00C
 uint16_t discharge_temp_cell_critical_high = 6000; // 60.00C
-uint16_t onboard_temp_balance_disable = 6000;  // 60.00C
-uint16_t onboard_temp_balance_reenable = 5500; // 55.00C
+uint16_t onboard_temp_balance_disable = 8000;  // 80.00C
+uint16_t onboard_temp_balance_reenable = 7000; // 70.00C
 uint16_t onboard_temp_critical_high = 6000; // 60.00C
 uint16_t voltage_difference_threshold = 100; // 0.0100V
 
