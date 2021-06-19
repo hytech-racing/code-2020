@@ -17,9 +17,9 @@
 
 #define DRIVER DAVID
 
-#define TORQUE_1 60
-#define TORQUE_2 100
-#define TORQUE_3 120
+#define TORQUE_1 100
+#define TORQUE_2 140
+#define TORQUE_3 160
 
 // set to true or false for debugging
 #define DEBUG false
@@ -43,9 +43,9 @@
 #include "../../Vehicle/Main_Control_Unit/driver_constants.h"
 
 #else
-#define TORQUE_1 60
+#define TORQUE_1 40
 #define TORQUE_2 100
-#define TORQUE_3 120
+#define TORQUE_3 160
 #define DEBUG false
 #define BMS_DEBUG false
 #define REGEN_ENABLE false
