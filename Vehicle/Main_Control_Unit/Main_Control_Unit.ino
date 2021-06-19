@@ -167,9 +167,7 @@ void setup() {
     pinMode(TEENSY_OK, OUTPUT);
     digitalWrite(TEENSY_OK, HIGH);
 
-    #if DEBUG
     Serial.begin(115200);
-    #endif
     CAN.begin();
 
     /* Configure CAN rx interrupt */
@@ -608,6 +606,12 @@ inline void software_shutdown() {
 void parse_can_message() {
     static CAN_message_t rx_msg;
     while (CAN.read(rx_msg)) {
+        Serial.print("CAN Message ID: ");
+        Serial.print(rx_msg.id);
+        if (rx_msg.id == 100 || rx_msg.id == 400)
+            Serial.println(". Energy meter");
+        else
+            Serial.println(".");
         switch (rx_msg.id) {
             case ID_MC_VOLTAGE_INFORMATION:        mc_voltage_information.load(rx_msg.buf);        break;
             case ID_MC_INTERNAL_STATES:            mc_internal_states.load(rx_msg.buf);            break;
