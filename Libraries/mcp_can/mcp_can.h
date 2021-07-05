@@ -50,6 +50,16 @@
 
 #define MAX_CHAR_IN_MESSAGE 8
 
+// This is not part of the actual library. Added as FlexCAN-style interface.
+typedef struct CAN_message_t {
+  uint32_t id; // can identifier
+  uint8_t ext; // identifier is extended
+  uint8_t rtr; // remote transmission request packet type
+  uint8_t len; // length of data
+  uint16_t timeout; // milliseconds, zero will disable waiting
+  uint8_t buf[8];
+} CAN_message_t;
+
 class MCP_CAN
 {
     private:
@@ -131,6 +141,22 @@ public:
     unsigned long getCanId(void);                                   // get can id when receive
     byte isRemoteRequest(void);                                     // get RR flag when receive
     byte isExtendedFrame(void);                                     // did we recieve 29bit frame?
+
+    // This is not part of the actual library. Added as FlexCAN-style interface.
+    inline int read(CAN_message_t& msg) {
+      if (checkReceive() != CAN_MSGAVAIL)
+        return false;
+      readMsgBuf(&msg.len, msg.buf);
+      msg.id = can_id;
+      msg.ext = ext_flg;
+      msg.rtr = rtr;
+      msg.timeout = 0;
+      return true;
+    }
+
+    inline int write(CAN_message_t& msg) {
+      return sendMsgBuf(msg.id, msg.ext, msg.rtr, msg.len, msg.buf);
+    }
 };
 
 #endif
